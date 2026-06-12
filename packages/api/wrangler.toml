@@ -1,0 +1,51 @@
+name = "akira-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ── D1 ────────────────────────────────────────────────────────────
+# Local development uses Miniflare's sqlite at .wrangler/state/v3/d1/
+# For production values, see wrangler.production.toml.
+[[d1_databases]]
+binding = "DB"
+database_name = "antena"
+database_id = "local-placeholder"
+
+# ── KV ────────────────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "CACHE"
+id = "local-placeholder"
+
+# ── R2 ────────────────────────────────────────────────────────────
+# Local mode: Miniflare's R2 emulator. Enable R2 in production
+# dashboard to use the real bucket.
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "antena-images-local"
+
+# ── Vectorize ─────────────────────────────────────────────────────
+# Local mode: not supported. Bindings are stubbed.
+[[vectorize]]
+binding = "VECTORS"
+index_name = "news_embeddings_local"
+
+# ── Analytics Engine ──────────────────────────────────────────────
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "feed_events_local"
+
+# ── Queues ────────────────────────────────────────────────────────
+[[queues.producers]]
+binding = "IMAGE_QUEUE"
+queue = "image-pipeline-local"
+
+[[queues.consumers]]
+queue = "image-pipeline-local"
+max_batch_size = 10
+max_batch_timeout = 30
+
+# ── Vars ──────────────────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "local"
+API_BASE = "http://localhost:8800"
+PUBLIC_WEB_BASE = "http://localhost:4400"

@@ -1,0 +1,32 @@
+name = "akira-api"
+compatibility_date = "2026-03-01"
+compatibility_flags = ["nodejs_compat"]
+main = "packages/api/src/index.ts"
+
+[dev]
+port = 8787
+
+# D1 bound to local Miniflare SQLite for wrangler dev
+# Production: replace with real database_id from `wrangler d1 create akira-db`
+[[d1_databases]]
+binding = "DB"
+database_name = "akira-db"
+database_id = "AKIRA_DB_ID"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "AKIRA_KV_ID"
+
+# Session storage for Astro (required for @astrojs/cloudflare sessions)
+[[kv_namespaces]]
+binding = "SESSION"
+id = "AKIRA_SESSION_ID"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "akira-images"
+
+# Secrets go in .dev.vars (local) and Cloudflare dashboard (production)
+# Do NOT put secrets here
+[vars]
+ENVIRONMENT = "development"

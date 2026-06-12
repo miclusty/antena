@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════
+   ANTENA DESIGN TOKENS v2.0
+   CSS custom properties for theming
+   ═══════════════════════════════════════════ */
+
+:root {
+  /* ── Backgrounds ── */
+  --bg-base:      #F7F5F2;
+  --bg-elevated:  #FFFFFF;
+  --bg-hover:     #F0EDEA;
+  --bg-overlay:   rgba(0, 0, 0, 0.4);
+
+  /* ── Borders & Dividers ── */
+  --border:       #E5E0D8;
+  --border-base:  #E5E0D8;
+  --border-strong:#CCC7BE;
+
+  /* ── Text ── */
+  --text-primary:   #1A1A1A;
+  --text-secondary: #6B6760;
+  --text-tertiary:  #9C9890;
+  --text-inverse:   #F7F5F2;
+
+  /* ── Aliases (compatibility) ── */
+  --surface:    var(--bg-elevated);
+  --foreground: var(--text-primary);
+
+  /* ── Brand / Accent ── */
+  --accent:        #FF4D5A;
+  --accent-hover:  #FF6B72;
+  --accent-muted:  rgba(255, 77, 90, 0.10);
+  --accent-subtle: rgba(255, 77, 90, 0.06);
+  --accent-ring:   rgba(255, 77, 90, 0.32);
+  --accent-glow:   0 0 0 3px rgba(255, 77, 90, 0.18);
+
+  /* ── Semantic ── */
+  --success:  #10B981;
+  --warning:  #F59E0B;
+  --error:    #EF4444;
+  --info:     #3B82F6;
+
+  /* ── Bias / Political Spectrum ── */
+  --bias-officialist:    #75AADB;
+  --bias-officialist-dk: #1A3A6B;
+  --bias-neutral:        #8A8D97;
+  --bias-opposition:    #F5C542;
+  --bias-opposition-dk: #E8A37C;
+
+  /* ── Category Colors ── */
+  --cat-politica:      #FF4D5A;
+  --cat-economia:      #F59E0B;
+  --cat-deportes:      #10B981;
+  --cat-policiales:   #EF4444;
+  --cat-cultura:      #8B5CF6;
+  --cat-tecnologia:   #3B82F6;
+  --cat-sociedad:    #06B6D4;
+  --cat-internacional:#6366F1;
+
+  /* ── Shadows ── */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 2px 8px rgba(58, 51, 44, 0.06);
+
+  /* ── Spacing ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Radii ── */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full: 9999px;
+
+  /* ── Typography ── */
+  --font-display: "Syne", system-ui, sans-serif;
+  --font-body:    "DM Sans", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  26px;
+  --text-3xl:  32px;
+
+  /* ── Transitions ── */
+  --transition-fast:   100ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow:  300ms ease;
+
+  /* ── Layout ── */
+  --header-height: 56px;
+  --bottom-nav-height: 60px;
+  --feed-max-width: 600px;
+  --sidebar-width: 268px;
+  --right-rail-width: 320px;
+
+  /* ── Live / Breaking ── */
+  --live-red:        #DC2626;
+  --live-red-soft:   rgba(220, 38, 38, 0.10);
+  --live-pulse:      0 0 0 0 rgba(220, 38, 38, 0.7);
+
+  /* ── Drawer ── */
+  --drawer-width:    85%;
+  --drawer-z:        100;
+  --backdrop-z:      90;
+  --drawer-shadow:   -8px 0 24px rgba(0, 0, 0, 0.20);
+}
+
+/* ── Dark Mode ── */
+[data-theme="dark"] {
+  --bg-base:      #0F1117;
+  --bg-elevated:  #1A1D27;
+  --bg-hover:     #242836;
+  --bg-overlay:   rgba(0, 0, 0, 0.6);
+
+  --border:       #2A2E3C;
+  --border-base:  #2A2E3C;
+  --border-strong:#3A3E4C;
+
+  --text-primary:   #E8E6E3;
+  --text-secondary: #8A8D97;
+  --text-tertiary: #5C5F6A;
+  --text-inverse:   #0F1117;
+
+  /* ── Aliases (compatibility) ── */
+  --surface:    var(--bg-elevated);
+  --foreground: var(--text-primary);
+
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25);
+}

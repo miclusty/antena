@@ -1,0 +1,52 @@
+name = "akira-api-staging"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ── D1 ────────────────────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "antena-staging"
+database_id = "b3273323-32f2-4a3f-a2e3-36dbc1547999"
+migrations_dir = "migrations"
+
+# ── KV ────────────────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "CACHE"
+id = "1be489f607fd4ddd8c2bcbeec8d925d3"
+
+# ── R2 ────────────────────────────────────────────────────────────
+# Disabled: enable R2 in the dashboard first.
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "antena-images-staging"
+
+# ── Vectorize ─────────────────────────────────────────────────────
+[[vectorize]]
+binding = "VECTORS"
+index_name = "news_embeddings_staging"
+
+# ── Analytics Engine ──────────────────────────────────────────────
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "feed_events_staging"
+
+# ── Queues ────────────────────────────────────────────────────────
+[[queues.producers]]
+binding = "IMAGE_QUEUE"
+queue = "image-pipeline-staging"
+
+[[queues.consumers]]
+queue = "image-pipeline-staging"
+max_batch_size = 10
+max_batch_timeout = 30
+
+# ── Cron (every 2 hours) ──────────────────────────────────────────
+[triggers]
+crons = ["0 */2 * * *"]
+
+# ── Vars ──────────────────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "staging"
+API_BASE = "https://api-staging.antena.com.ar"
+PUBLIC_WEB_BASE = "https://staging.antena.com.ar"

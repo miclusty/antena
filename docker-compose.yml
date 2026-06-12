@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Python Extractor
+  extractor:
+    build: ./packages/akira
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/data
+    environment:
+      - AKIRA_DB_PATH=/data/akira.db
+    restart: unless-stopped
+
+  # Node.js API  
+  api:
+    build: ./packages/api
+    ports:
+      - "8787:8787"
+    depends_on:
+      - extractor
+    environment:
+      - PYTHON_EXTRACTOR_URL=http://extractor:5000
+      - API_KEY=${API_KEY:-akira-dev-key}
+    restart: unless-stopped
+
+  # Astro Web
+  web:
+    build: ./packages/antena
+    ports:
+      - "4321:4321"
+    depends_on:
+      - api
+    environment:
+      - PUBLIC_API_BASE=http://api:8787
+    restart: unless-stopped
+
+volumes:
+  data:
