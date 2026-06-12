@@ -1,0 +1,180 @@
+/** @jsxImportSource solid-js */
+import { createMemo, createSignal, Show, For } from 'solid-js';
+import type { NewsItem } from '../../lib/types';
+import { useHaptic } from '../../lib/haptic';
+import { createScrollProgress } from '../../lib/scroll-progress';
+import { trackEvent } from '../../lib/analytics';
+import BottomSheet from '../common/BottomSheet';
+
+interface OtrasVocesCtaProps {
+  otherSources: NewsItem[];
+  currentId: string;
+  onSelect: (article: NewsItem) => void;
+}
+
+/**
+ * Sticky CTA that appears after the user has scrolled past the
+ * article body. Tapping it opens a BottomSheet listing all the
+ * other sources covering the same story.
+ */
+export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
+  const haptic = useHaptic();
+  const [sheetOpen, setSheetOpen] = createSignal(false);
+  const [sentinelRef, passed] = createScrollProgress(0.6);
+
+  // Pre-compute the source labels for the CTA copy
+  const topSources = createMemo(() =>
+    props.otherSources
+      .slice(0, 3)
+      .map((a) => a.source)
+  );
+  const overflow = createMemo(() =>
+    Math.max(0, props.otherSources.length - 3)
+  );
+
+  // Fire a one-time analytics event when the CTA becomes visible
+  let tracked = false;
+  const trackOnce = () => {
+    if (tracked) return;
+    if (!passed()) return;
+    tracked = true;
+    trackEvent({
+      type: 'card_view',
+      newsId: props.currentId,
+      source: 'otras_voces_cta',
+    });
+  };
+
+  const openSheet = () => {
+    haptic.vibrate(15); // light impact
+    trackOnce();
+    setSheetOpen(true);
+  };
+
+  return (
+    <Show when={props.otherSources.length > 0}>
+      {/* Sentinel — drives when the sticky CTA appears */}
+      <div
+        ref={sentinelRef}
+        aria-hidden="true"
+        style={{ height: '1px' }}
+      />
+      <Show when={passed()}>
+        <div
+          class="fixed left-0 right-0 z-30 mx-4 flex justify-center pointer-events-none"
+          style={{ bottom: 'calc(var(--bottom-nav-height, 60px) + 12px)' }}
+        >
+          <button
+            onClick={openSheet}
+            class="pointer-events-auto w-full max-w-md min-h-[56px] rounded-2xl px-5 py-3 flex items-center justify-between gap-3 text-left active:scale-[0.98] transition-transform"
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-base)',
+              'backdrop-filter': 'blur(20px)',
+              'box-shadow': '0 8px 24px rgba(0,0,0,0.12)',
+            }}
+            aria-label={`Ver ${props.otherSources.length} voces más sobre esta historia`}
+          >
+            <div class="flex-1 min-w-0">
+              <p
+                class="text-[11px] font-bold uppercase tracking-widest"
+                style={{ color: 'var(--accent)' }}
+              >
+                {props.otherSources.length} voces más sobre esta historia
+              </p>
+              <p
+                class="text-sm font-medium mt-0.5 truncate"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {topSources().join(' · ')}
+                <Show when={overflow() > 0}>
+                  <span style={{ color: 'var(--text-tertiary)' }}>
+                    {' '}· +{overflow()}
+                  </span>
+                </Show>
+              </p>
+            </div>
+            <span
+              class="material-symbols-rounded text-2xl shrink-0"
+              style={{ color: 'var(--accent)' }}
+            >
+              arrow_forward
+            </span>
+          </button>
+        </div>
+      </Show>
+
+      <BottomSheet
+        open={sheetOpen()}
+        onClose={() => setSheetOpen(false)}
+        title={`${props.otherSources.length} voces sobre esta historia`}
+      >
+        <ul class="flex flex-col">
+          <For each={props.otherSources}>
+            {(article) => (
+              <li>
+                <button
+                  onClick={() => {
+                    haptic.vibrate('tap');
+                    setSheetOpen(false);
+                    props.onSelect(article);
+                  }}
+                  class="group flex items-stretch gap-3 w-full px-4 py-3 min-h-[64px] text-left hover:bg-bg-hover active:bg-bg-hover transition-colors border-b border-border-base"
+                >
+                  {/* Bias color stripe */}
+                  <div
+                    class="w-1 rounded-full shrink-0 self-stretch"
+                    style={{ 'background-color': article.biasColor || '#8A8D97' }}
+                    aria-hidden="true"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <h3
+                      class="text-[14px] font-semibold leading-snug line-clamp-2"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {article.title.replace('📢 ', '')}
+                    </h3>
+                    <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      <span
+                        class="text-[11px] font-semibold"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        {article.source}
+                      </span>
+                      <span
+                        class="w-0.5 h-0.5 rounded-full"
+                        style={{ background: 'var(--text-tertiary)' }}
+                      />
+                      <span
+                        class="text-[10px]"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        {article.time}
+                      </span>
+                      <span
+                        class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        style={{
+                          'background-color': (article.biasColor || '#8A8D97') + '20',
+                          color: article.biasColor || '#8A8D97',
+                        }}
+                      >
+                        {article.bias}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    class="material-symbols-rounded text-lg leading-none self-center opacity-60 group-hover:opacity-100 transition-opacity"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    aria-hidden="true"
+                  >
+                    chevron_right
+                  </span>
+                </button>
+              </li>
+            )}
+          </For>
+        </ul>
+      </BottomSheet>
+    </Show>
+  );
+}

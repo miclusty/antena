@@ -1,0 +1,35 @@
+name = "antena"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "./dist"
+
+# Phase 6 will fill in the actual Cloudflare bindings (D1, KV, R2,
+# Vectorize, Analytics Engine, Queues, Cron Triggers). Keeping them
+# commented here as a checklist so deploys don't surprise us later.
+
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "antena"
+# database_id = "<to-fill>"
+
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "<to-fill>"
+
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "antena-images"
+
+# [[vectorize_indexes]]
+# binding = "VECTORS"
+# index_name = "news_embeddings"
+
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "feed_events"
+
+# [[queues.producers]]
+# binding = "IMAGE_QUEUE"
+# queue = "image-pipeline"
+
+# [triggers]
+# crons = ["0 */2 * * *"]

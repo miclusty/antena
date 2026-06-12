@@ -1,0 +1,24 @@
+{
+  "name": "akira",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter api dev & pnpm --filter antena dev",
+    "build": "pnpm --filter antena build",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply akira-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply akira-db --remote",
+    "validate": "pnpm typecheck && pnpm lint",
+    "typecheck": "pnpm --filter api typecheck && pnpm --filter antena typecheck",
+    "test": "pnpm --filter api test && pnpm --filter antena test",
+    "test:e2e": "pnpm --filter antena test:e2e",
+    "lint": "pnpm --filter api lint && pnpm --filter antena lint",
+    "lighthouse": "lhci autorun",
+    "deploy:staging": "wrangler pages deploy ./packages/antena/dist --project-name=antena --branch=develop",
+    "deploy:prod": "wrangler pages deploy ./packages/antena/dist --project-name=antena --branch=main"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}

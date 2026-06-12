@@ -1,0 +1,77 @@
+name = "akira-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ── D1 ────────────────────────────────────────────────────────────
+# Production database. Created 2026-06-12 in WEUR region.
+# Free tier: 5B reads/mo, 100k writes/day, 10 GB storage.
+[[d1_databases]]
+binding = "DB"
+database_name = "antena-prod"
+database_id = "ef096b0b-bab6-4b0b-bf5a-30b2dd5bd17c"
+migrations_dir = "migrations"
+
+# ── KV (edge cache) ───────────────────────────────────────────────
+# Pre-existing namespace (used by other Workers in the account).
+# Free tier: 100k reads/day, 1k writes/day.
+[[kv_namespaces]]
+binding = "CACHE"
+id = "df27599523364a02bd294ff97acb1f5c"
+
+# ── R2 (image storage) ────────────────────────────────────────────
+# Bucket name decided; R2 must be enabled in the Cloudflare dashboard
+# before this binding works. Run: Dashboard → R2 → Subscribe to R2.
+# Once enabled, uncomment the block below and run `wrangler deploy`.
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "antena-images"
+
+# ── Vectorize (semantic search) ───────────────────────────────────
+# 384-dim cosine index. Free tier: 30M stored vectors, 50M queried dims/mo.
+[[vectorize]]
+binding = "VECTORS"
+index_name = "news_embeddings"
+
+# ── Analytics Engine (telemetry) ──────────────────────────────────
+# Free tier: 100k events/day. Requires activation in the Cloudflare
+# dashboard (Workers → Analytics Engine → Enable). Commented out
+# until the dashboard side is done.
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "feed_events"
+
+# ── Queues (image pipeline) ───────────────────────────────────────
+# Free tier: 1M operations/mo, 1k concurrent workers.
+# Queue consumer is not implemented in the Worker yet — the image
+# pipeline runs out of band. Commented until the consumer is added
+# to packages/api/src/queues/.
+# [[queues.producers]]
+# binding = "IMAGE_QUEUE"
+# queue = "image-pipeline"
+
+# [[queues.consumers]]
+# queue = "image-pipeline"
+# max_batch_size = 10
+# max_batch_timeout = 30
+
+# ── Cron (every 2 hours: refresh embeddings + GC + health) ────────
+# Commented: account already has 5 cron triggers (limit reached).
+# Re-enable once other workers are consolidated or upgraded to paid plan.
+# [triggers]
+# crons = ["0 */2 * * *"]
+
+# ── Vars ──────────────────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"
+API_BASE = "https://api.antena.com.ar"
+PUBLIC_WEB_BASE = "https://antena.com.ar"
+
+# ── Routes (custom domain) ────────────────────────────────────────
+# The /api/* pattern is served by the Worker; everything else is
+# handled by Pages (antena.com.ar). Add the route after Pages is
+# connected to the same zone.
+# routes = [
+#   { pattern = "antena.com.ar/api/*", custom_domain = true },
+#   { pattern = "api.antena.com.ar/*", custom_domain = true },
+# ]

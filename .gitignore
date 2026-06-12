@@ -1,0 +1,78 @@
+# Node
+node_modules/
+dist/
+.wrangler/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+*.egg-info/
+*.egg
+.pytest_cache/
+.ruff_cache/
+uv.lock
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+*.db.backup*
+*.sqlite
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Build
+build/
+
+# Worktrees
+.worktrees/
+
+# Logs
+*.log
+logs/
+
+# Scripts with secrets
+scripts/extract-official-sources.sh
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+docs/temp/
+
+# Package-specific
+packages/akira/.venv/
+packages/akira/uv.lock
+packages/akira/akira.egg-info/
+packages/akira/__pycache__/
+packages/akira/.pytest_cache/
+packages/akira/.ruff_cache/
+packages/antena/.astro/
+packages/antena/dist/
+packages/api/dist/
+packages/extractor/venv/
+.worktrees/
+packages/extractor/venv/

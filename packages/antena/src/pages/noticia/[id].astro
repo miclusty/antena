@@ -1,0 +1,35 @@
+---
+export const prerender = true;
+
+// Pre-render a small set of placeholder paths. The actual article view
+// is handled client-side by App.tsx (Solid islands), so these static
+// pages are just SEO-friendly fallbacks. The real /noticia/{id} routing
+// runs in the browser via the App component.
+export function getStaticPaths() {
+  return [
+    { params: { id: 'index' } },
+  ];
+}
+
+const { id } = Astro.params;
+const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:8787';
+const news = id === 'index' ? null : await fetch(`${apiBase}/api/news/${id}`).then((r) => r.json()).catch(() => null);
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>{news?.title || 'Noticia'} — Antena</title>
+    <meta property="og:title" content={news?.title || 'Antena'} />
+    <meta property="og:description" content={news?.summary || ''} />
+    <meta property="og:image" content={news?.image_url || '/icons/icon.svg'} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <article>
+      <h1>{news?.title || 'Noticia'}</h1>
+      <p>{news?.summary || ''}</p>
+      <a href="/">← Volver al feed</a>
+    </article>
+  </body>
+</html>

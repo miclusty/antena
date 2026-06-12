@@ -1,0 +1,41 @@
+name: Deploy Antena
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/antena/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-antena:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'packages/antena/pnpm-lock.yaml'
+
+      - name: Install & Build
+        run: |
+          cd packages/antena
+          pnpm install --frozen-lockfile
+          pnpm build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          PUBLIC_API_BASE: ${{ vars.PUBLIC_API_BASE }}
+          PUBLIC_AKIRA_BASE: ${{ vars.PUBLIC_AKIRA_BASE }}
+
+      - name: Deploy to Cloudflare Pages
+        run: |
+          cd packages/antena
+          npx wrangler pages deploy dist --project-name antena --commit-message "Deploy from GitHub Actions"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

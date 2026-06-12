@@ -1,0 +1,28 @@
+{
+  "name": "@akira/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.36.0",
+    "fast-xml-parser": "^5.5.9",
+    "hono": "^4.7.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.0",
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "better-sqlite3": "^12.8.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.19.15",
+    "drizzle-kit": "^0.28.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,449 @@
+/** @jsxImportSource solid-js */
+import { createResource, For, Show, createMemo, createSignal } from 'solid-js';
+import type { NewsItem, VoiceBreakdown } from '../../lib/types';
+import { fetchNewsByCluster, fetchMasterArticle, type MasterArticle } from '../../lib/api';
+import { mapNewsCard, stripHtml } from '../../lib/mappers';
+import ClusterView from './ClusterView';
+import ReadingMode from './ReadingMode';
+import MediaEmbed from '../common/MediaEmbed';
+import ImageGallery from '../common/ImageGallery';
+import BiasBreakdownBar from '../common/BiasBreakdownBar';
+import { useHaptic } from '../../lib/haptic';
+import { VOICE_COLORS, VOICE_LABELS } from '../../lib/bias';
+import ReadingProgress from './ReadingProgress';
+import ArticleBottomBar from './ArticleBottomBar';
+import OtrasVocesCta from './OtrasVocesCta';
+import { toast } from '../Toast';
+import { useBookmarks } from '../../lib/bookmarks';
+
+interface ArticleDetailProps {
+  news: NewsItem;
+  onBack: () => void;
+  onArticleSelect?: (article: NewsItem) => void;
+}
+
+export default function ArticleDetail(props: ArticleDetailProps) {
+  const haptic = useHaptic();
+  const [readingModeOpen, setReadingModeOpen] = createSignal(false);
+  const { isBookmarked, toggleBookmark } = useBookmarks();
+  const n = () => props.news;
+
+  const handleShare = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    if (navigator.share) {
+      try { await navigator.share({ title: n().title, url }); }
+      catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast('Enlace copiado', 'info');
+    }
+  };
+
+  const cleanBody = () => stripHtml(n().body || n().summary || '');
+
+  const media = createMemo(() => {
+    const body = cleanBody();
+    const images: string[] = [];
+    const videos: string[] = [];
+    const imgMatches = body.match(/https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|gif|webp)/gi);
+    if (imgMatches) images.push(...imgMatches);
+    const videoMatches = body.match(/https?:\/\/[^\s"'<>]*(youtube\.com|youtu\.be|vimeo\.com)[^\s"'<>]*/gi);
+    if (videoMatches) videos.push(...videoMatches);
+    return { images, videos };
+  });
+
+  const [clusterData] = createResource(
+    () => n().clusterId || undefined,
+    async (clusterId) => {
+      if (!clusterId) return [];
+      try { return (await fetchNewsByCluster(clusterId)).news.map(mapNewsCard); }
+      catch { return []; }
+    },
+    { initialValue: [] as NewsItem[] }
+  );
+
+  const [masterArticle] = createResource(
+    () => n().clusterId || undefined,
+    async (clusterId) => {
+      if (!clusterId) return null;
+      try { return await fetchMasterArticle(clusterId); }
+      catch { return null; }
+    },
+    { initialValue: null }
+  );
+
+  const displayTitle = () => (masterArticle() as MasterArticle | null)?.title || n().title;
+  const displaySummary = () => {
+    const master = masterArticle() as MasterArticle | null;
+    if (master?.body) return stripHtml(master.body);
+    if (master?.summary) return stripHtml(master.summary);
+    return n().body || n().summary || '';
+  };
+
+  const realVoices = (): VoiceBreakdown[] => {
+    const articles = clusterData();
+    if (!articles || articles.length <= 1) return n().voices;
+    const biasMap: Record<string, number> = { 'Oficialista': 1, 'Opositor': -1, 'Neutral': 0 };
+    const scores = articles.map(a => biasMap[a.bias] ?? 0);
+    const officialist = scores.filter(s => s > 0).length;
+    const opposition = scores.filter(s => s < 0).length;
+    const neutral = scores.filter(s => s === 0).length;
+    const total = scores.length;
+    return [
+      { label: VOICE_LABELS.officialist, pct: Math.round((officialist / total) * 100), color: VOICE_COLORS.officialist },
+      { label: VOICE_LABELS.neutral, pct: Math.round((neutral / total) * 100), color: VOICE_COLORS.neutral },
+      { label: VOICE_LABELS.opposition, pct: Math.round((opposition / total) * 100), color: VOICE_COLORS.opposition },
+    ].filter(v => v.pct > 0);
+  };
+
+  const voices = () => {
+    const rv = realVoices();
+    return rv.length > 0 ? rv : n().voices;
+  };
+
+  const cleanLocation = () => {
+    const loc = n().location;
+    if (!loc) return '';
+    return [...new Set(loc.split(',').map(p => p.trim()))].join(', ');
+  };
+
+  const readingTime = () => {
+    const words = displaySummary().split(/\s+/).length;
+    return `${Math.max(1, Math.ceil(words / 200))} min de lectura`;
+  };
+
+  const signalColor = () => n().signalLevel >= 7 ? 'var(--accent)' : n().signalLevel >= 4 ? 'var(--warning)' : 'var(--text-tertiary)';
+
+  return (
+    <div style={{ background: 'var(--bg-base)' }}>
+      <ReadingProgress />
+
+      {/* Top bar */}
+      <header
+        class="sticky top-0 z-40 border-b"
+        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+      >
+        <div class="flex items-center px-4 h-12">
+          <button
+            onClick={() => { haptic.vibrate('tap'); props.onBack(); }}
+            class="flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-bg-hover active:scale-90 transition-all"
+            style={{ color: 'var(--text-primary)' }}
+            aria-label="Volver"
+          >
+            <span
+              class="material-symbols-rounded text-xl leading-none"
+              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+            >
+              arrow_back
+            </span>
+          </button>
+          <span
+            class="flex-1 text-center text-xs font-medium truncate px-3"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            {n().category}
+          </span>
+          <button
+            onClick={() => { haptic.vibrate('tap'); setReadingModeOpen(true); }}
+            class="flex items-center gap-1.5 text-xs rounded-full border min-h-[44px] transition-colors px-3 active:scale-95"
+            style={{
+              color: 'var(--text-tertiary)',
+              'border-color': 'var(--border-base)',
+            }}
+            aria-label="Modo lectura"
+          >
+            <span
+              class="material-symbols-rounded text-lg leading-none"
+              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+            >
+              menu_book
+            </span>
+            Modo lectura
+          </button>
+        </div>
+      </header>
+
+      {/* Content */}
+      <main class="px-5 py-6">
+        {/* Category badge */}
+        <div class="mb-4">
+          <span
+            class="text-xs px-2 py-0.5 rounded-full border"
+            style={{
+              'background': 'var(--accent-muted)',
+              color: 'var(--accent)',
+              'border-color': 'var(--accent)',
+            }}
+          >
+            {n().category}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h1
+          class="text-[24px] md:text-[30px] font-bold leading-[1.15] mb-4 tracking-tight"
+          style={{ color: 'var(--text-primary)', 'font-family': 'var(--font-display)' }}
+        >
+          {displayTitle().replace('📢 ', '')}
+        </h1>
+
+        {/* Meta row */}
+        <div
+          class="flex items-center gap-2 mb-6 pb-4 flex-wrap"
+          style={{ 'border-bottom': '1px solid var(--border-base)' }}
+        >
+          <span class="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            {n().source}
+          </span>
+          <span
+            class="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
+            style={{ 'background-color': n().biasGradientColor || 'var(--bias-neutral)' }}
+          >
+            {n().bias || 'Neutral'}
+          </span>
+          <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
+          <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{n().time}</span>
+          <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
+          <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{readingTime()}</span>
+          <Show when={cleanLocation()}>
+            <>
+              <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
+              <span
+                class="material-symbols-rounded text-base leading-none"
+                style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+              >
+                location_on
+              </span>
+              <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{cleanLocation()}</span>
+            </>
+          </Show>
+        </div>
+
+        {/* Source link */}
+        <Show when={n().sourceUrl}>
+          <div class="mb-6">
+            <a
+              href={n().sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => haptic.vibrate('tap')}
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors border"
+              style={{
+                'background': 'var(--accent-muted)',
+                color: 'var(--accent)',
+                'border-color': 'var(--accent)',
+              }}
+            >
+              <span
+                class="material-symbols-rounded text-base leading-none"
+                style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+              >
+                open_in_new
+              </span>
+              Leer en fuente original
+            </a>
+          </div>
+        </Show>
+
+        {/* Badges */}
+        <div class="flex gap-2 mb-5 flex-wrap">
+          <Show when={n().isGacetilla}>
+            <span
+              class="h-6 flex items-center rounded-full border px-2.5"
+              style={{ 'border-color': 'var(--text-tertiary)', color: 'var(--text-tertiary)' }}
+            >
+              <p class="text-[9px] font-semibold uppercase tracking-wider">Comunicado Oficial</p>
+            </span>
+          </Show>
+          <Show when={n().isClickbait}>
+            <span
+              class="h-6 flex items-center rounded-full border px-2.5"
+              style={{ 'border-color': 'rgba(245,158,11,0.3)', color: 'var(--warning)' }}
+            >
+              <p class="text-[9px] font-semibold uppercase tracking-wider">Ruido Filtrado</p>
+            </span>
+          </Show>
+        </div>
+
+        {/* Hero Media */}
+        <Show when={n().imageUrl || media().images.length > 0 || media().videos.length > 0}>
+          <div class="mb-6">
+            <Show when={media().videos.length > 0}>
+              <MediaEmbed url={media().videos[0]} />
+            </Show>
+            <Show when={media().videos.length === 0 && media().images.length > 1}>
+              <ImageGallery images={[n().imageUrl, ...media().images].filter(Boolean) as string[]} />
+            </Show>
+            <Show when={media().videos.length === 0 && media().images.length <= 1 && n().imageUrl}>
+              <div class="relative w-full rounded-lg overflow-hidden">
+                <img
+                  src={n().imageUrl!}
+                  alt=""
+                  class="w-full h-64 md:h-80 object-cover cursor-zoom-in"
+                  loading="lazy"
+                  onError={(e) => {
+                    const parent = (e.target as HTMLImageElement).parentElement;
+                    if (parent) parent.style.display = 'none';
+                  }}
+                />
+              </div>
+            </Show>
+          </div>
+        </Show>
+
+        {/* Article Body */}
+        <section class="mb-6">
+          <div
+            class="text-[17px] leading-[1.65]"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            <p>{displaySummary()}</p>
+          </div>
+        </section>
+
+        {/* Sticky CTA + bottom sheet for other voices on the same story.
+            The CTA becomes visible after the user scrolls past 60% of the
+            article body and opens a BottomSheet listing the rest of the
+            cluster's sources. */}
+        <OtrasVocesCta
+          otherSources={clusterData().filter((a) => a.id !== n().id)}
+          currentId={n().id}
+          onSelect={props.onArticleSelect || (() => {})}
+        />
+
+        {/* Signal Gauge */}
+        <section
+          class="rounded-xl border p-4 mb-4"
+          style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+        >
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+              Potencia de Señal
+            </h2>
+          </div>
+          <div class="flex items-end justify-center gap-[2px] h-12 mb-2">
+            <For each={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}>
+              {(i) => (
+                <div
+                  class="w-2.5 rounded-full transition-all duration-500"
+                  style={{
+                    height: `${6 + i * 3}px`,
+                    'background-color': i <= n().signalLevel ? 'var(--accent)' : 'var(--border-base)',
+                  }}
+                />
+              )}
+            </For>
+          </div>
+          <p class="text-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Nivel {n().signalLevel}/10 —{' '}
+            <span class="font-medium" style={{ color: 'var(--text-primary)' }}>
+              {n().signalLevel >= 7 ? 'Alta propagación' : n().signalLevel >= 4 ? 'Propagación media' : 'Baja propagación'}
+            </span>
+          </p>
+        </section>
+
+        {/* Voice Breakdown */}
+        <section
+          class="rounded-xl border p-4 mb-4"
+          style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+        >
+          <h2 class="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--text-tertiary)' }}>
+            Desglose de Voces
+          </h2>
+          <BiasBreakdownBar voices={voices()} barClass="h-5" labelClass="text-xs" />
+        </section>
+
+        {/* Clickbait Answer */}
+        <Show when={n().isClickbait}>
+          <section
+            class="rounded-xl border p-4 mb-4"
+            style={{ 'background': 'rgba(245,158,11,0.06)', 'border-color': 'rgba(245,158,11,0.2)' }}
+          >
+            <div class="flex items-start gap-2">
+              <span
+                class="material-symbols-rounded text-lg leading-none mt-0.5"
+                style={{ color: 'var(--warning)', 'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}
+              >
+                shield
+              </span>
+              <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--warning)' }}>
+                  Ruido Filtrado
+                </p>
+                <p class="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {n().clickbaitAnswer}
+                </p>
+              </div>
+            </div>
+          </section>
+        </Show>
+
+        {/* Propagation Timeline */}
+        <Show when={clusterData().length > 1}>
+          <section
+            class="rounded-xl border p-4 mb-4"
+            style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+          >
+            <h2 class="text-[10px] font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--text-tertiary)' }}>
+              Origen y Propagación
+            </h2>
+            <div
+              class="relative pl-4 border-l-2 ml-1 flex flex-col gap-4"
+              style={{ 'border-color': 'var(--border-base)' }}
+            >
+              <For each={clusterData().slice(0, 5)}>
+                {(article, idx) => (
+                  <div class="relative">
+                    <div
+                      class="absolute -left-[21px] top-0.5 w-3 h-3 rounded-full border-2"
+                      style={{
+                        'background-color': idx() === 0 ? 'var(--accent)' : 'var(--text-tertiary)',
+                        'border-color': 'var(--bg-elevated)',
+                      }}
+                    />
+                    <p
+                      class="text-[9px] font-bold mb-0.5 uppercase tracking-wide"
+                      style={{ color: idx() === 0 ? 'var(--accent)' : 'var(--text-tertiary)' }}
+                    >
+                      {article.time} —{' '}
+                      {idx() === 0 ? 'Origen' : idx() === 1 ? 'Recogido' : 'Amplificado'}
+                    </p>
+                    <p class="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {article.source}
+                    </p>
+                  </div>
+                )}
+              </For>
+            </div>
+          </section>
+        </Show>
+
+        {/* Cluster View - Related Articles */}
+        <Show when={clusterData().length > 1}>
+          <ClusterView
+            clusterId={n().clusterId}
+            articles={clusterData()}
+            onArticleSelect={props.onArticleSelect || (() => {})}
+          />
+        </Show>
+      </main>
+
+      <ReadingMode
+        isOpen={readingModeOpen()}
+        onClose={() => setReadingModeOpen(false)}
+        title={displayTitle()}
+        body={n().body || ''}
+        summary={n().summary || ''}
+      />
+
+      <ArticleBottomBar
+        sourceUrl={n().sourceUrl}
+        isBookmarked={isBookmarked(n().id)}
+        onBookmark={() => toggleBookmark(n().id)}
+        onShare={handleShare}
+        onReadingMode={() => setReadingModeOpen(true)}
+        articleUrl={typeof window !== 'undefined' ? window.location.href : ''}
+      />
+    </div>
+  );
+}
