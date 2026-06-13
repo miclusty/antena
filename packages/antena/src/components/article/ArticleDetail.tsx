@@ -53,10 +53,10 @@ export default function ArticleDetail(props: ArticleDetailProps) {
   });
 
   const [clusterData] = createResource(
-    () => n().clusterId || undefined,
-    async (clusterId) => {
-      if (!clusterId) return [];
-      try { return (await fetchNewsByCluster(clusterId)).news.map(mapNewsCard); }
+    () => n().id,
+    async (newsId) => {
+      if (!newsId) return [];
+      try { return (await fetchNewsByCluster(newsId)).news.map(mapNewsCard); }
       catch { return []; }
     },
     { initialValue: [] as NewsItem[] }
