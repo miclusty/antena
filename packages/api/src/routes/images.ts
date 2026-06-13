@@ -27,6 +27,6 @@ imagesRoutes.post("/upload-base64", async (c) => {
   const binaryString = atob(body.data);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-  const url = await uploadImage(c.env.IMAGES, key, bytes, body.content_type);
+  const url = await uploadImage(c.env.IMAGES, key, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer, body.content_type);
   return c.json({ url, key }, 201);
 });

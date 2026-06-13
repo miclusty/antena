@@ -9,15 +9,15 @@ export const healthRoutes = new Hono<{ Bindings: Env }>();
  */
 healthRoutes.get("/full", async (c) => {
   const startTime = Date.now();
-  
+
   // Check Python Extractor
   let extractorStatus = "unknown";
-  let extractorLibs = {};
+  let extractorLibs: Record<string, unknown> = {};
   try {
     const res = await fetch("http://localhost:5000/health", {
       signal: AbortSignal.timeout(5000)
     });
-    const data = await res.json();
+    const data = (await res.json()) as { status?: string; libraries?: Record<string, unknown> };
     extractorStatus = data.status || "error";
     extractorLibs = data.libraries || {};
   } catch (e) {
@@ -26,16 +26,16 @@ healthRoutes.get("/full", async (c) => {
 
   // Check D1 Database
   let dbStatus = "ok";
-  let dbStats = {};
+  let dbStats: Record<string, number> = {};
   try {
     const db = c.env.DB;
     const result = await db.prepare("SELECT COUNT(*) as count FROM news_cards").first();
     const sources = await db.prepare("SELECT COUNT(*) as count FROM sources").first();
     const locations = await db.prepare("SELECT COUNT(*) as count FROM locations").first();
     dbStats = {
-      news_cards: result?.count || 0,
-      sources: sources?.count || 0,
-      locations: locations?.count || 0
+      news_cards: (result as { count?: number } | null)?.count ?? 0,
+      sources: (sources as { count?: number } | null)?.count ?? 0,
+      locations: (locations as { count?: number } | null)?.count ?? 0
     };
   } catch (e) {
     dbStatus = "error";
@@ -47,7 +47,7 @@ healthRoutes.get("/full", async (c) => {
     const res = await fetch("http://localhost:5000/health", {
       signal: AbortSignal.timeout(5000)
     });
-    const data = await res.json();
+    const data = (await res.json()) as { db_path?: string };
     localDbStatus = data.db_path ? "ok" : "error";
   } catch (e) {
     localDbStatus = "unavailable";

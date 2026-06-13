@@ -27,8 +27,7 @@ import CitySelector from './components/common/CitySelector';
 import BreakingView from './components/feed/BreakingView';
 import MobileDrawer from './components/menu/MobileDrawer';
 import SourceLogo from './components/common/SourceLogo';
-import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, fetchTrending, fetchCities } from './lib/api';
-import type { ApiNewsCard } from './lib/api';
+import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, fetchTrending, fetchCities, fetchFeaturedStory, type FeedResponse, type ApiNewsCard } from './lib/api';
 import { mapNewsCard } from './lib/mappers';
 import { parseURLState, updateURL, clearURL } from './lib/urlState';
 
@@ -110,7 +109,7 @@ export default function App() {
 
   const [feed, { refetch }] = createResource(
     () => `${activeCategory()}:${searchQuery()}:${activeLocation() ?? 'all'}:${activeFeedTab()}`,
-    async () => {
+    async (): Promise<FeedResponse> => {
       try {
         const catParam = activeCategory() === 'Todas' ? undefined : activeCategory();
         const result = await fetchFeed({
@@ -119,7 +118,7 @@ export default function App() {
           limit: 20,
           offset: 0,
         });
-        return result;
+        return result as FeedResponse;
       } catch (e) {
         console.error('fetchFeed failed:', e);
         if (typeof window === 'undefined') throw e;
@@ -127,7 +126,7 @@ export default function App() {
           const cached = await getCachedNews(50);
           if (cached?.length) {
             toast('Sin conexión — mostrando artículos guardados', 'warning');
-            return { news: cached, total: cached.length, page: 1, per_page: cached.length, location: null, category: null };
+            return { news: cached as unknown as ApiNewsCard[], total: cached.length, page: 1, per_page: cached.length, location: null, category: null };
           }
         }
         throw e;

@@ -4,8 +4,8 @@
  */
 
 export interface RSSItem {
-  title: string;
-  link: string;
+  title?: string;
+  link?: string;
   description?: string;
   content?: string;
   pubDate?: string;
@@ -17,6 +17,7 @@ export interface RSSFeed {
   title: string;
   link: string;
   description?: string;
+  subtitle?: string;
   items: RSSItem[];
 }
 
@@ -75,9 +76,11 @@ function parseRSSFeed(xml: string, sourceUrl: string): RSSFeed {
 
   while ((itemMatch = itemRegex.exec(xml)) !== null) {
     const itemXml = itemMatch[1];
+    const title = cleanText(extractTag(itemXml, "title") || "");
+    const link = extractTag(itemXml, "link") || "";
     const item: RSSItem = {
-      title: cleanText(extractTag(itemXml, "title") || ""),
-      link: extractTag(itemXml, "link") || "",
+      title,
+      link,
       description: cleanText(extractTag(itemXml, "description")),
       content: cleanText(extractTag(itemXml, "content:encoded") || extractTag(itemXml, "content")),
       pubDate: extractTag(itemXml, "pubDate") || extractTag(itemXml, "dc:date"),
@@ -109,9 +112,11 @@ function parseAtomFeed(xml: string, sourceUrl: string): RSSFeed {
 
   while ((entryMatch = entryRegex.exec(xml)) !== null) {
     const entryXml = entryMatch[1];
+    const title = cleanText(extractTag(entryXml, "title") || "");
+    const link = extractAtomLink(entryXml) || "";
     const item: RSSItem = {
-      title: cleanText(extractTag(entryXml, "title") || ""),
-      link: extractAtomLink(entryXml) || "",
+      title,
+      link,
       description: cleanText(extractTag(entryXml, "summary")),
       content: cleanText(extractTag(entryXml, "content")),
       pubDate: extractTag(entryXml, "published") || extractTag(entryXml, "updated"),
@@ -139,7 +144,7 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
-function cleanText(text: string | null): string | undefined {
+function cleanText(text: string | null | undefined): string | undefined {
   if (!text) return undefined;
   return text
     .replace(/<[^>]*>/g, "") // Remove HTML tags
@@ -152,23 +157,23 @@ function cleanText(text: string | null): string | undefined {
     .trim();
 }
 
-function extractTag(xml: string, tag: string): string | null {
+function extractTag(xml: string, tag: string): string | undefined {
   const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
   const match = xml.match(regex);
-  return match ? match[1].trim() : null;
+  return match ? match[1].trim() : undefined;
 }
 
-function extractAtomLink(xml: string): string | null {
+function extractAtomLink(xml: string): string | undefined {
   const match = xml.match(/<link[^>]+href=["']([^"']+)["']/i);
-  return match ? match[1] : null;
+  return match ? match[1] : undefined;
 }
 
-function extractAtomLinkRel(xml: string, rel: string): string | null {
+function extractAtomLinkRel(xml: string, rel: string): string | undefined {
   const match = xml.match(new RegExp(`<link[^>]+rel=["']${rel}["'][^>]+href=["']([^"']+)["']`, "i"));
-  return match ? match[1] : null;
+  return match ? match[1] : undefined;
 }
 
-function extractMediaContent(xml: string): string | null {
+function extractMediaContent(xml: string): string | undefined {
   // Try media:content
   let match = xml.match(/<media:content[^>]+url=["']([^"']+)["']/i);
   if (match) return match[1];
@@ -185,10 +190,10 @@ function extractMediaContent(xml: string): string | null {
   match = xml.match(/<enclosure[^>]+type=["']image\/[^"']+["'][^>]+url=["']([^"']+)["']/i);
   if (match) return match[1];
 
-  return null;
+  return undefined;
 }
 
-function extractEnclosure(xml: string): string | null {
+function extractEnclosure(xml: string): string | undefined {
   const match = xml.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
-  return match ? match[1] : null;
+  return match ? match[1] : undefined;
 }

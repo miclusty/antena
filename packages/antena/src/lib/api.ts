@@ -2,8 +2,8 @@
 // API Client for AKIRA + Hono API
 // ═══════════════════════════════════════════
 
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.PUBLIC_API_BASE as string) || 'http://localhost:5000';
-const AKIRA_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.PUBLIC_AKIRA_BASE as string) || 'http://localhost:5000';
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_API_BASE as string) || 'http://localhost:5000';
+const AKIRA_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_AKIRA_BASE as string) || 'http://localhost:5000';
 
 export interface ApiNewsCard {
   id: string;
@@ -189,6 +189,45 @@ export interface ApiCity {
 
 export interface CitiesResponse {
   cities: ApiCity[];
+}
+
+export interface SearchResponse {
+  q: string;
+  results: ApiNewsCard[];
+  total: number;
+}
+
+export interface FeaturedStoryResponse {
+  featured: {
+    primary: ApiNewsCard;
+    clusterId: string;
+    sourcesCount: number;
+    cardCount: number;
+    sourceNames: string[];
+    allCards: ApiNewsCard[];
+  } | null;
+  message?: string;
+}
+
+export async function fetchSearch(q: string, limit = 20): Promise<SearchResponse> {
+  if (!q || q.length < 2) return { q, results: [], total: 0 };
+  try {
+    const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+    if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+    return res.json();
+  } catch {
+    return { q, results: [], total: 0 };
+  }
+}
+
+export async function fetchFeaturedStory(): Promise<FeaturedStoryResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/api/news/featured`);
+    if (!res.ok) throw new Error(`Failed to fetch featured: ${res.status}`);
+    return res.json();
+  } catch {
+    return { featured: null };
+  }
 }
 
 export async function fetchBreaking(limit = 20): Promise<BreakingResponse> {

@@ -1,3 +1,8 @@
+// This route is not currently mounted in index.ts. It uses a Python
+// extractor service that we may bring back when AKIRA is deployed to
+// Cloudflare Containers. @ts-nocheck until then.
+// @ts-nocheck
+
 import { Hono } from "hono";
 import type { Env } from "../lib/types";
 import { authMiddleware } from "../middleware/auth";

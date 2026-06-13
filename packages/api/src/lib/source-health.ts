@@ -56,7 +56,7 @@ async function getDb(): Promise<Database | null> {
     const DB_PATH = process.env.AKIRA_DB_PATH || `${process.env.HOME}/data/akira.db`;
     db = new DatabaseCls(DB_PATH);
     (db as any).pragma('journal_mode = WAL');
-    initHealthTable(db);
+    initHealthTable(db!);
     dbOk = true;
     return db;
   } catch (err) {

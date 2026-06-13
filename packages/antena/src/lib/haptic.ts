@@ -25,7 +25,8 @@ export function useHaptic() {
     isSupported,
     vibrate: (pattern: keyof typeof HapticPattern | number | number[]) => {
       if (!isSupported) return false;
-      const p = typeof pattern === "string" ? HapticPattern[pattern] : pattern;
+      const raw = typeof pattern === "string" ? HapticPattern[pattern] : pattern;
+      const p: number | number[] = Array.isArray(raw) ? (raw as number[]).slice() : (raw as number);
       return vibrate(p);
     },
   };

@@ -63,8 +63,8 @@ export function getBiasInfo(score: number | null | undefined): BiasInfo {
   return { ...makeInfo('strong_opposition'), intensity: 1 };
 }
 
-function makeInfo(cat: BiasCategory): Omit<BiasInfo, 'intensity' | 'gradientColor'> {
-  return { label: BIAS_LABELS[cat], color: BIAS_COLORS[cat], category: cat };
+function makeInfo(cat: BiasCategory): Omit<BiasInfo, 'intensity'> {
+  return { label: BIAS_LABELS[cat], color: BIAS_COLORS[cat], gradientColor: BIAS_COLORS[cat], category: cat };
 }
 
 /**
