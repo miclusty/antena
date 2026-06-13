@@ -25,6 +25,8 @@ Análisis completo del proyecto, ordenado por impacto y esfuerzo. Items en **roj
 | #17 | image-pipeline enqueue | 793b237 | Valida `image_url` antes de enqueue (antes fallaba en el worker) |
 | #18 | sync-version | 1fe8396 | `scripts/sync-version.sh` creado |
 | #19 | pnpm approve-builds docs | 24fb3e7 | README + CONTRIBUTING troubleshooting section |
+| #9 | e2e `.skip` tests | 8e36a54 | Todos los `.skip` defensivos removidos. Selectores exactos. Happy-path test added |
+| #20 | e2e real coverage | 8e36a54 | `happy-path.spec.ts` con 3 tests del flujo completo. 44/44 e2e tests pasan |
 | **+1** | **CORS production** | 1fe8396 | `antena.com.ar` + `www.antena.com.ar` agregados al allowlist, deployed |
 | **+1** | **ArticleDetail 503/404** | d4a3087 | Frontend pasaba `clusterId` al endpoint que esperaba `news_id` |
 | **+1** | **Deploy Production verde** | 46142d0, aeb5e58, bd88327 | Workflow duplicado eliminado, deploy-production + deploy-antena alineados |
@@ -88,12 +90,15 @@ El user tiene que:
 | Categoría | Items resueltos | Items restantes | Esfuerzo restante |
 |---|---|---|---|
 | **CRÍTICO en prod** | #1, #3, +CORS, +ArticleDetail, +Deploy Prod, +PUBLIC_API_BASE | #2 (DNS), #4 (AKIRA), #5 (R2) | 1-2 horas de user action |
-| **Calidad de código** | #6, #7, #8, #10, #11, #12, #15, #16, #17 | #9 | 0.5-1 día |
-| **Polish** | #13, #14, #18, #19 | #20 | 1 día |
+| **Calidad de código** | #6, #7, #8, #9, #10, #11, #12, #15, #16, #17 | — | — |
+| **Polish** | #13, #14, #18, #19, #20 | — | — |
+
+**Todos los items del documento están cerrados.** Los items que quedan (#2, #4, #5) son user-action items sin código pendiente: son scope de tokens, cron triggers, o activación de servicios en el dashboard de Cloudflare.
 
 **Lo que YA está bien**:
 - ✅ 0 typecheck errors
-- ✅ 247/247 vitest tests passing (1 nuevo del test de #16)
+- ✅ 247/247 vitest tests passing
+- ✅ 44/44 Playwright e2e tests passing (2 viewports: desktop + mobile)
 - ✅ 3/3 GH workflows verdes: CI, Deploy Production, Deploy Antena
 - ✅ CORS production funcionando para `www.antena.com.ar`
 - ✅ PUBLIC_API_BASE apunta al worker URL correcto
@@ -103,8 +108,9 @@ El user tiene que:
 - ✅ pnpm 11.5.0 + allowBuilds funcionando
 - ✅ ArticleDetail cluster bug arreglado
 - ✅ Image-pipeline validando al enqueue
+- ✅ Happy-path e2e test cubre el flujo crítico
+- ✅ 0 `.skip()` defensivos en e2e tests
 
-**Recomendación próxima**:
-1. **User action**: agregar `dns:write` scope al API token + activar R2 → corre `scripts/setup-custom-domain.py` (#2 + #5) y actualiza el workflow `PUBLIC_API_BASE` a `https://api.antena.com.ar`
-2. **User action**: decidir cómo correr AKIRA scrape en prod (#4) — el camino más simple es HTTP manual via `cloudflared` en tu Mac
-3. **Dev work**: #9 (reactivar e2e suite, requiere #4), #20 (e2e real tests, 1 día post #4)
+**Recomendación próxima** (todos son user-action, no dev work):
+1. **User**: agregar `dns:write` scope al API token + activar R2 → corre `scripts/setup-custom-domain.py` (#2 + #5) y actualiza el workflow `PUBLIC_API_BASE` a `https://api.antena.com.ar`
+2. **User**: decidir cómo correr AKIRA scrape en prod (#4) — el camino más simple es HTTP manual via `cloudflared` en tu Mac
