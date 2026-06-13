@@ -3,16 +3,20 @@ import { render, fireEvent, cleanup, waitFor } from "@solidjs/testing-library";
 import NewsCard from "../components/common/NewsCard";
 import { createMockNews, mockNavigatorVibrate } from "./helpers";
 
+// Mock fetch globally so the NewsCard's trackEvent() (which fires on
+// render) doesn't hit a real network. The default mock returns 200 OK.
+const mockFetch = vi.fn(() =>
+  Promise.resolve(new Response("{}", { status: 200 }))
+);
+globalThis.fetch = mockFetch as unknown as typeof fetch;
+
 afterEach(cleanup);
 
 describe("NewsCard", () => {
   beforeEach(() => {
     mockNavigatorVibrate();
-    // Mock fetch to prevent the NewsCard's trackEvent() from hitting
-    // /api/track and creating an unhandled rejection in the test runner.
-    globalThis.fetch = vi.fn(() =>
-      Promise.resolve(new Response("{}", { status: 200 }))
-    ) as unknown as typeof fetch;
+    mockFetch.mockClear();
+    mockFetch.mockReturnValue(Promise.resolve(new Response("{}", { status: 200 })));
   });
 
   it("renders title, source, and time", () => {
