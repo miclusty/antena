@@ -18,11 +18,12 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      # pnpm 11 changed the build-allowlist workflow. The 'with.version'
-      # pins the action's pnpm, but the build allowlist must be approved
-      # via `pnpm approve-builds` for the chosen version. Use --all
-      # to approve all pending native builds non-interactively.
+      # pnpm 11 changed the build-allowlist workflow. The build
+      # allowlist must be approved via `pnpm approve-builds` BEFORE
+      # the install step can run native build scripts (esbuild,
+      # workerd, better-sqlite3, sharp). --all is the non-interactive
+      # flag. After approve, the second install with the allowlist in
+      # place succeeds.
       - run: pnpm approve-builds --all
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
@@ -45,6 +46,7 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
+      - run: pnpm approve-builds --all
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter antena build
       - run: pnpm --filter antena preview &
