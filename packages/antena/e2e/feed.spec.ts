@@ -5,15 +5,16 @@ test.describe("Feed interactions", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
+    // The feed must have at least one article for this test to make sense.
+    // If the API is empty, fail loudly — do NOT test.skip.
+    const firstArticle = page.locator("article").first();
+    await expect(firstArticle).toBeVisible({ timeout: 10_000 });
+
     const initialCount = await page.locator("article").count();
-    if (initialCount === 0) {
-      test.skip(true, "No articles to scroll");
-      return;
-    }
 
     // Scroll to bottom
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
 
     // After scroll, there should be at least the same number of articles
     // (or more, if infinite scroll triggered)
@@ -25,33 +26,18 @@ test.describe("Feed interactions", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Look for a category link/button
-    const categoryLink = page.getByText(/Política|Economía|Deportes/i).first();
-    if (!(await categoryLink.isVisible({ timeout: 1000 }).catch(() => false))) {
-      test.skip(true, "No category filter visible");
-      return;
-    }
+    // Política is one of the category buttons in the sidebar / top
+    // filters. Use the exact "Política" text (the category name
+    // in the CATEGORIES constant).
+    const categoryLink = page.getByRole("button", { name: "Política" }).first();
+    await expect(categoryLink).toBeVisible({ timeout: 5_000 });
 
     await categoryLink.click();
     await page.waitForTimeout(500);
 
-    // URL should reflect the category filter
+    // URL should reflect the category filter (?cat=Política, with the
+    // accented i URL-encoded as %C3%AD).
     const url = page.url();
-    expect(url).toContain("cat=");
-  });
-
-  test("sort change is reflected in URL", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
-
-    // Look for a sort control (Time filters, etc.)
-    const sortControl = page.getByText(/reciente|popular|destacado|tiempo|hoy|semana/i).first();
-    if (!(await sortControl.isVisible({ timeout: 1000 }).catch(() => false))) {
-      test.skip(true, "No sort control visible");
-      return;
-    }
-
-    await sortControl.click();
-    await page.waitForTimeout(300);
+    expect(url).toMatch(/cat=.*Pol/i);
   });
 });

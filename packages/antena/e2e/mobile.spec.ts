@@ -1,8 +1,9 @@
-import { test, expect, devices } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 test.describe("Mobile UX", () => {
-  test.use({ ...devices["Pixel 5"] });
-
+  // Mobile viewport is configured at the project level
+  // (mobile-chromium in playwright.config.ts). This file
+  // runs under that project, so we don't override here.
   test("bottom nav is reachable on mobile viewport", async ({ page }) => {
     await page.goto("/");
     const home = page.getByLabel("Inicio");

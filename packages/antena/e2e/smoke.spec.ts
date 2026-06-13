@@ -7,11 +7,13 @@ import { test, expect } from "@playwright/test";
 test.describe("Antena smoke tests", () => {
   test("home page loads with the app shell", async ({ page }) => {
     await page.goto("/");
-    // App shell: bottom nav with 4 tabs
-    await expect(page.getByLabel("Inicio")).toBeVisible();
-    await expect(page.getByLabel("Buscar")).toBeVisible();
-    await expect(page.getByLabel("Guardados")).toBeVisible();
-    await expect(page.getByLabel("Menú")).toBeVisible();
+    // App shell: bottom nav with 5 tabs. "Buscar" appears twice
+    // (top header + bottom nav) so use .first() everywhere to
+    // avoid strict-mode violations.
+    await expect(page.getByLabel("Inicio").first()).toBeVisible();
+    await expect(page.getByLabel("Buscar").first()).toBeVisible();
+    await expect(page.getByLabel("Guardados").first()).toBeVisible();
+    await expect(page.getByLabel("Menú").first()).toBeVisible();
   });
 
   test("home page shows feed tabs (Para vos / Siguiendo / Explorar)", async ({ page }) => {
