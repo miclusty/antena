@@ -33,7 +33,7 @@ jobs:
           # pnpm_config_allowedBuildScripts to '*' allows all
           # pending build scripts (esbuild, workerd,
           # better-sqlite3, sharp) and install returns exit 0.
-          pnpm_config_allowedBuildScripts: '*'
+          pnpm_config_allowedBuildScripts: 'better-sqlite3,esbuild,sharp,workerd'
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
