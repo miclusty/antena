@@ -5,7 +5,8 @@ Cloudflare-native news feed. Reddit/X.com-style mobile UI built on Astro 5 + Sol
 ## Quick Start
 
 ```bash
-# 1. Install
+# 1. Install (pnpm 11+; if it prompts to approve build scripts,
+#    accept with 'y' or pre-approve with `pnpm approve-builds`)
 pnpm install
 cp .env.example .env
 
@@ -22,6 +23,8 @@ pnpm deploy:staging    # Cloudflare Pages preview branch
 pnpm deploy:prod       # Cloudflare Pages main branch
 cd packages/api && wrangler deploy --env=production   # API Worker
 ```
+
+> New to the project? Read [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup, scripts, and troubleshooting guide.
 
 ## Architecture
 
