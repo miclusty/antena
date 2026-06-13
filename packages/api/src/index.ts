@@ -30,13 +30,15 @@ app.use("*", cors({
       /^http:\/\/192\.168\.\d+\.\d+:(4321|4400)$/,
       "https://akira.ar",
       "https://www.akira.ar",
-      "https://akira.pages.dev"
+      "https://akira.pages.dev",
+      // Custom domains (production)
+      "https://antena.com.ar",
+      "https://www.antena.com.ar",
     ];
     if (!origin) return "*";
     if (allowed.includes(origin)) return origin;
     if (allowed.some(a => a instanceof RegExp && a.test(origin))) return origin;
     return null;
-    return allowed.includes(origin) ? origin : "*";
   },
   credentials: true,
 }));

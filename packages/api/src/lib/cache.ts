@@ -76,7 +76,23 @@ export function withCache(
       if (cached) return cached;
     }
 
-    const response = await handler(req, ...args);
+    // Run the handler with try-catch fallback. If the upstream D1 query
+    // or compute fails (timeout, network, 5xx), return a 503 instead of
+    // letting the error bubble up to the user. Cloudflare's edge will
+    // retry transient errors.
+    let response: Response;
+    try {
+      response = await handler(req, ...args);
+    } catch (e) {
+      console.error("withCache handler failed:", e);
+      return new Response(
+        JSON.stringify({
+          error: "Internal server error",
+          message: (e as Error).message,
+        }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     if (response.status === 200 || response.status === 203 || response.status === 204) {
       const ttl = opts.ttl ?? DEFAULT_TTL;

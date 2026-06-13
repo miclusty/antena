@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** @jsxImportSource solid-js */
 import { createResource, For, Show } from 'solid-js';
 import type { NewsItem } from '../../lib/types';

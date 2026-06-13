@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Env } from "../lib/types";
+import { getAkiraBaseUrl } from "../lib/akira-url";
 
 export const healthRoutes = new Hono<{ Bindings: Env }>();
 
@@ -10,18 +11,21 @@ export const healthRoutes = new Hono<{ Bindings: Env }>();
 healthRoutes.get("/full", async (c) => {
   const startTime = Date.now();
 
-  // Check Python Extractor
-  let extractorStatus = "unknown";
+  // Check Python Extractor (only if AKIRA is configured)
+  const akiraBase = getAkiraBaseUrl();
+  let extractorStatus = akiraBase ? "unknown" : "not_configured";
   let extractorLibs: Record<string, unknown> = {};
-  try {
-    const res = await fetch("http://localhost:5000/health", {
-      signal: AbortSignal.timeout(5000)
-    });
-    const data = (await res.json()) as { status?: string; libraries?: Record<string, unknown> };
-    extractorStatus = data.status || "error";
-    extractorLibs = data.libraries || {};
-  } catch (e) {
-    extractorStatus = "unavailable";
+  if (akiraBase) {
+    try {
+      const res = await fetch(`${akiraBase}/health`, {
+        signal: AbortSignal.timeout(5000)
+      });
+      const data = (await res.json()) as { status?: string; libraries?: Record<string, unknown> };
+      extractorStatus = data.status || "error";
+      extractorLibs = data.libraries || {};
+    } catch (e) {
+      extractorStatus = "unavailable";
+    }
   }
 
   // Check D1 Database
@@ -41,16 +45,18 @@ healthRoutes.get("/full", async (c) => {
     dbStatus = "error";
   }
 
-  // Check Local SQLite
-  let localDbStatus = "unknown";
-  try {
-    const res = await fetch("http://localhost:5000/health", {
-      signal: AbortSignal.timeout(5000)
-    });
-    const data = (await res.json()) as { db_path?: string };
-    localDbStatus = data.db_path ? "ok" : "error";
-  } catch (e) {
-    localDbStatus = "unavailable";
+  // Check Local SQLite (only if AKIRA is configured)
+  let localDbStatus: string = akiraBase ? "unknown" : "not_configured";
+  if (akiraBase) {
+    try {
+      const res = await fetch(`${akiraBase}/health`, {
+        signal: AbortSignal.timeout(5000)
+      });
+      const data = (await res.json()) as { db_path?: string };
+      localDbStatus = data.db_path ? "ok" : "error";
+    } catch (e) {
+      localDbStatus = "unavailable";
+    }
   }
 
   return c.json({
@@ -61,7 +67,7 @@ healthRoutes.get("/full", async (c) => {
     services: {
       python_extractor: {
         status: extractorStatus,
-        url: "http://localhost:5000",
+        url: akiraBase ?? "not configured (AKIRA not deployed in prod)",
         libraries: extractorLibs
       },
       api: {

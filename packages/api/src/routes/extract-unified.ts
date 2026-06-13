@@ -2,16 +2,17 @@ import { Hono } from "hono";
 import type { Env } from "../lib/types";
 import { authMiddleware } from "../middleware/auth";
 import { checkPythonExtractor } from "../lib/python-extractor";
+import { getAkiraBaseUrl } from "../lib/akira-url";
 
 export const extractUnifiedRoutes = new Hono<{ Bindings: Env }>();
 
 // Health check for Python extractor
 extractUnifiedRoutes.get("/health", async (c) => {
   const isAvailable = await checkPythonExtractor();
-  
+
   return c.json({
     python_extractor: {
-      url: process.env.PYTHON_EXTRACTOR_URL || "http://localhost:5000",
+      url: getAkiraBaseUrl() ?? "not configured (AKIRA not deployed in prod)",
       available: isAvailable
     }
   });
@@ -19,8 +20,16 @@ extractUnifiedRoutes.get("/health", async (c) => {
 
 // Proxy to Python extractor's unified extraction endpoint
 extractUnifiedRoutes.post("/", authMiddleware, async (c) => {
-  const pythonExtractorUrl = process.env.PYTHON_EXTRACTOR_URL || "http://localhost:5000";
-  
+  const pythonExtractorUrl = getAkiraBaseUrl();
+
+  // No AKIRA configured — return 503 instead of crashing.
+  if (!pythonExtractorUrl) {
+    return c.json({
+      error: "AKIRA extractor not configured",
+      message: "Set AKIRA_URL environment variable to enable Python extraction.",
+    }, 503);
+  }
+
   // Forward the entire request to Python extractor's /extract endpoint
   const requestUrl = `${pythonExtractorUrl}/extract`;
   

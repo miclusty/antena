@@ -1,4 +1,3 @@
-// @ts-nocheck
 /** @jsxImportSource solid-js */
 import { createSignal, Show } from 'solid-js';
 
@@ -62,7 +61,7 @@ export default function ReadingMode(props: ReadingModeProps) {
                 value={fontSize()}
                 onInput={(e) => setFontSize(parseInt(e.currentTarget.value))}
                 class="w-16 h-1"
-                style={{ accentColor: theme().text }}
+                style={{ 'accent-color': theme().text }}
               />
               <span class="text-sm font-bold" style={{ color: theme().muted }}>A</span>
             </div>

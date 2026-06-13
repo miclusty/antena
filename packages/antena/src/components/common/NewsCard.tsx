@@ -53,6 +53,7 @@ export interface NewsCardProps {
   news: NewsItem;
   onClick: () => void;
   variant?: 'default' | 'compact';
+  isBookmarked?: boolean;
   onUpvote?: (id: string, delta: 1 | -1) => void;
   onBookmark?: (id: string) => void;
   onShare?: (id: string) => void;

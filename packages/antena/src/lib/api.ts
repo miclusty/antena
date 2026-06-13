@@ -2,7 +2,13 @@
 // API Client for AKIRA + Hono API
 // ═══════════════════════════════════════════
 
-const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_API_BASE as string) || 'http://localhost:5000';
+// API_BASE is the Workers API. We default to localhost:8787 (wrangler dev
+// default) — NOT 5000, which is the Python AKIRA port. Set
+// PUBLIC_API_BASE in .env.production to point at api.antena.com.ar.
+const API_BASE_FALLBACK = "http://localhost:8787";
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_API_BASE as string) || API_BASE_FALLBACK;
+// AKIRA_BASE points at the Python extractor (NOT the API). It only runs
+// on the dev machine, not in production. Caller code must check for null.
 const AKIRA_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_AKIRA_BASE as string) || 'http://localhost:5000';
 
 export interface ApiNewsCard {

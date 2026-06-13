@@ -38,7 +38,9 @@ searchRoutes.get("/", async (c) => {
         .all<FtsRow>();
       ftsResults = result.results ?? [];
     } catch (e) {
-      console.warn("FTS5 query failed (table may not exist yet):", e);
+      if ((c.env as { ENVIRONMENT?: string }).ENVIRONMENT === "development") {
+        console.warn("FTS5 query failed (table may not exist yet):", e);
+      }
       ftsResults = [];
     }
 
@@ -54,7 +56,9 @@ searchRoutes.get("/", async (c) => {
         vectorResults = matches.matches ?? [];
       }
     } catch (e) {
-      console.warn("Vectorize search unavailable:", e);
+      if ((c.env as { ENVIRONMENT?: string }).ENVIRONMENT === "development") {
+        console.warn("Vectorize search unavailable:", e);
+      }
     }
 
     return c.json({

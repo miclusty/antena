@@ -1,7 +1,8 @@
-// @ts-nocheck
 // ═══════════════════════════════════════════
 // Core types
 // ═══════════════════════════════════════════
+
+import type { VoiceBreakdown } from './bias';
 
 export interface NewsItem {
   id: string;

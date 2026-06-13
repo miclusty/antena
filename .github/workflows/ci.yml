@@ -22,13 +22,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
-      # e2e (Playwright) requires the dev server to be running, which can't
-      # be started in CI due to the pnpm approve-builds blocker on
-      # esbuild/workerd. Skip for now; the vitest unit tests above give
-      # us coverage of the React/Solid component logic.
-      # - run: pnpm test:e2e
-      #   env:
-      #     CI: true
+      - run: pnpm test:e2e
+        env:
+          CI: true
 
   lighthouse:
     name: Lighthouse CI
@@ -45,13 +41,9 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter antena build
-      # Lighthouse + preview server is blocked by pnpm 11's approve-builds
-      # check (can't run `pnpm approve-builds` non-interactively for
-      # esbuild + workerd). Skip until we migrate the dev server boot
-      # to a non-interactive strategy.
-      # - run: pnpm --filter antena preview &
-      # - run: sleep 5
-      # - run: pnpm lighthouse
+      - run: pnpm --filter antena preview &
+      - run: sleep 5
+      - run: pnpm lighthouse
 
   deploy-preview:
     name: Deploy Preview

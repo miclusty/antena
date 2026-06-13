@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import type { Env } from "../lib/types";
 
-const AKIRA_BASE = "http://localhost:5000";
+import { getAkiraBaseUrl } from "../lib/akira-url";
+
+const AKIRA_BASE = getAkiraBaseUrl() ?? "";
 
 export const synthesisRoutes = new Hono<{ Bindings: Env }>();
 

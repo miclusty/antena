@@ -1,17 +1,19 @@
+import { getAkiraBaseUrl } from "./akira-url";
+
 /**
  * Python Extractor integration
- * The Python extractor (akira_extractor.py) runs on port 5000 and handles
- * the extraction cascade: RSS → WP API → Newspaper3k → Goose3 → Sitemap → Playwright → Jina
+ * The Python extractor (akira_extractor.py) runs on port 5000 locally on
+ * the dev machine. In production, this whole module is a no-op because
+ * AKIRA isn't deployed to Cloudflare — getAkiraBaseUrl() returns null and
+ * all checks/exports will fail. Callers must check for null.
  */
-
-const PYTHON_EXTRACTOR_URL = process.env.PYTHON_EXTRACTOR_URL || "http://localhost:5000";
 
 /**
  * Check if the Python extractor is available
  */
 export async function checkPythonExtractor(): Promise<boolean> {
   try {
-    const response = await fetch(`${PYTHON_EXTRACTOR_URL}/health`, {
+    const response = await fetch(`${getAkiraBaseUrl() ?? ""}/health`, {
       method: "GET",
       signal: AbortSignal.timeout(5000),
     });
@@ -25,7 +27,7 @@ export async function checkPythonExtractor(): Promise<boolean> {
  * Extract using Newspaper3k from Python extractor
  */
 export async function extractWithNewspaper(url: string, language = "es"): Promise<unknown> {
-  const response = await fetch(`${PYTHON_EXTRACTOR_URL}/extract/newspaper`, {
+  const response = await fetch(`${getAkiraBaseUrl() ?? ""}/extract/newspaper`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url, language }),
@@ -38,7 +40,7 @@ export async function extractWithNewspaper(url: string, language = "es"): Promis
  * Extract using Goose3 from Python extractor
  */
 export async function extractWithGoose(url: string): Promise<unknown> {
-  const response = await fetch(`${PYTHON_EXTRACTOR_URL}/extract/goose`, {
+  const response = await fetch(`${getAkiraBaseUrl() ?? ""}/extract/goose`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
@@ -51,7 +53,7 @@ export async function extractWithGoose(url: string): Promise<unknown> {
  * Hybrid extraction: best of Newspaper + Goose
  */
 export async function extractHybrid(url: string): Promise<unknown> {
-  const response = await fetch(`${PYTHON_EXTRACTOR_URL}/extract/hybrid`, {
+  const response = await fetch(`${getAkiraBaseUrl() ?? ""}/extract/hybrid`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
@@ -64,7 +66,7 @@ export async function extractHybrid(url: string): Promise<unknown> {
  * RSS extraction using Python feedparser
  */
 export async function extractRSSWithPython(url: string, limit = 20): Promise<unknown> {
-  const response = await fetch(`${PYTHON_EXTRACTOR_URL}/extract/rss`, {
+  const response = await fetch(`${getAkiraBaseUrl() ?? ""}/extract/rss`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url, limit }),
@@ -77,7 +79,7 @@ export async function extractRSSWithPython(url: string, limit = 20): Promise<unk
  * Scan a site for article URLs using sitemap
  */
 export async function scanSiteForArticles(url: string): Promise<unknown> {
-  const response = await fetch(`${PYTHON_EXTRACTOR_URL}/extract`, {
+  const response = await fetch(`${getAkiraBaseUrl() ?? ""}/extract`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url, prefer_method: "sitemap" }),
