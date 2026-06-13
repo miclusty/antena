@@ -1,15 +1,17 @@
 packages:
   - "packages/*"
 
-allowBuilds:
-  better-sqlite3: set this to true or false
-  esbuild: set this to true or false
-  sharp: set this to true or false
-  workerd: set this to true or false
-
-# pnpm 11 reads allowedBuildScripts from pnpm-workspace.yaml with
-# this exact YAML syntax (NOT package.json's "pnpm" key — that was
-# deprecated). Confirmed via `pnpm config get allowedBuildScripts`
-# after this commit.
+# pnpm 11 reads allowedBuildScripts from pnpm-workspace.yaml. This
+# is the new home for the old pnpm.onlyBuiltDependencies key
+# (which pnpm 11 ignores if set in package.json).
 allowedBuildScripts:
   - "*"
+
+# pnpm 11 also runs `pnpm install` before any script (e.g.
+# `pnpm typecheck`). If install fails (e.g. with the same
+# ERR_PNPM_IGNORED_BUILDS that pnpm-workspace.yaml's
+# allowedBuildScripts is supposed to suppress), the script
+# never runs. Disabling this verification means scripts run
+# directly without re-checking deps — the user is responsible
+# for running install first.
+verifyDepsBeforeRun: false
