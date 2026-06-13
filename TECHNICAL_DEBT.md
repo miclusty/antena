@@ -19,10 +19,12 @@ Análisis completo del proyecto, ordenado por impacto y esfuerzo. Items en **roj
 | #11 | withCache sin fallback | 1fe8396 | try-catch que retorna 503 en error |
 | #12 | VoiceBreakdown import | 793b237 | Movido a `types.ts` (single source). `bias.ts` re-exporta |
 | #13 | engines + packageManager | 1fe8396, 674a687 | `engines: { node >=20, pnpm >=11 }` agregado; `packageManager` removido (conflicta con pnpm-action-setup) |
+| #14 | CONTRIBUTING.md | 24fb3e7 | Creado. Cubre setup, 3-terminal dev, tests, conventions, troubleshooting |
 | #15 | featuredCluster createEffect | 793b237 | Convertido a `createMemo` puro derivado del feed signal |
 | #16 | location_province dedupe | 793b237 | "Córdoba, Córdoba" → "Córdoba" cuando name === province |
 | #17 | image-pipeline enqueue | 793b237 | Valida `image_url` antes de enqueue (antes fallaba en el worker) |
 | #18 | sync-version | 1fe8396 | `scripts/sync-version.sh` creado |
+| #19 | pnpm approve-builds docs | 24fb3e7 | README + CONTRIBUTING troubleshooting section |
 | **+1** | **CORS production** | 1fe8396 | `antena.com.ar` + `www.antena.com.ar` agregados al allowlist, deployed |
 | **+1** | **ArticleDetail 503/404** | d4a3087 | Frontend pasaba `clusterId` al endpoint que esperaba `news_id` |
 | **+1** | **Deploy Production verde** | 46142d0, aeb5e58, bd88327 | Workflow duplicado eliminado, deploy-production + deploy-antena alineados |
@@ -74,25 +76,10 @@ El user tiene que:
 
 ## 🔵 BAJO — Polish y nice-to-haves
 
-### #14. CONTRIBUTING.md
-`docs/architecture.md` ✓ existe. Falta `CONTRIBUTING.md` en root con setup + scripts + troubleshooting para humanos nuevos (no-AI).
-
-**Fix**: 2 horas. Extraer de AGENTS.md la sección de setup + scripts.
-
-### #19. `pnpm dev` requiere `pnpm approve-builds` interactivo en Mac nueva
-Un dev que clona el repo necesita ejecutar `pnpm approve-builds` antes de `pnpm dev` por primera vez.
-
-**Fix**: Documentar en README.md o CONTRIBUTING.md:
-```bash
-pnpm install
-pnpm approve-builds
-pnpm dev
-```
-
 ### #20. Tests e2e no validan el flujo completo
 6 specs en `packages/antena/e2e/` (article-bookmark, bookmarks, feed, mobile, pwa, search). Casi todos `test.skip()`. Falta un test e2e real que recorra: "abrir la app → ver feed → click en una noticia → ver artículo → guardar en bookmarks".
 
-**Fix**: 1 día cuando se reactiven los e2e en CI (relacionado con #4/#9).
+**Fix**: 1 día cuando se reactiven los e2e en CI (relacionado con #4).
 
 ---
 
@@ -102,7 +89,7 @@ pnpm dev
 |---|---|---|---|
 | **CRÍTICO en prod** | #1, #3, +CORS, +ArticleDetail, +Deploy Prod, +PUBLIC_API_BASE | #2 (DNS), #4 (AKIRA), #5 (R2) | 1-2 horas de user action |
 | **Calidad de código** | #6, #7, #8, #10, #11, #12, #15, #16, #17 | #9 | 0.5-1 día |
-| **Polish** | #13, #18 | #14, #19, #20 | 1 día |
+| **Polish** | #13, #14, #18, #19 | #20 | 1 día |
 
 **Lo que YA está bien**:
 - ✅ 0 typecheck errors
@@ -120,4 +107,4 @@ pnpm dev
 **Recomendación próxima**:
 1. **User action**: agregar `dns:write` scope al API token + activar R2 → corre `scripts/setup-custom-domain.py` (#2 + #5) y actualiza el workflow `PUBLIC_API_BASE` a `https://api.antena.com.ar`
 2. **User action**: decidir cómo correr AKIRA scrape en prod (#4) — el camino más simple es HTTP manual via `cloudflared` en tu Mac
-3. **Dev work**: #9 (reactivar e2e suite, requiere #4), #14 (CONTRIBUTING.md, 2h), #19 (doc approve-builds, 5min), #20 (e2e real tests, 1 día)
+3. **Dev work**: #9 (reactivar e2e suite, requiere #4), #20 (e2e real tests, 1 día post #4)
