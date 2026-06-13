@@ -24,8 +24,15 @@ jobs:
       # workerd, better-sqlite3, sharp). --all is the non-interactive
       # flag. After approve, the second install with the allowlist in
       # place succeeds.
-      - run: pnpm approve-builds --all
       - run: pnpm install --frozen-lockfile
+        env:
+          # pnpm 11.5.0 doesn't read pnpm-workspace.yaml's
+          # allowedBuildScripts at install time. The env var
+          # PNPM_ALLOWED_BUILDSCRIPTS is the only reliable way to
+          # allow native builds in CI. With "any-package", all
+          # build scripts (esbuild, workerd, better-sqlite3, sharp)
+          # run.
+          PNPM_ALLOWED_BUILDSCRIPTS: '*'
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
@@ -46,8 +53,9 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-      - run: pnpm approve-builds --all
       - run: pnpm install --frozen-lockfile
+        env:
+          PNPM_ALLOWED_BUILDSCRIPTS: '*'
       - run: pnpm --filter antena build
       - run: pnpm --filter antena preview &
       - run: sleep 5
