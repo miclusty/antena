@@ -113,16 +113,19 @@ test.describe("Happy path", () => {
       );
     });
 
-    // 2. Reload — bookmarks should survive.
+    // 2. Reload — bookmarks should survive. Use 'domcontentloaded'
+    // (not 'networkidle') because the page makes long-poll requests
+    // that may never go idle.
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(1000);
 
     // 3. Open Guardados.
-    await page.getByLabel("Guardados").click();
-    await page.waitForTimeout(300);
+    await page.getByLabel("Guardados").last().click();
+    await page.waitForTimeout(500);
 
     // 4. Limpiar button is visible (we have 2 bookmarks).
-    await expect(page.getByText("Limpiar")).toBeVisible();
+    await expect(page.getByLabel("Limpiar todos los guardados")).toBeVisible({ timeout: 10_000 });
   });
 
   test("Limpiar empties the bookmarks list", async ({ page }) => {
