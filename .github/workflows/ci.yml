@@ -56,7 +56,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
         env:
-          pnpm_config_allowedBuildScripts: '*'
+          pnpm_config_allowedBuildScripts: 'better-sqlite3,esbuild,sharp,workerd'
       - run: pnpm --filter antena build
       - run: pnpm --filter antena preview &
       - run: sleep 5
