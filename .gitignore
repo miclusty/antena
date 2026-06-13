@@ -76,3 +76,7 @@ packages/api/dist/
 packages/extractor/venv/
 .worktrees/
 packages/extractor/venv/
+
+# Playwright test artifacts
+packages/antena/test-results/
+packages/antena/playwright-report/
