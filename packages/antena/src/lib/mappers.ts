@@ -174,9 +174,13 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
 
   let location = '';
   if (card.location_name) {
-    location = card.location_province
-      ? `${card.location_name}, ${card.location_province}`
-      : card.location_name;
+    // Avoid "Córdoba, Córdoba" when the city and province names
+    // happen to be identical (e.g. Córdoba Capital / Córdoba province).
+    if (card.location_province && card.location_province !== card.location_name) {
+      location = `${card.location_name}, ${card.location_province}`;
+    } else {
+      location = card.location_name;
+    }
   }
 
   const category = card.category || extractCategory(card.title);

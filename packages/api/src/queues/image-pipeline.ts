@@ -25,6 +25,10 @@ export async function handleImagePipeline(
 
       const sourceUrl = card?.image_url;
       if (!sourceUrl) {
+        // Defensive: enqueue at routes/image.ts now skips enqueueing
+        // when image_url is missing, so this branch should be rare.
+        // Keeping the warn + ack as a safety net for direct enqueues
+        // (e.g. admin tools, future migrations).
         console.warn(`image-pipeline: no source URL for hash=${data.hash}`);
         msg.ack();
         continue;

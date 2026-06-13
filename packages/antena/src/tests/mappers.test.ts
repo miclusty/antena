@@ -344,6 +344,13 @@ describe("mapNewsCard", () => {
     expect(result.location).toBe("Córdoba");
   });
 
+  it("deduplicates when name and province are identical", () => {
+    // e.g. Córdoba Capital / Córdoba province: "Córdoba, Córdoba" would be noise.
+    const card = { ...baseCard, location_province: "Córdoba" };
+    const result = mapNewsCard(card);
+    expect(result.location).toBe("Córdoba");
+  });
+
   it("returns empty location when no location_name", () => {
     const card = { ...baseCard, location_name: null, location_province: null };
     const result = mapNewsCard(card);

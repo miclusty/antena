@@ -68,12 +68,6 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = createSignal(false);
   const [trendingItems, setTrendingItems] = createSignal<ApiNewsCard[]>([]);
   const [breakingItems, setBreakingItems] = createSignal<ApiNewsCard[]>([]);
-  const [featuredCluster, setFeaturedCluster] = createSignal<{
-    primary: NewsItem;
-    clusterId: string;
-    sourcesCount: number;
-    sourceNames: string[];
-  } | null>(null);
 
   const haptic = useHaptic();
 
@@ -150,6 +144,20 @@ export default function App() {
 
   const { setObserverTarget } = useInfiniteScroll({ onLoadMore: loadMore, hasMore, isLoading: () => feed.loading });
 
+  const featuredCluster = createMemo(() => {
+    const data = feed();
+    if (!data?.news) return null;
+    const newsList = data.news as unknown as ApiNewsCard[];
+    const featured = newsList.find(n => (n.sources_count ?? 0) >= 3);
+    if (!featured) return null;
+    return {
+      primary: mapNewsCard(featured),
+      clusterId: featured.cluster_id ?? '',
+      sourcesCount: featured.sources_count ?? 1,
+      sourceNames: (featured.source_names ?? (featured.source_name ? [featured.source_name] : [])).slice(0, 5),
+    };
+  });
+
   createEffect(() => {
     const data = feed();
     if (data?.news && offset() === 0) {
@@ -157,22 +165,10 @@ export default function App() {
       setHasMore(data.news.length >= 20);
       cacheNews(data.news).catch(() => {});
 
-      // Compute trending, breaking, featured from the loaded feed
       const newsList = data.news as unknown as ApiNewsCard[];
       setTrendingItems(newsList.filter(n => (n.sources_count ?? 1) >= 1).slice(0, 10));
       const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
       setBreakingItems(newsList.filter(n => new Date(n.created_at).getTime() >= twoHoursAgo));
-      const featured = newsList.find(n => (n.sources_count ?? 0) >= 3);
-      if (featured) {
-        setFeaturedCluster({
-          primary: mapNewsCard(featured),
-          clusterId: featured.cluster_id ?? '',
-          sourcesCount: featured.sources_count ?? 1,
-          sourceNames: (featured.source_names ?? (featured.source_name ? [featured.source_name] : [])).slice(0, 5),
-        });
-      } else {
-        setFeaturedCluster(null);
-      }
     }
   });
 

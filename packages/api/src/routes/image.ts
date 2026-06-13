@@ -30,13 +30,24 @@ imageRoutes.get("/:hash", async (c) => {
       return fetch(r2Url, { cf: { image: cfImage } });
     }
 
-    c.executionCtx.waitUntil(
-      c.env.IMAGE_QUEUE.send({
-        type: "fetch_and_store",
-        hash,
-        requestTime: Date.now(),
-      })
-    );
+    // Validate that the news card actually has a source image_url
+    // before enqueueing. Otherwise the worker logs a warning and
+    // acks the message immediately — wasted work and log noise.
+    const card = await c.env.DB.prepare(
+      "SELECT image_url FROM news_cards WHERE id = ? OR image_hash = ?"
+    )
+      .bind(hash, hash)
+      .first<{ image_url: string | null }>();
+
+    if (card?.image_url) {
+      c.executionCtx.waitUntil(
+        c.env.IMAGE_QUEUE.send({
+          type: "fetch_and_store",
+          hash,
+          requestTime: Date.now(),
+        })
+      );
+    }
 
     return c.json({ error: "Image not yet available", hash }, 404);
   }, {

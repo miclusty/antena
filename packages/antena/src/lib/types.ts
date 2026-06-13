@@ -2,7 +2,11 @@
 // Core types
 // ═══════════════════════════════════════════
 
-import type { VoiceBreakdown } from './bias';
+export interface VoiceBreakdown {
+  label: string;
+  color: string;
+  pct: number;
+}
 
 export interface NewsItem {
   id: string;
@@ -38,8 +42,6 @@ export interface PropagationEvent {
   text: string;
   isOrigin: boolean;
 }
-
-export type { VoiceBreakdown } from './bias';
 
 export interface Category {
   name: string;

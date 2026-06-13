@@ -7,6 +7,10 @@
  *  - Amber (#E8A37C): Mild opposition
  */
 
+// VoiceBreakdown interface is defined in types.ts (single source).
+// Re-exported here for backwards compat with imports from './bias'.
+export type { VoiceBreakdown } from './types';
+
 const BIAS_COLORS = {
   strong_officialist: '#1A3A6B',   // dark blue — Kirchnerismo duro
   mild_officialist: '#75AADB',     // light blue — Peronismo/K
@@ -43,12 +47,6 @@ interface BiasInfo {
   gradientColor: string;
   intensity: number;
   category: BiasCategory;
-}
-
-export interface VoiceBreakdown {
-  label: string;
-  color: string;
-  pct: number;
 }
 
 /** Map bias_score (-1.0 to +1.0) to 5-level categorical info. */
