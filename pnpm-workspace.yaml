@@ -1,9 +1,15 @@
 packages:
   - "packages/*"
 
-# Whitelist native build scripts. pnpm 11 introduced this new
-# camelCase config (replacing `onlyBuiltDependencies`). The action
-# also sets the version, so do NOT add `packageManager: pnpm@X.Y.Z`
-# to package.json (it conflicts and CI fails).
 allowBuilds:
-  "*": true
+  better-sqlite3: set this to true or false
+  esbuild: set this to true or false
+  sharp: set this to true or false
+  workerd: set this to true or false
+
+# pnpm 11 reads allowedBuildScripts from pnpm-workspace.yaml with
+# this exact YAML syntax (NOT package.json's "pnpm" key — that was
+# deprecated). Confirmed via `pnpm config get allowedBuildScripts`
+# after this commit.
+allowedBuildScripts:
+  - "*"

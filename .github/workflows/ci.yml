@@ -19,6 +19,13 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      # pnpm 11 requires running `pnpm approve-builds` once to register
+      # the allowlist (esbuild, workerd, better-sqlite3, sharp) before
+      # the install step can run their build scripts non-interactively.
+      # The --force flag auto-approves the dependencies listed in
+      # pnpm-workspace.yaml's allowedBuildScripts.
+      - run: pnpm approve-builds --force
+      - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
