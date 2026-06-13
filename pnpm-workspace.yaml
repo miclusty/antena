@@ -1,11 +1,9 @@
 packages:
   - "packages/*"
 
-# pnpm 11: use "allowBuilds" (camelCase) to whitelist which native
-# packages can run their install scripts. Without this, esbuild, workerd,
-# and better-sqlite3 fail to build, and `pnpm install` returns
-# non-zero (which breaks CI's `pnpm install --frozen-lockfile`).
+# Whitelist native build scripts. pnpm 11 introduced this new
+# camelCase config (replacing `onlyBuiltDependencies`). The action
+# also sets the version, so do NOT add `packageManager: pnpm@X.Y.Z`
+# to package.json (it conflicts and CI fails).
 allowBuilds:
-  better-sqlite3: true
-  esbuild: true
-  workerd: true
+  "*": true
