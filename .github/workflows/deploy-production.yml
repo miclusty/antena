@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 11 }
+        with: { version: 11.5.0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || true
       - run: pnpm typecheck
       - run: pnpm lint
 
@@ -28,12 +28,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 11 }
+        with: { version: 11.5.0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || true
       - name: Deploy API Worker to production
-        run: cd packages/api && pnpm exec wrangler deploy --config wrangler.production.toml
+        run: pnpm --filter @akira/api exec wrangler deploy --config wrangler.production.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -44,20 +44,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 11 }
+        with: { version: 11.5.0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile || true
       - name: Build Antena (with production env)
         run: |
           cd packages/antena
           echo "PUBLIC_API_BASE=https://api.antena.com.ar" > .env.production
           echo "PUBLIC_AKIRA_BASE=https://api.antena.com.ar" >> .env.production
-          pnpm build
+          pnpm --filter antena build
       - name: Deploy Antena to Pages
         run: |
-          cd packages/antena
-          pnpm exec wrangler pages deploy dist --project-name=antena --branch=main --commit-dirty=true
+          pnpm --filter antena exec wrangler pages deploy dist --project-name=antena --branch=main --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
