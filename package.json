@@ -6,9 +6,6 @@
     "node": ">=20",
     "pnpm": ">=11"
   },
-  "pnpm": {
-    "allowedBuildScripts": ["*"]
-  },
   "scripts": {
     "dev": "pnpm --filter api dev & pnpm --filter antena dev",
     "build": "pnpm --filter antena build",
