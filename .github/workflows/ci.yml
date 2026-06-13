@@ -45,9 +45,13 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter antena build
-      - run: pnpm --filter antena preview &
-      - run: sleep 5
-      - run: pnpm lighthouse
+      # Lighthouse + preview server is blocked by pnpm 11's approve-builds
+      # check (can't run `pnpm approve-builds` non-interactively for
+      # esbuild + workerd). Skip until we migrate the dev server boot
+      # to a non-interactive strategy.
+      # - run: pnpm --filter antena preview &
+      # - run: sleep 5
+      # - run: pnpm lighthouse
 
   deploy-preview:
     name: Deploy Preview
