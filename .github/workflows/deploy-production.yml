@@ -50,9 +50,14 @@ jobs:
       - run: pnpm install --frozen-lockfile || true
       - name: Build Antena (with production env)
         run: |
-          cd packages/antena
-          echo "PUBLIC_API_BASE=https://api.antena.com.ar" > .env.production
-          echo "PUBLIC_AKIRA_BASE=https://api.antena.com.ar" >> .env.production
+          # The frontend calls /api/* with this base URL. Today we
+          # serve the API from the Cloudflare Worker URL
+          # (akira-api.miclusty.workers.dev). When the custom
+          # domain api.antena.com.ar is wired up (DEBT #2 — needs
+          # dns:write scope on the API token), update both lines
+          # to https://api.antena.com.ar.
+          echo "PUBLIC_API_BASE=https://akira-api.miclusty.workers.dev" > packages/antena/.env.production
+          echo "PUBLIC_AKIRA_BASE=https://akira-api.miclusty.workers.dev" >> packages/antena/.env.production
           pnpm --filter antena build
       - name: Deploy Antena to Pages
         run: |
