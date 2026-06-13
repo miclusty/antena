@@ -48,8 +48,9 @@ describe("BottomNav", () => {
     const { getByLabelText } = render(() => (
       <BottomNav activeTab="bookmarks" onTabChange={onChange} />
     ));
-    const bookmarksIcon = getByLabelText("Guardados").querySelector("span");
-    const homeIcon = getByLabelText("Inicio").querySelector("span");
+    // The first <span> is the relative wrapper; the icon span is the second one.
+    const bookmarksIcon = getByLabelText("Guardados").querySelectorAll("span")[1];
+    const homeIcon = getByLabelText("Inicio").querySelectorAll("span")[1];
     expect(bookmarksIcon?.getAttribute("style")).toContain("'FILL' 1");
     expect(homeIcon?.getAttribute("style")).toContain("'FILL' 0");
   });

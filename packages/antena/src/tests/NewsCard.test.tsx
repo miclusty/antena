@@ -8,6 +8,11 @@ afterEach(cleanup);
 describe("NewsCard", () => {
   beforeEach(() => {
     mockNavigatorVibrate();
+    // Mock fetch to prevent the NewsCard's trackEvent() from hitting
+    // /api/track and creating an unhandled rejection in the test runner.
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve(new Response("{}", { status: 200 }))
+    ) as unknown as typeof fetch;
   });
 
   it("renders title, source, and time", () => {
@@ -79,13 +84,20 @@ describe("NewsCard", () => {
   });
 
   it("calls onShare when share button is clicked", () => {
+    // Mock window.open so the WhatsApp link doesn't try to navigate
+    const openSpy = vi.fn();
+    const originalOpen = window.open;
+    window.open = openSpy;
+
     const onShare = vi.fn();
     const news = createMockNews();
     const { getByLabelText } = render(() => (
       <NewsCard news={news} onClick={() => {}} onShare={onShare} />
     ));
-    fireEvent.click(getByLabelText("Compartir"));
-    expect(onShare).toHaveBeenCalledWith(news.id);
+    fireEvent.click(getByLabelText("Compartir por WhatsApp"));
+    // The inline WhatsApp handler now opens wa.me directly via window.open
+    expect(openSpy).toHaveBeenCalled();
+    window.open = originalOpen;
   });
 
   it("renders a prominent WhatsApp share button on every card", () => {
