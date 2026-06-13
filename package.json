@@ -6,7 +6,6 @@
     "node": ">=20",
     "pnpm": ">=11"
   },
-  "packageManager": "pnpm@11.5.0",
   "pnpm": {
     "allowedBuildScripts": ["*"]
   },
