@@ -1,14 +1,27 @@
 /** @jsxImportSource solid-js */
-import { For, Show } from 'solid-js';
+import { For, Show, createSignal, onCleanup, onMount } from 'solid-js';
+import type { Category } from '../../lib/types';
 
 export interface FeedTab {
   id: string;
   label: string;
+  /** Optional category slug — present for category tabs, absent for the
+   *  built-in home/following/explore tabs. */
+  category?: string;
 }
 
 interface FeedTabsProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
+  /** Tabs that have been added on top of the defaults (excluding
+   *  the built-in ones). Used so the user can remove a custom
+   *  tab they previously added. */
+  customTabs: FeedTab[];
+  onAddCustomTab: (category: Category) => void;
+  onRemoveCustomTab: (tabId: string) => void;
+  /** All categories that can be added as a tab. The picker
+   *  shows the ones that aren't already in `customTabs`. */
+  availableCategories: Category[];
   tabs?: FeedTab[];
   visible?: boolean;
 }
@@ -22,6 +35,35 @@ const DEFAULT_TABS: FeedTab[] = [
 export default function FeedTabs(props: FeedTabsProps) {
   const tabs = () => props.tabs || DEFAULT_TABS;
   const visible = () => props.visible !== false;
+
+  const [pickerOpen, setPickerOpen] = createSignal(false);
+  let pickerRef: HTMLDivElement | undefined;
+
+  // Close the picker when clicking outside it. The listener is
+  // attached on mount (client-only) and detached on cleanup.
+  // We can't attach during the component's top-level evaluation
+  // because that runs during SSR, where `document` doesn't exist.
+  const onDocClick = (e: MouseEvent) => {
+    if (!pickerRef) return;
+    if (!pickerOpen()) return;
+    if (e.target instanceof Node && !pickerRef.contains(e.target)) {
+      setPickerOpen(false);
+    }
+  };
+  onMount(() => {
+    document.addEventListener('click', onDocClick);
+  });
+  onCleanup(() => {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('click', onDocClick);
+    }
+  });
+
+  // Categories already added as custom tabs (by slug) — hide them
+  // from the picker so the user can't add duplicates.
+  const pickedSlugs = () => new Set(props.customTabs.map((t) => t.category));
+  const pickable = () =>
+    props.availableCategories.filter((c) => !pickedSlugs().has(c.slug));
 
   return (
     <div
@@ -41,6 +83,7 @@ export default function FeedTabs(props: FeedTabsProps) {
                 onClick={() => props.onTabChange(tab.id)}
                 class="relative flex items-center gap-1.5 min-h-[44px] px-3 py-3 text-sm font-semibold whitespace-nowrap transition-colors duration-150 active:scale-95"
                 style={{ color: isActive() ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                aria-current={isActive() ? 'page' : undefined}
               >
                 <span>{tab.label}</span>
                 <Show when={isActive()}>
@@ -54,19 +97,110 @@ export default function FeedTabs(props: FeedTabsProps) {
           }}
         </For>
 
-        {/* "+" add tab button */}
-        <button
-          onClick={() => {/* TODO: category picker */}}
-          class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-bg-hover transition-colors ml-1"
-          aria-label="Añadir pestaña"
-        >
-          <span
-            class="material-symbols-rounded text-lg text-text-tertiary"
-            style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+        <For each={props.customTabs}>
+          {(tab) => {
+            const isActive = () => props.activeTab === tab.id;
+            return (
+              <div class="relative flex items-center">
+                <button
+                  onClick={() => props.onTabChange(tab.id)}
+                  class="relative flex items-center gap-1.5 min-h-[44px] pl-3 pr-1 py-3 text-sm font-semibold whitespace-nowrap transition-colors duration-150 active:scale-95"
+                  style={{ color: isActive() ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                  aria-current={isActive() ? 'page' : undefined}
+                >
+                  <span>{tab.label}</span>
+                  <Show when={isActive()}>
+                    <span
+                      class="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
+                      style={{ 'background-color': 'var(--accent)' }}
+                    />
+                  </Show>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    props.onRemoveCustomTab(tab.id);
+                  }}
+                  class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-bg-hover text-text-tertiary"
+                  aria-label={`Quitar pestaña ${tab.label}`}
+                >
+                  <span
+                    class="material-symbols-rounded text-base leading-none"
+                    style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
+                  >
+                    close
+                  </span>
+                </button>
+              </div>
+            );
+          }}
+        </For>
+
+        {/* "+" add tab button + picker */}
+        <div class="relative ml-1" ref={pickerRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setPickerOpen((v) => !v);
+            }}
+            class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-bg-hover transition-colors"
+            aria-label="Añadir pestaña"
+            aria-expanded={pickerOpen()}
+            aria-haspopup="listbox"
           >
-            add
-          </span>
-        </button>
+            <span
+              class="material-symbols-rounded text-lg text-text-tertiary"
+              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+            >
+              add
+            </span>
+          </button>
+
+          <Show when={pickerOpen()}>
+            <div
+              class="absolute left-0 top-full mt-2 z-40 min-w-[200px] rounded-2xl border border-border-base overflow-hidden"
+              style={{
+                'background-color': 'var(--bg-elevated)',
+                'box-shadow': 'var(--shadow-md)',
+              }}
+              role="listbox"
+            >
+              <Show
+                when={pickable().length > 0}
+                fallback={
+                  <p class="px-4 py-3 text-sm text-text-tertiary">
+                    Ya agregaste todas las categorías.
+                  </p>
+                }
+              >
+                <For each={pickable()}>
+                  {(cat) => (
+                    <button
+                      type="button"
+                      role="option"
+                      onClick={() => {
+                        props.onAddCustomTab(cat);
+                        setPickerOpen(false);
+                      }}
+                      class="w-full flex items-center gap-3 px-4 min-h-[44px] py-2 text-left hover:bg-bg-hover active:bg-bg-hover transition-colors"
+                    >
+                      <span
+                        class="material-symbols-rounded text-lg leading-none text-text-tertiary"
+                        style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+                        aria-hidden="true"
+                      >
+                        {cat.icon}
+                      </span>
+                      <span class="text-sm font-medium text-text-primary">
+                        {cat.name}
+                      </span>
+                    </button>
+                  )}
+                </For>
+              </Show>
+            </div>
+          </Show>
+        </div>
       </div>
     </div>
   );

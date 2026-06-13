@@ -81,7 +81,7 @@ test.describe("Happy path", () => {
     await expect(page.getByRole("heading", { name: articleTitle! })).toBeVisible();
 
     // 11. The "Limpiar" button is visible because we have ≥1 bookmark.
-    await expect(page.getByText("Limpiar")).toBeVisible();
+    await expect(page.getByLabel("Limpiar todos los guardados")).toBeVisible();
 
     // 12. Find the saved card in the bookmarks view and unbookmark
     //     from there. NewsCard's "Guardar" button is a toggle.
@@ -139,10 +139,10 @@ test.describe("Happy path", () => {
     await page.getByLabel("Guardados").click();
     await page.waitForTimeout(300);
 
-    // 3. Click Limpiar (the button clears the list after a confirm).
-    //    Use a window.confirm handler to auto-accept.
-    page.once("dialog", (dialog) => dialog.accept());
-    await page.getByText("Limpiar").click();
+    // 3. Click Limpiar (the button clears the list).
+    //    BookmarksView's "Limpiar" button calls clearBookmarks()
+    //    directly (no confirm dialog).
+    await page.getByLabel("Limpiar todos los guardados").click();
     await page.waitForTimeout(300);
 
     // 4. localStorage should be empty.

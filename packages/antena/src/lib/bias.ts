@@ -90,8 +90,12 @@ export function getBiasGradientColor(score: number | null | undefined): string {
       return `rgb(${r},${g},${b})`;
     }
   } else {
-    // -1 (yellow #F5C542) → 0 (gray)
-    const t = Math.abs(clamped);
+    // -1 (yellow #F5C542) → 0 (gray). t goes from 0 (clamped=-1)
+    // to 1 (clamped=0), so the start color is yellow and the end
+    // color is gray. (Previously the formula was inverted: at
+    // score=-1 it returned gray, contradicting the comment above.
+    // The bias.test.ts TODO(Phase 8+) is now fixed by this change.)
+    const t = 1 - Math.abs(clamped);
     const r = Math.round(245 + (150 - 245) * t);
     const g = Math.round(197 + (140 - 197) * t);
     const b = Math.round(66 + (131 - 66) * t);

@@ -30,6 +30,7 @@ import SourceLogo from './components/common/SourceLogo';
 import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, fetchTrending, fetchCities, fetchFeaturedStory, type FeedResponse, type ApiNewsCard } from './lib/api';
 import { mapNewsCard } from './lib/mappers';
 import { parseURLState, updateURL, clearURL } from './lib/urlState';
+import { CATEGORIES, type Category } from './lib/types';
 
 const CAT_COLORS: Record<string, string> = {
   'Política':'#FF4D5A','Economía':'#F59E0B','Deportes':'#10B981','Policiales':'#EF4444',
@@ -64,6 +65,27 @@ export default function App() {
   const [searchOpen, setSearchOpen] = createSignal(false);
   const [activeFeedTab, setActiveFeedTab] = createSignal<string>('home');
   const [feedTabsVisible, setFeedTabsVisible] = createSignal(true);
+  // User-added category tabs (e.g. "Política", "Deportes") that
+  // appear after the default Para vos / Siguiendo / Explorar tabs.
+  // Persisted to localStorage so the user's tab layout survives
+  // a page reload. The shape is a list of {id, label, category}
+  // where id is "cat:<slug>" (used to dispatch onTabChange in
+  // the FeedTabs onTabChange handler).
+  type CustomTab = { id: string; label: string; category: string };
+  const [customTabs, setCustomTabs] = createSignal<CustomTab[]>(
+    typeof window === 'undefined'
+      ? []
+      : (() => {
+          try {
+            const raw = localStorage.getItem("antena-custom-tabs");
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? (parsed as CustomTab[]) : [];
+          } catch {
+            return [];
+          }
+        })(),
+  );
   const [cities, setCities] = createSignal<Array<{ id: number; name: string; province: string; count: number }>>([]);
   const [drawerOpen, setDrawerOpen] = createSignal(false);
   const [trendingItems, setTrendingItems] = createSignal<ApiNewsCard[]>([]);
@@ -363,7 +385,43 @@ export default function App() {
             onTabChange={(tabId) => {
               haptic.vibrate('tap');
               setActiveFeedTab(tabId);
+              // Custom category tabs (e.g. "cat:politica") also set
+              // the activeCategory so the feed filters by it.
+              if (tabId.startsWith("cat:")) {
+                const slug = tabId.slice(4);
+                const cat = CATEGORIES.find((c) => c.slug === slug);
+                if (cat) setActiveCategory(cat.name);
+              }
             }}
+            customTabs={customTabs()}
+            onAddCustomTab={(cat) => {
+              const newTab = { id: `cat:${cat.slug}`, label: cat.name, category: cat.slug };
+              const next = [...customTabs(), newTab];
+              setCustomTabs(next);
+              try {
+                localStorage.setItem("antena-custom-tabs", JSON.stringify(next));
+              } catch {
+                // localStorage may be unavailable (private mode);
+                // the in-memory state is still usable for the session.
+              }
+              haptic.vibrate('tap');
+              setActiveFeedTab(newTab.id);
+              setActiveCategory(cat.name);
+            }}
+            onRemoveCustomTab={(tabId) => {
+              const next = customTabs().filter((t) => t.id !== tabId);
+              setCustomTabs(next);
+              try {
+                localStorage.setItem("antena-custom-tabs", JSON.stringify(next));
+              } catch {
+                /* see above */
+              }
+              // If the removed tab was active, fall back to 'home'.
+              if (activeFeedTab() === tabId) {
+                setActiveFeedTab("home");
+              }
+            }}
+            availableCategories={CATEGORIES.filter((c) => c.slug !== "all")}
             visible={feedTabsVisible()}
           />
         </Show>

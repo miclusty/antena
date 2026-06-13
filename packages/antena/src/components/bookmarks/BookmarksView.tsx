@@ -50,6 +50,7 @@ export default function BookmarksView(props: BookmarksViewProps) {
               onClick={clearBookmarks}
               class="text-xs transition-colors"
               style={{ color: 'var(--error)' }}
+              aria-label="Limpiar todos los guardados"
             >
               Limpiar
             </button>

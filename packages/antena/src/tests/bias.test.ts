@@ -70,11 +70,27 @@ describe("getBiasGradientColor", () => {
   });
 
   it("returns yellow at score -1.0", () => {
-    // TODO(Phase 8+): bias.ts has a sign bug in the negative branch —
-    // the interpolation is inverted so score -1 currently returns gray
-    // (150,140,131) instead of the documented yellow (245,197,66).
-    // For now we test the actual behavior.
-    expect(getBiasGradientColor(-1.0)).toBe("rgb(150,140,131)");
+    // Strong opposition (score -1.0) maps to the documented yellow
+    // (#F5C542 = rgb(245, 197, 66)). The negative branch of
+    // getBiasGradientColor was previously inverted; the fix is in
+    // bias.ts and the test now asserts the correct behavior.
+    expect(getBiasGradientColor(-1.0)).toBe("rgb(245,197,66)");
+  });
+
+  it("returns gray at score 0.0 (boundary)", () => {
+    // Score 0 is the boundary — the negative branch ends here,
+    // so at t=1 we get the gray (#968C83 = rgb(150, 140, 131)).
+    expect(getBiasGradientColor(0.0)).toBe("rgb(150,140,131)");
+  });
+
+  it("interpolates between yellow and gray for negative scores", () => {
+    // At score -0.5 (midway), t = 1 - 0.5 = 0.5. The result
+    // should be halfway between yellow and gray.
+    const mid = getBiasGradientColor(-0.5);
+    // r = 245 + (150-245)*0.5 = 197.5 → round → 198
+    // g = 197 + (140-197)*0.5 = 168.5 → round → 169
+    // b = 66 + (131-66)*0.5 = 98.5 → round → 99
+    expect(mid).toBe("rgb(198,169,99)");
   });
 
   it("clamps scores above 1.0", () => {
