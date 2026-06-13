@@ -27,12 +27,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           # pnpm 11.5.0 doesn't read pnpm-workspace.yaml's
-          # allowedBuildScripts at install time. The env var
-          # PNPM_ALLOWED_BUILDSCRIPTS is the only reliable way to
-          # allow native builds in CI. With "any-package", all
-          # build scripts (esbuild, workerd, better-sqlite3, sharp)
-          # run.
-          PNPM_ALLOWED_BUILDSCRIPTS: '*'
+          # allowedBuildScripts at install time (a pnpm bug). The
+          # env var name is 'pnpm_config_<key>' (NOT
+          # PNPM_ALLOWED_BUILDSCRIPTS). Setting
+          # pnpm_config_allowedBuildScripts to '*' allows all
+          # pending build scripts (esbuild, workerd,
+          # better-sqlite3, sharp) and install returns exit 0.
+          pnpm_config_allowedBuildScripts: '*'
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
@@ -55,7 +56,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
         env:
-          PNPM_ALLOWED_BUILDSCRIPTS: '*'
+          pnpm_config_allowedBuildScripts: '*'
       - run: pnpm --filter antena build
       - run: pnpm --filter antena preview &
       - run: sleep 5
