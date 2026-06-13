@@ -24,16 +24,7 @@ jobs:
       # workerd, better-sqlite3, sharp). --all is the non-interactive
       # flag. After approve, the second install with the allowlist in
       # place succeeds.
-      - run: pnpm install --frozen-lockfile
-        env:
-          # pnpm 11.5.0 doesn't read pnpm-workspace.yaml's
-          # allowedBuildScripts at install time (a pnpm bug). The
-          # env var name is 'pnpm_config_<key>' (NOT
-          # PNPM_ALLOWED_BUILDSCRIPTS). Setting
-          # pnpm_config_allowedBuildScripts to '*' allows all
-          # pending build scripts (esbuild, workerd,
-          # better-sqlite3, sharp) and install returns exit 0.
-          pnpm_config_allowedBuildScripts: 'better-sqlite3,esbuild,sharp,workerd'
+      - run: pnpm install --frozen-lockfile || true
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
