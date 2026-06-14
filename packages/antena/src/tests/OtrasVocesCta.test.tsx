@@ -61,7 +61,7 @@ describe("OtrasVocesCta", () => {
     expect(document.body.textContent).toContain("Otra cobertura");
   });
 
-  it("calls onSelect with the article and closes the sheet when a source is tapped", async () => {
+  it("calls onSelect with the article and closes the sheet when a source card is tapped", async () => {
     mockNavigatorVibrate();
     const others = [createMockNews({ id: "x2", source: "X Source", title: "Title Y" })];
     const fake = installFakeIO();
@@ -72,16 +72,43 @@ describe("OtrasVocesCta", () => {
     fake.fireAll([{ isIntersecting: true, intersectionRatio: 0.8 }]);
     const cta = await waitFor(() => getByLabelText(/voces más sobre esta historia/i));
     fireEvent.click(cta);
-    // Click the source button — match by aria-label or text within the dialog
+    // The side-by-side table renders a 'Leer completo' button
+    // per source card. Click it to switch to that coverage.
     const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
     expect(dialog).toBeTruthy();
-    const sourceBtn = Array.from(dialog.querySelectorAll("button")).find(
-      (b) => b.textContent?.includes("Title Y")
+    // BottomSheet portals to document.body; query there.
+    const readBtn = Array.from(document.body.querySelectorAll("button")).find(
+      (b) => b.getAttribute("aria-label") === "Leer cobertura de X Source"
     ) as HTMLElement;
-    expect(sourceBtn).toBeTruthy();
-    fireEvent.click(sourceBtn);
+    expect(readBtn).toBeTruthy();
+    fireEvent.click(readBtn);
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect.mock.calls[0][0].id).toBe("x2");
+  });
+
+  it("marks the current article as 'Estás acá' in the table", async () => {
+    mockNavigatorVibrate();
+    const others = [
+      createMockNews({ id: "x2", source: "X Source", title: "Other" }),
+      createMockNews({ id: "a1", source: "My Source", title: "Current" }),
+    ];
+    const fake = installFakeIO();
+    const { getByLabelText } = render(() => (
+      <OtrasVocesCta otherSources={others} currentId="a1" onSelect={() => {}} />
+    ));
+    fake.fireAll([{ isIntersecting: true, intersectionRatio: 0.8 }]);
+    const cta = await waitFor(() => getByLabelText(/voces más sobre esta historia/i));
+    fireEvent.click(cta);
+    // The current article's button is disabled and labeled
+    // 'Estás acá'; the other one has 'Leer cobertura de…'.
+    const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog.textContent).toContain("Estás acá");
+    expect(dialog.textContent).toContain("Leyendo");
+    // The 'Leer completo' button is only on the OTHER source.
+    const readBtn = document.body.querySelector(
+      'button[aria-label="Leer cobertura de X Source"]'
+    ) as HTMLElement;
+    expect(readBtn).toBeTruthy();
   });
 });
 

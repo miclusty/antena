@@ -1,11 +1,12 @@
 /** @jsxImportSource solid-js */
-import { createMemo, createSignal, Show, For } from 'solid-js';
+import { createMemo, createSignal, Show } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import { useHaptic } from '../../lib/haptic';
 import { createScrollProgress } from '../../lib/scroll-progress';
 import { trackEvent } from '../../lib/analytics';
 import BottomSheet from '../common/BottomSheet';
 import MaterialIcon from '../common/MaterialIcon';
+import OtrasVocesTable from './OtrasVocesTable';
 
 interface OtrasVocesCtaProps {
   otherSources: NewsItem[];
@@ -105,65 +106,20 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
         onClose={() => setSheetOpen(false)}
         title={`${props.otherSources.length} voces sobre esta historia`}
       >
-        <ul class="flex flex-col">
-          <For each={props.otherSources}>
-            {(article) => (
-              <li>
-                <button
-                  onClick={() => {
-                    haptic.vibrate('tap');
-                    setSheetOpen(false);
-                    props.onSelect?.(article);
-                  }}
-                  class="group flex items-stretch gap-3 w-full px-4 py-3 min-h-[64px] text-left hover:bg-bg-hover active:bg-bg-hover transition-colors border-b border-border-base"
-                >
-                  {/* Bias color stripe */}
-                  <div
-                    class="w-1 rounded-full shrink-0 self-stretch"
-                    style={{ 'background-color': article.biasColor || '#8A8D97' }}
-                    aria-hidden="true"
-                  />
-                  <div class="flex-1 min-w-0">
-                    <h3
-                      class="text-[14px] font-semibold leading-snug line-clamp-2"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      {article.title.replace('📢 ', '')}
-                    </h3>
-                    <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                      <span
-                        class="text-[11px] font-semibold"
-                        style={{ color: 'var(--text-secondary)' }}
-                      >
-                        {article.source}
-                      </span>
-                      <span
-                        class="w-0.5 h-0.5 rounded-full"
-                        style={{ background: 'var(--text-tertiary)' }}
-                      />
-                      <span
-                        class="text-[10px]"
-                        style={{ color: 'var(--text-tertiary)' }}
-                      >
-                        {article.time}
-                      </span>
-                      <span
-                        class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                        style={{
-                          'background-color': (article.biasColor || '#8A8D97') + '20',
-                          color: article.biasColor || '#8A8D97',
-                        }}
-                      >
-                        {article.bias}
-                      </span>
-                    </div>
-                  </div>
-                  <MaterialIcon name="chevron_right" size="lg" class="text-lg self-center opacity-60 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
-                </button>
-              </li>
-            )}
-          </For>
-        </ul>
+        <p
+          class="text-[11px] mb-3"
+          style={{ color: 'var(--text-tertiary)' }}
+        >
+          Deslizá horizontalmente para comparar cómo cubre cada medio
+        </p>
+        <OtrasVocesTable
+          sources={props.otherSources}
+          currentId={props.currentId}
+          onSelect={(article) => {
+            setSheetOpen(false);
+            props.onSelect?.(article);
+          }}
+        />
       </BottomSheet>
     </Show>
   );
