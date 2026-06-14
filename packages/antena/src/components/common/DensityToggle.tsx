@@ -1,4 +1,6 @@
 /** @jsxImportSource solid-js */
+import { For } from 'solid-js';
+import MaterialIcon from './MaterialIcon';
 
 export type Density = 'compact' | 'comfortable';
 

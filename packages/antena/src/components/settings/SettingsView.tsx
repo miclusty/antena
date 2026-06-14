@@ -179,6 +179,24 @@ export default function SettingsView() {
         </p>
       </header>
 
+      <Section title="Tu feed" icon="tune" description="Personalizá qué notas ves primero y de dónde.">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("antena:open-onboarding"))}
+          class="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border transition-colors text-left"
+          style={{ background: 'var(--bg-base)', 'border-color': 'var(--border-base)' }}
+        >
+          <div class="flex items-center gap-3 min-w-0">
+            <MaterialIcon name="tune" size="lg" class="text-lg shrink-0" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+            <div class="min-w-0">
+              <p class="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Ciudad, categorías y medios</p>
+              <p class="text-[11px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Elegí tu ciudad, qué temas te interesan y qué medios seguís.</p>
+            </div>
+          </div>
+          <MaterialIcon name="chevron_right" size="lg" class="text-lg shrink-0" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
+        </button>
+      </Section>
+
       <Section title="Apariencia" icon="palette">
         <Row label="Tema" description={`Actual: ${themeLabel()}`}>
           <button
@@ -373,13 +391,16 @@ export default function SettingsView() {
   );
 }
 
-function Section(props: { title: string; icon: string; children: any }) {
+function Section(props: { title: string; icon: string; children: any; description?: string }) {
   return (
     <section class="border-b border-border-base px-5 py-4">
       <h2 class="text-[10px] font-extrabold uppercase tracking-widest mb-3 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
         <MaterialIcon name={props.icon} size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
         {props.title}
       </h2>
+      <Show when={props.description}>
+        <p class="text-[11px] mb-3 -mt-2" style={{ color: 'var(--text-tertiary)' }}>{props.description}</p>
+      </Show>
       <div class="space-y-3">{props.children}</div>
     </section>
   );

@@ -1,26 +1,18 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createResource, For, Show, onMount, createMemo } from "solid-js";
+import { createSignal, createResource, For, Show, createMemo, onMount } from "solid-js";
 import { fetchCities, fetchCategories, fetchSources, followSource, type ApiSourceEntry, type ApiCategory, type ApiCity } from "../../lib/api";
 import { useHaptic } from "../../lib/haptic";
 import { toast } from "../Toast";
 import MaterialIcon from '../common/MaterialIcon';
 
-const ONBOARDED_KEY = "antena-onboarded";
+// Backwards-compat re-export: kept so any old call site
+// that still does `if (!isOnboarded())` doesn't break. The
+// new flow is organic (no auto-show). New users are always
+// "onboarded" by default — the personalization flow is
+// optional and user-initiated.
+export function isOnboarded(): boolean { return true; }
+
 const ONBOARDING_DRAFT_KEY = "antena-onboarding-draft";
-
-export function isOnboarded(): boolean {
-  if (typeof window === "undefined") return true; // SSR: pretend done
-  try { return localStorage.getItem(ONBOARDED_KEY) === "true"; }
-  catch { return true; }
-}
-
-export function markOnboarded() {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(ONBOARDED_KEY, "true");
-    localStorage.removeItem(ONBOARDING_DRAFT_KEY);
-  } catch { /* ignore */ }
-}
 
 interface Draft {
   cityId: number | null;
@@ -51,15 +43,23 @@ function writeDraft(d: Draft) {
 }
 
 interface OnboardingViewProps {
-  onComplete: (data: { cityId: number | null; categorySlugs: string[] }) => void;
-  onSkip: () => void;
+  onComplete?: (data: { cityId: number | null; categorySlugs: string[] }) => void;
+  onSkip?: () => void;
 }
 
 export default function OnboardingView(props: OnboardingViewProps) {
   const haptic = useHaptic();
+  const [visible, setVisible] = createSignal(false);
   const [step, setStep] = createSignal<1 | 2 | 3>(1);
   const [draft, setDraft] = createSignal<Draft>(readDraft());
   const [submitting, setSubmitting] = createSignal(false);
+
+  // Listen for the global event from Settings (or
+  // any other trigger). Self-controlled, no parent
+  // required.
+  onMount(() => {
+    window.addEventListener("antena:open-onboarding", () => setVisible(true));
+  });
 
   // Persist draft on every change so a refresh doesn't lose progress.
   createMemo(() => writeDraft(draft()));
@@ -87,69 +87,89 @@ export default function OnboardingView(props: OnboardingViewProps) {
     haptic.vibrate("tap");
   };
 
-  const canAdvance = () => {
-    if (step() === 1) return true; // city optional
-    if (step() === 2) return draft().categorySlugs.length >= 3;
-    if (step() === 3) return draft().followedSourceIds.length >= 2;
-    return false;
-  };
-
-  const advance = () => {
-    if (!canAdvance()) {
-      if (step() === 2) toast("Elegí al menos 3 categorías", "warning");
-      if (step() === 3) toast("Seguí al menos 2 medios", "warning");
-      return;
-    }
-    if (step() < 3) {
-      setStep((s) => ((s + 1) as 1 | 2 | 3));
-    } else {
-      finish();
-    }
-  };
-
-  const back = () => {
-    if (step() > 1) setStep((s) => ((s - 1) as 1 | 2 | 3));
-  };
-
-  const finish = async () => {
+  // Organic flow: every step is optional, no minimum
+  // category gate. The user can save partial state and
+  // come back later. Tabs at the top let you jump
+  // between Ciudad / Categorías / Medios freely.
+  const save = async () => {
     setSubmitting(true);
-    // Fire follow calls in parallel — failures are non-fatal.
     const followPromises = draft().followedSourceIds.map((id) => followSource(id).catch(() => false));
     await Promise.allSettled(followPromises);
-    markOnboarded();
     setSubmitting(false);
     haptic.vibrate("success");
-    toast("Listo, ¡bienvenido!", "info");
-    props.onComplete({ cityId: draft().cityId, categorySlugs: draft().categorySlugs });
+    toast("Preferencias guardadas", "info");
+    try { localStorage.removeItem(ONBOARDING_DRAFT_KEY); }
+    catch { /* ignore */ }
+    props.onComplete?.({ cityId: draft().cityId, categorySlugs: draft().categorySlugs });
+    setVisible(false);
   };
+
+  const cancel = () => {
+    props.onSkip?.();
+    setVisible(false);
+  };
+
+  if (!visible()) return null;
 
   return (
     <div
       class="fixed inset-0 z-[200] flex items-center justify-center px-4 py-6"
-      style={{ background: "var(--bg-base)" }}
+      style={{ background: "rgba(0,0,0,0.55)", "backdrop-filter": "blur(4px)" }}
     >
-      <div class="w-full max-w-md flex flex-col gap-5">
-        {/* Progress */}
-        <div class="flex items-center gap-2">
-          <For each={[1, 2, 3]}>
-            {(n) => (
-              <div
-                class="h-1 flex-1 rounded-full transition-colors"
-                style={{ background: n <= step() ? "var(--accent)" : "var(--border-base)" }}
-              />
+      <div
+        class="w-full max-w-md flex flex-col gap-4 rounded-2xl border p-5 max-h-[90vh] overflow-y-auto"
+        style={{ background: "var(--bg-elevated)", "border-color": "var(--border-base)" }}
+      >
+        <header class="flex items-start justify-between gap-3">
+          <div>
+            <h1 class="text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+              Personalizá tu feed
+            </h1>
+            <p class="text-xs mt-0.5" style={{ color: "var(--text-tertiary)" }}>
+              Cambialo cuando quieras desde Configuración. Cada paso es opcional.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={cancel}
+            class="shrink-0 p-2 rounded-full hover:bg-bg-hover transition-colors"
+            aria-label="Cerrar"
+          >
+            <MaterialIcon name="close" size="lg" class="text-lg" style={{ color: "var(--text-tertiary)" }} aria-hidden="true" />
+          </button>
+        </header>
+
+        {/* Tabbed navigation between the three sub-flows */}
+        <div class="flex gap-1 p-1 rounded-xl" style={{ background: "var(--bg-base)" }}>
+          <For each={[
+            { id: 1 as const, label: "Ciudad", icon: "location_on" },
+            { id: 2 as const, label: "Categorías", icon: "category" },
+            { id: 3 as const, label: "Medios", icon: "group" },
+          ]}>
+            {(t) => (
+              <button
+                type="button"
+                onClick={() => setStep(t.id)}
+                class="flex-1 flex items-center justify-center gap-1.5 min-h-[40px] rounded-lg text-xs font-semibold transition-colors"
+                style={
+                  step() === t.id
+                    ? { background: "var(--bg-elevated)", color: "var(--text-primary)" }
+                    : { color: "var(--text-tertiary)" }
+                }
+              >
+                <MaterialIcon name={t.icon} size="sm" class="text-sm" style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }} aria-hidden="true" />
+                {t.label}
+              </button>
             )}
           </For>
         </div>
 
         {/* Step 1: city */}
         <Show when={step() === 1}>
-          <StepHeader
-            step={1}
-            title="¿De dónde sos?"
-            subtitle="Vamos a priorizar las noticias de tu zona. Podés cambiarlo después."
-            icon="location_on"
-          />
-          <div class="space-y-2 max-h-[60vh] overflow-y-auto">
+          <p class="text-sm" style={{ color: "var(--text-secondary)" }}>
+            ¿De dónde querés leer noticias?
+          </p>
+          <div class="space-y-2">
             <button
               type="button"
               onClick={() => onCityPick(null)}
@@ -157,7 +177,7 @@ export default function OnboardingView(props: OnboardingViewProps) {
               style={
                 draft().cityId === null
                   ? { background: "var(--accent)", color: "#fff", "border-color": "var(--accent)" }
-                  : { background: "var(--bg-elevated)", color: "var(--text-primary)", "border-color": "var(--border-base)" }
+                  : { background: "var(--bg-base)", color: "var(--text-primary)", "border-color": "var(--border-base)" }
               }
             >
               <p class="text-sm font-semibold">Toda Argentina</p>
@@ -173,7 +193,7 @@ export default function OnboardingView(props: OnboardingViewProps) {
                     style={
                       draft().cityId === c.id
                         ? { background: "var(--accent)", color: "#fff", "border-color": "var(--accent)" }
-                        : { background: "var(--bg-elevated)", color: "var(--text-primary)", "border-color": "var(--border-base)" }
+                        : { background: "var(--bg-base)", color: "var(--text-primary)", "border-color": "var(--border-base)" }
                     }
                   >
                     <p class="text-sm font-semibold">{c.name}</p>
@@ -185,14 +205,11 @@ export default function OnboardingView(props: OnboardingViewProps) {
           </div>
         </Show>
 
-        {/* Step 2: categories */}
+        {/* Step 2: categorias */}
         <Show when={step() === 2}>
-          <StepHeader
-            step={2}
-            title="¿Qué temas te interesan?"
-            subtitle="Elegí al menos 3. Después podés cambiar."
-            icon="category"
-          />
+          <p class="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Tocá las categorías que te interesan.
+          </p>
           <div class="flex flex-wrap gap-2">
             <Show when={categories()} fallback={<Skeleton />}>
               <For each={categories()!}>
@@ -206,7 +223,7 @@ export default function OnboardingView(props: OnboardingViewProps) {
                       style={
                         active()
                           ? { background: "var(--accent)", color: "#fff", "border-color": "var(--accent)" }
-                          : { background: "var(--bg-elevated)", color: "var(--text-primary)", "border-color": "var(--border-base)" }
+                          : { background: "var(--bg-base)", color: "var(--text-primary)", "border-color": "var(--border-base)" }
                       }
                     >
                       <MaterialIcon name={c.icon} size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
@@ -217,20 +234,14 @@ export default function OnboardingView(props: OnboardingViewProps) {
               </For>
             </Show>
           </div>
-          <p class="text-[11px] text-center" style={{ color: "var(--text-tertiary)" }}>
-            {draft().categorySlugs.length} de 3+ seleccionados
-          </p>
         </Show>
 
         {/* Step 3: sources */}
         <Show when={step() === 3}>
-          <StepHeader
-            step={3}
-            title="Seguí al menos 2 medios"
-            subtitle="Así personalizamos tu feed con cobertura de fuentes que te interesan."
-            icon="group"
-          />
-          <div class="space-y-2 max-h-[50vh] overflow-y-auto">
+          <p class="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Seguí los medios que más te gusten.
+          </p>
+          <div class="space-y-2 max-h-[40vh] overflow-y-auto">
             <Show when={sources()} fallback={<Skeleton />}>
               <For each={sources()!}>
                 {(s: ApiSourceEntry) => {
@@ -243,11 +254,11 @@ export default function OnboardingView(props: OnboardingViewProps) {
                       style={
                         active()
                           ? { background: "var(--accent-muted)", "border-color": "var(--accent)" }
-                          : { background: "var(--bg-elevated)", "border-color": "var(--border-base)" }
+                          : { background: "var(--bg-base)", "border-color": "var(--border-base)" }
                       }
                     >
                       <div
-                        class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                        class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                         style={{
                           background: active() ? "var(--accent)" : "var(--bg-hover)",
                           color: active() ? "#fff" : "var(--text-secondary)",
@@ -270,62 +281,28 @@ export default function OnboardingView(props: OnboardingViewProps) {
               </For>
             </Show>
           </div>
-          <p class="text-[11px] text-center" style={{ color: "var(--text-tertiary)" }}>
-            {draft().followedSourceIds.length} de 2+ seleccionados
-          </p>
         </Show>
 
-        {/* Footer buttons */}
-        <div class="flex items-center gap-3 pt-2">
-          <Show when={step() > 1}>
-            <button
-              type="button"
-              onClick={back}
-              class="flex-1 min-h-[44px] rounded-full text-sm font-semibold"
-              style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-base)" }}
-            >
-              Atrás
-            </button>
-          </Show>
+        <footer class="flex items-center gap-3 pt-2">
           <button
             type="button"
-            onClick={advance}
+            onClick={cancel}
+            class="flex-1 min-h-[44px] rounded-full text-sm font-medium"
+            style={{ background: "transparent", color: "var(--text-tertiary)" }}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={save}
             disabled={submitting()}
             class="flex-1 min-h-[44px] rounded-full text-sm font-semibold transition-colors disabled:opacity-50"
             style={{ background: "var(--accent)", color: "#fff" }}
           >
-            {submitting() ? "Guardando…" : step() === 3 ? "Empezar" : "Siguiente"}
+            {submitting() ? "Guardando…" : "Guardar"}
           </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={props.onSkip}
-          class="text-[11px] underline self-center"
-          style={{ color: "var(--text-tertiary)" }}
-        >
-          Saltar por ahora
-        </button>
+        </footer>
       </div>
-    </div>
-  );
-}
-
-function StepHeader(props: { step: number; title: string; subtitle: string; icon: string }) {
-  return (
-    <div>
-      <div
-        class="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-        style={{ background: "var(--accent-muted)", color: "var(--accent)" }}
-      >
-        <MaterialIcon name={props.icon} size="2xl" class="text-2xl " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 28" }} aria-hidden="true" />
-      </div>
-      <h1 class="text-2xl font-bold" style={{ "font-family": "var(--font-display)", color: "var(--text-primary)" }}>
-        {props.title}
-      </h1>
-      <p class="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-        {props.subtitle}
-      </p>
     </div>
   );
 }

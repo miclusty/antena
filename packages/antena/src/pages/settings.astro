@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import SettingsView from '../components/settings/SettingsView';
+import OnboardingView from '../components/onboarding/OnboardingView';
 ---
 <Layout
   title="Configuración"
@@ -8,4 +9,5 @@ import SettingsView from '../components/settings/SettingsView';
   canonical="https://antena.com.ar/settings"
 >
   <SettingsView client:load />
+  <OnboardingView client:only="solid-js" />
 </Layout>
