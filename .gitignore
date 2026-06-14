@@ -80,3 +80,8 @@ packages/extractor/venv/
 # Playwright test artifacts
 packages/antena/test-results/
 packages/antena/playwright-report/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
