@@ -1,0 +1,295 @@
+{
+  "date": "2026-06-14T19:43:51.172189+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 4,
+  "elapsed_seconds": 253.0,
+  "retrieval_metrics_aggregate": {
+    "ndcg_at_10": 0.0,
+    "recall_at_10": 0.0,
+    "recall_at_20": 0.0,
+    "mrr": 0.0,
+    "hit_rate_at_5": 0.0,
+    "ndcg_at_5": 0.0,
+    "n_irrelevant_in_cluster": 5.5,
+    "precision_at_20": 0.0,
+    "semantic_overlap_in_cluster": {
+      "n_neighbors": 5.0,
+      "max_overlap_tokens": 3.0,
+      "n_relevant_in_cluster": 11.25,
+      "mean_overlap_tokens": 1.4
+    },
+    "hit_rate_at_1": 0.0,
+    "n_relevant_in_cluster": 8.8333,
+    "ndcg_at_20": 0.0,
+    "precision_at_10": 0.0,
+    "latency_ms_assemble": 3863.8333,
+    "precision_at_5": 0.0,
+    "recall_at_5": 0.0,
+    "n_relevant_out_of_cluster": 2.0,
+    "n_neighbor_returned": 3.3333
+  },
+  "synthesis_metrics_aggregate": {
+    "unsupported_claims_count": 6.0,
+    "faithfulness": 3.3333,
+    "source_coverage": 3.0,
+    "composite": 0.62,
+    "perspective_balance": 2.6667
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 13,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 8730,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 224167,
+        "judge_ms": 20074,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 4,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.62,
+          "reasoning": "El artículo master afirma detalles específicos como el apodo 'Tito', la ubicación exacta del cuerpo y la fecha de última aparición que no están respaldados por los chunks, los cuales solo mencionan genéricamente a un hombre o cantante enterrado en su casa. Aunque se cubren las fuentes principales sobre el hallazgo y las tres perspectivas (neutral, pro_gov, anti_gov), la perspectiva pro_gov es casi idéntica a la neutral, lo que reduce significativamente el equilibrio real entre los puntos de vista presentados."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 10,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3559,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 2
+      },
+      "synthesis": {
+        "latency_ms": 171068,
+        "judge_ms": 45837,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 2,
+          "perspective_balance": 4,
+          "unsupported_claims_count": 8,
+          "composite": 0.58,
+          "reasoning": "El artículo presenta afirmaciones específicas sobre retiradas militares, declaraciones de Trump y detalles de ataques en instalaciones médicas que no están respaldados por los chunks proporcionados. Aunque se mencionan eventos como el lanzamiento de Artemis II y las amenazas de 'Edad de Piedra' con cierta precisión basada en la evidencia, gran parte del contenido sobre diplomacia, retiradas y roles específicos de funcionarios carece de soporte directo en los textos fuente."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 0,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 6,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 0,
+        "n_relevant_out_of_cluster": 8,
+        "n_irrelevant_in_cluster": 0
+      },
+      "synthesis": {
+        "latency_ms": 1,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 44,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 5327,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 2,
+        "n_irrelevant_in_cluster": 27,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 134278,
+        "judge_ms": 2025,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "LLM call failed: LM Studio unreachable after retries. Nodes tried: ['http://192.168.31.37:1234', 'http://192.168.31.37:1234']"
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 1970,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 186044,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3591,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 121388,
+        "judge_ms": 68944,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 7,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma con certeza absoluta que se eliminan alias y códigos QR, mientras que los chunks solo confirman que no se requieren alias ni QR para las transferencias por aproximación NFC. La perspectiva pro_gov añade afirmaciones sobre liderazgo regional e infraestructura compleja que no están en la evidencia, y la anti_gov introduce preocupaciones de privacidad y concentración de poder sin respaldo textual."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

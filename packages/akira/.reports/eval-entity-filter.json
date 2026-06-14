@@ -1,0 +1,308 @@
+{
+  "date": "2026-06-14T19:38:33.185070+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 5,
+  "elapsed_seconds": 174.3,
+  "retrieval_metrics_aggregate": {
+    "mrr": 0.0,
+    "n_relevant_in_cluster": 8.8333,
+    "recall_at_20": 0.0,
+    "ndcg_at_5": 0.0,
+    "latency_ms_assemble": 5397.0,
+    "recall_at_5": 0.0,
+    "precision_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "precision_at_10": 0.0,
+    "n_irrelevant_in_cluster": 5.5,
+    "semantic_overlap_in_cluster": {
+      "n_neighbors": 5.0,
+      "n_relevant_in_cluster": 10.6,
+      "max_overlap_tokens": 3.8,
+      "mean_overlap_tokens": 1.84
+    },
+    "hit_rate_at_5": 0.0,
+    "n_relevant_out_of_cluster": 2.0,
+    "ndcg_at_20": 0.0,
+    "n_neighbor_returned": 4.1667,
+    "ndcg_at_10": 0.0,
+    "hit_rate_at_1": 0.0,
+    "precision_at_20": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "source_coverage": 2.3333,
+    "perspective_balance": 3.3333,
+    "unsupported_claims_count": 8.6667,
+    "faithfulness": 3.3333,
+    "composite": 0.6067
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 13,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 4047,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 60535,
+        "judge_ms": 44135,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 2,
+          "perspective_balance": 4,
+          "unsupported_claims_count": 16,
+          "composite": 0.58,
+          "reasoning": "La mayoría de los detalles específicos del artículo master, como el nombre 'Tito', la fecha exacta de última vista ('martes pasado') y las afirmaciones sobre la debida diligencia o la falta de protocolos, no están respaldados por ningún chunk proporcionado. Los chunks solo confirman que se halló un cuerpo en Morón y que la Justicia está investigando, pero omiten cualquier información sobre el nombre de la víctima, su cronología exacta o las opiniones específicas de vecinos sobre negligencia o inseguridad."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 10,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 1900,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 106831,
+        "judge_ms": 28863,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 2,
+          "perspective_balance": 4,
+          "unsupported_claims_count": 7,
+          "composite": 0.58,
+          "reasoning": "El artículo master afirma múltiples detalles específicos sobre ataques a instalaciones médicas, amenazas de Trump y la presencia de tropas que solo están parcialmente respaldados por los chunks disponibles. Los chunks confirman los ataques al Instituto Pasteur y la advertencia de 'Edad de Piedra', pero no mencionan la solicitud de Pezeshkian a organizaciones internacionales ni los incidentes en Bushehr o Ormuz, lo que reduce la cobertura de fuentes. Las tres perspectivas presentan argumentos coherentes con el contexto general del cluster, aunque carecen de evidencia completa para cada afirmación detallada."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 0,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 5,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 0,
+        "n_relevant_out_of_cluster": 8,
+        "n_irrelevant_in_cluster": 0
+      },
+      "synthesis": {
+        "latency_ms": 1,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 44,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 8816,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 2,
+        "n_irrelevant_in_cluster": 27,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 108617,
+        "judge_ms": 45175,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "Parse error"
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 8808,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 163456,
+        "judge_ms": 2029,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "LLM call failed: LM Studio unreachable after retries. Nodes tried: ['http://192.168.31.37:1234', 'http://192.168.31.37:1234']"
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 8806,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 53839,
+        "judge_ms": 44667,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma que Coelsa procesa todos los movimientos y que la tecnología refleja una política de inclusión financiera, afirmaciones que no están respaldadas por los chunks originales que solo mencionan el anuncio del sistema. Además, aunque se presentan tres perspectivas, las dos pro-gov y anti-gov comparten la premisa central de que Coelsa es un actor único con poder concentrado, lo que reduce significativamente el equilibrio real entre ellas."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

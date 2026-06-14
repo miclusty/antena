@@ -1,0 +1,288 @@
+{
+  "date": "2026-06-14T19:50:30.067563+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 3,
+  "elapsed_seconds": 274.6,
+  "retrieval_metrics_aggregate": {
+    "hit_rate_at_1": 0.0,
+    "precision_at_20": 0.0,
+    "n_relevant_in_cluster": 8.8333,
+    "hit_rate_at_5": 0.0,
+    "semantic_overlap_in_cluster": {
+      "max_overlap_tokens": 4.5,
+      "n_relevant_in_cluster": 10.5,
+      "n_neighbors": 5.0,
+      "mean_overlap_tokens": 2.25
+    },
+    "recall_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "n_neighbor_returned": 3.3333,
+    "recall_at_20": 0.0,
+    "n_irrelevant_in_cluster": 5.5,
+    "latency_ms_assemble": 3899.1667,
+    "ndcg_at_10": 0.0,
+    "n_relevant_out_of_cluster": 2.0,
+    "ndcg_at_20": 0.0,
+    "precision_at_10": 0.0,
+    "precision_at_5": 0.0,
+    "mrr": 0.0,
+    "ndcg_at_5": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "faithfulness": 4.0,
+    "unsupported_claims_count": 5.0,
+    "source_coverage": 3.0,
+    "perspective_balance": 2.0,
+    "composite": 0.66
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 13,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3602,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2
+      },
+      "synthesis": {
+        "latency_ms": 222354,
+        "judge_ms": 48598,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "Parse error"
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 10,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 1971,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 187752,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 0,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 0,
+        "n_relevant_out_of_cluster": 8,
+        "n_irrelevant_in_cluster": 0
+      },
+      "synthesis": {
+        "latency_ms": 1,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 44,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 5445,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 2,
+        "n_irrelevant_in_cluster": 27,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 165939,
+        "judge_ms": 2030,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "LLM call failed: LM Studio unreachable after retries. Nodes tried: ['http://192.168.31.37:1234', 'http://192.168.31.37:1234']"
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 8658,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 187801,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3712,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 149700,
+        "judge_ms": 53137,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 5,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma que la tecnología NFC permite transacciones entre cuentas bancarias y virtuales, lo cual no está respaldado por los chunks que solo mencionan transferencias entre teléfonos móviles; además, las afirmaciones sobre reducción del uso de efectivo y seguridad son interpretaciones subjetivas no presentes en la evidencia. Dos perspectivas (pro_gov y anti_gov) comparten el mismo tono positivo sin matices críticos distintos, lo que reduce el equilibrio de puntos de vista."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

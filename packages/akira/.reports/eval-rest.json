@@ -1,0 +1,302 @@
+{
+  "date": "2026-06-14T19:57:08.496337+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 5,
+  "elapsed_seconds": 318.9,
+  "retrieval_metrics_aggregate": {
+    "n_irrelevant_in_cluster": 5.5,
+    "recall_at_20": 0.0,
+    "semantic_overlap_in_cluster": {
+      "n_relevant_in_cluster": 10.25,
+      "max_overlap_tokens": 3.5,
+      "mean_overlap_tokens": 1.95,
+      "n_neighbors": 5.0
+    },
+    "hit_rate_at_1": 0.0,
+    "precision_at_5": 0.0,
+    "hit_rate_at_5": 0.0,
+    "mrr": 0.0,
+    "precision_at_20": 0.0,
+    "precision_at_10": 0.0,
+    "ndcg_at_5": 0.0,
+    "recall_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "n_relevant_in_cluster": 8.8333,
+    "n_neighbor_returned": 3.3333,
+    "ndcg_at_20": 0.0,
+    "n_relevant_out_of_cluster": 2.0,
+    "ndcg_at_10": 0.0,
+    "latency_ms_assemble": 3117.6667
+  },
+  "synthesis_metrics_aggregate": {
+    "faithfulness": 3.5,
+    "composite": 0.63,
+    "source_coverage": 3.0,
+    "perspective_balance": 2.5,
+    "unsupported_claims_count": 5.25
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 13,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 2947,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 74651,
+        "judge_ms": 30284,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 2,
+          "perspective_balance": 4,
+          "unsupported_claims_count": 4,
+          "composite": 0.58,
+          "reasoning": "El artículo introduce nombres específicos como 'Tito' y la sigla 'AMS' que no están presentes en los chunks originales, lo que reduce la fidelidad. Además, falta cobertura total sobre las fuentes, ya que muchos detalles de las perspectivas son inferencias o agregaciones no verificables en el texto base. Aunque se presentan tres perspectivas distintas (neutral, pro_gov, anti_gov), la falta de evidencia textual para sostenerlas uniformemente baja el equilibrio."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 10,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3463,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 144327,
+        "judge_ms": 49788,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 4,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 6,
+          "composite": 0.62,
+          "reasoning": "El artículo master mezcla información verificable en los chunks (ataques médicos, retórica de Trump, Artemis II) con afirmaciones específicas sobre un llamamiento del presidente iraní a organizaciones internacionales que no están respaldadas por ningún chunk. Además, las perspectivas pro_gov y anti_gov presentan interpretaciones idénticas sobre la superioridad tecnológica y el uso de logros espaciales para justificar la guerra, lo que reduce drásticamente el equilibrio entre las tres visiones."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 0,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 5,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 0,
+        "n_relevant_out_of_cluster": 8,
+        "n_irrelevant_in_cluster": 0
+      },
+      "synthesis": {
+        "latency_ms": 1,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 44,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3522,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 2,
+        "n_irrelevant_in_cluster": 27,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 138113,
+        "judge_ms": 2025,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "LLM call failed: LM Studio unreachable after retries. Nodes tried: ['http://192.168.31.37:1234', 'http://192.168.31.37:1234']"
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 5303,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 282316,
+        "judge_ms": 31306,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 4,
+          "composite": 0.66,
+          "reasoning": "El score de fidelidad es 4 porque el artículo master incluye detalles específicos (como 'ex jefe del Cuartel de Bomberos' y 'subalterna') que no están explícitamente en los chunks originales, aunque se refieren a la misma persona. La cobertura de fuentes es 3 porque falta información sobre el caso de Sergio Martínez en Río Grande en los chunks proporcionados. El balance de perspectiva es bajo (2) porque las tres perspectivas presentan casi idéntico contenido factual sin variación significativa en el tono o enfoque, lo que indica una falta de diversidad real en la narrativa."
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3466,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2
+      },
+      "synthesis": {
+        "latency_ms": 83647,
+        "judge_ms": 79976,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 7,
+          "composite": 0.66,
+          "reasoning": "El artículo es mayormente fiel a los chunks, que confirman el anuncio de Coelsa sobre transferencias NFC sin alias y el contexto del 'boom' de transferencias inmediatas, aunque algunos detalles específicos como la comparación con América Latina o la falta de regulación no están explícitamente en los textos proporcionados. La cobertura de fuentes es parcial porque los chunks solo mencionan brevemente varios medios (Alertanoticias, El Observador) sin citar todos los nombres que aparecen en el resumen del artículo master. El balance de perspectivas es deficiente ya que la perspectiva anti_gov se reduce a una sola oración sobre la falta de regulación y no desarrolla argumentos sustantivos sobre seguridad o trazabilidad como sugiere el título."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}
