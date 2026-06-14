@@ -82,7 +82,7 @@ newsRoutes.get("/feed", async (c) => {
     // Skip cache when the feed is personalized (following=true
     // or source_ids=…). Both produce per-device results that
     // should never be served to another user.
-    ttl: followingDeviceId || sourceIds ? 0 : 60,
+    ttl: followingDeviceId || sourceIds ? 0 : 30,
     swr: followingDeviceId || sourceIds ? 0 : 300,
   })(c.req.raw);
 });
@@ -179,4 +179,9 @@ newsRoutes.get("/:id/cluster", async (c) => {
     return c.json({ cluster_id: news.cluster_id, news: cluster });
   }, { ttl: 300, swr: 0 })(c.req.raw);
 });
-# Cache-bust: 2026-06-14T11:43:41Z
+
+// Note: the /api/news/feed endpoint has a 60s TTL + 300s SWR
+// cache. After syncing new clusters to D1, callers may need
+// to wait ~5 min for the edge cache to expire. We do not
+// bypass the cache because the D1 reads are slow enough
+// to merit caching for normal traffic.
