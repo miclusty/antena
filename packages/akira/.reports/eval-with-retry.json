@@ -1,0 +1,314 @@
+{
+  "date": "2026-06-14T18:49:23.491764+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 5,
+  "elapsed_seconds": 440.1,
+  "retrieval_metrics_aggregate": {
+    "precision_at_10": 0.0,
+    "recall_at_20": 0.0,
+    "hit_rate_at_1": 0.0,
+    "ndcg_at_10": 0.0,
+    "ndcg_at_20": 0.0,
+    "semantic_overlap_in_cluster": {
+      "max_overlap_tokens": 3.3333,
+      "n_neighbors": 5.0,
+      "n_relevant_in_cluster": 10.6667,
+      "mean_overlap_tokens": 1.7
+    },
+    "n_relevant_in_cluster": 10.6667,
+    "latency_ms_assemble": 9410.5,
+    "precision_at_20": 0.0,
+    "recall_at_10": 0.0,
+    "n_irrelevant_in_cluster": 7.8333,
+    "recall_at_5": 0.0,
+    "ndcg_at_5": 0.0,
+    "mrr": 0.0,
+    "n_neighbor_returned": 5.0,
+    "n_relevant_out_of_cluster": 0.1667,
+    "precision_at_5": 0.0,
+    "hit_rate_at_5": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "unsupported_claims_count": 2.6667,
+    "composite": 0.66,
+    "faithfulness": 4.0,
+    "source_coverage": 3.0,
+    "perspective_balance": 2.0
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 14,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7199,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 3,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 191541,
+        "judge_ms": 50856,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "Parse error"
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 9197,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 122516,
+        "judge_ms": 32557,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "El artículo respalda bien los ataques a instalaciones médicas y la advertencia de Trump sobre la 'Edad de Piedra', pero inventa detalles específicos como el llamamiento del presidente iraní al jueves y la fecha exacta del día 34 sin evidencia en los chunks. Además, afirma que Trump anunció una retirada de tropas en dos o tres semanas, lo cual no aparece en ninguna fuente proporcionada."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 20,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 11948,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 12,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 1.0,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 372107,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 41,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 13864,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 13,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 13,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 169356,
+        "judge_ms": 44031,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 2,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma detalles específicos sobre la dinámica de vida diaria del régimen semiabierto y el contexto personal del encuentro entre las partes que no están respaldados por los chunks proporcionados. Aunque se cubren los hechos centrales (condena, tribunal, fecha), faltan citas textuales para las afirmaciones más detalladas sobre el proceso judicial y la biografía de la denunciante."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7127,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 329494,
+        "judge_ms": 103424,
+        "judge": {
+          "faithfulness": 0,
+          "source_coverage": 0,
+          "perspective_balance": 0,
+          "unsupported_claims_count": 0,
+          "composite": 0.0,
+          "reasoning": "Parse error"
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7128,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 79426,
+        "judge_ms": 90272,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma que Coelsa es el 'procesador centralizado' de todos los movimientos, lo cual contradice directamente a los chunks que describen a Coelsa simplemente como la cámara de compensación donde pasan los movimientos. Además, las afirmaciones sobre la eliminación total de opciones tradicionales y la reducción de competencia no están respaldadas por ninguna fuente citada en los chunks. Aunque se cubren bien los hechos básicos del lanzamiento NFC, la falta de evidencia para las interpretaciones sistémicas profundas baja el puntaje general."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

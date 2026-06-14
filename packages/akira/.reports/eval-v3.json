@@ -1,0 +1,321 @@
+{
+  "date": "2026-06-14T18:58:11.668663+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 6,
+  "elapsed_seconds": 420.8,
+  "retrieval_metrics_aggregate": {
+    "precision_at_20": 0.0,
+    "n_relevant_out_of_cluster": 0.1667,
+    "precision_at_10": 0.0,
+    "n_relevant_in_cluster": 10.6667,
+    "ndcg_at_5": 0.0,
+    "ndcg_at_20": 0.0,
+    "precision_at_5": 0.0,
+    "recall_at_20": 0.0,
+    "latency_ms_assemble": 8887.0,
+    "mrr": 0.0,
+    "recall_at_10": 0.0,
+    "n_irrelevant_in_cluster": 7.8333,
+    "semantic_overlap_in_cluster": {
+      "n_relevant_in_cluster": 10.6667,
+      "n_neighbors": 5.0,
+      "mean_overlap_tokens": 1.7,
+      "max_overlap_tokens": 3.3333
+    },
+    "n_neighbor_returned": 5.0,
+    "ndcg_at_10": 0.0,
+    "recall_at_5": 0.0,
+    "hit_rate_at_5": 0.0,
+    "hit_rate_at_1": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "perspective_balance": 3.0,
+    "faithfulness": 3.6667,
+    "unsupported_claims_count": 4.8333,
+    "source_coverage": 3.3333,
+    "composite": 0.6867
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 14,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12669,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 3,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 365657,
+        "judge_ms": 42454,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 2,
+          "perspective_balance": 4,
+          "unsupported_claims_count": 5,
+          "composite": 0.58,
+          "reasoning": "El artículo master afirma que se inició una investigación y se abrió una negociación, pero los chunks solo confirman que la Justicia investiga y que se frenaron medidas para abrir una conciliación obligatoria, sin especificar si ya hubo una negociación abierta ni detalles sobre el estado de las demandas. Además, las perspectivas pro_gov y anti_gov introducen juicios de valor sobre la 'capacidad del Estado' o la 'evasión de responsabilidades', conceptos que no están respaldados por los textos fuente neutrales."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 4391,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 106781,
+        "judge_ms": 58980,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 4,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 5,
+          "composite": 0.62,
+          "reasoning": "El artículo master afirma hechos específicos como la solicitud del presidente iraní a organizaciones sanitarias y detalles sobre intercambios diplomáticos en el estrecho de Ormuz que no están respaldados por los chunks, limitando su fidelidad. Aunque se citan eventos verificados como el lanzamiento de Artemis II y los ataques al Instituto Pasteur, la cobertura es parcial al omitir contextos más amplios presentes en otros chunks. Las tres perspectivas presentan narrativas contradictorias sobre la estrategia de Trump (retirada vs. escalada), pero la perspectiva anti_gov se basa casi exclusivamente en la misma fuente que pro_gov, lo que reduce el equilibrio real."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 20,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 6376,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 12,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 1.0,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 313397,
+        "judge_ms": 53767,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 5,
+          "unsupported_claims_count": 6,
+          "composite": 0.78,
+          "reasoning": "La mayoría de las afirmaciones específicas sobre el apoyo de Milei, la fecha del 31 de julio para la declaración jurada y las críticas al periodismo están respaldadas por varios chunks, pero faltan detalles concretos sobre los mensajes en redes sociales y la acusación constitucional específica. La perspectiva balance es alta porque se presentan claramente tres puntos de vista distintos sin que coincidan en sus conclusiones principales."
+        }
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 41,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 4341,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 13,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 13,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 187958,
+        "judge_ms": 50350,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 4,
+          "composite": 0.66,
+          "reasoning": "La mayoría de las afirmaciones específicas sobre el rechazo de recursos, la aplicación estricta de la ley y la autoridad de los tribunales no están respaldadas en los chunks, que solo confirman la condena y el régimen semiabierto. Aunque se cubren varios titulares y detalles del caso (fecha 2018, seis años), faltan citas textuales para las declaraciones sobre la autoridad judicial o la aplicación estricta de la ley. La perspectiva balance es baja porque los chunks no ofrecen ninguna visión crítica o cuestionadora del proceso judicial, limitándose a reportar el hecho sin analizar la transparencia o efectividad mencionada en la perspectiva anti_gov."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12732,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 127418,
+        "judge_ms": 105623,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 5,
+          "perspective_balance": 3,
+          "unsupported_claims_count": 0,
+          "composite": 0.82,
+          "reasoning": "El artículo master es altamente fiel a los chunks, cubriendo casi todos los casos específicos mencionados en las fuentes originales con detalles precisos. Las tres perspectivas están equilibradas: la neutral resume los hechos, la pro_gov destaca la acción judicial y la anti_gov cuestiona la gestión pública sin contradecir los datos fácticos presentados."
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12813,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 82524,
+        "judge_ms": 138638,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 9,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma con certeza que se eliminan alias y códigos QR, lo cual está respaldado por varios chunks, pero no menciona explícitamente la eliminación de CBU ni el uso exclusivo de NFC en todas las transacciones, limitando la cobertura total. Las tres perspectivas presentan argumentos distintos (neutral, pro_gov, anti_gov), pero los chunks solo proporcionan evidencia neutra sobre el lanzamiento del sistema, dejando sin respaldo las afirmaciones específicas de cada postura política. Por lo tanto, se descuenta puntos por falta de mención a CBU y por la ausencia de fuentes que validen las críticas o beneficios políticos."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

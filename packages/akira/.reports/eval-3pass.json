@@ -1,0 +1,321 @@
+{
+  "date": "2026-06-14T18:36:10.863863+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 6,
+  "elapsed_seconds": 410.1,
+  "retrieval_metrics_aggregate": {
+    "n_relevant_out_of_cluster": 0.1667,
+    "n_relevant_in_cluster": 10.6667,
+    "semantic_overlap_in_cluster": {
+      "mean_overlap_tokens": 1.7,
+      "n_relevant_in_cluster": 10.6667,
+      "max_overlap_tokens": 3.3333,
+      "n_neighbors": 5.0
+    },
+    "ndcg_at_20": 0.0,
+    "recall_at_20": 0.0,
+    "recall_at_5": 0.0,
+    "n_neighbor_returned": 5.0,
+    "n_irrelevant_in_cluster": 7.8333,
+    "hit_rate_at_5": 0.0,
+    "ndcg_at_10": 0.0,
+    "precision_at_5": 0.0,
+    "latency_ms_assemble": 12918.3333,
+    "recall_at_10": 0.0,
+    "precision_at_20": 0.0,
+    "mrr": 0.0,
+    "ndcg_at_5": 0.0,
+    "hit_rate_at_1": 0.0,
+    "precision_at_10": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "perspective_balance": 2.8333,
+    "unsupported_claims_count": 4.3333,
+    "composite": 0.66,
+    "source_coverage": 3.0,
+    "faithfulness": 3.6667
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 14,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12888,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 3,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 265823,
+        "judge_ms": 59842,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 2,
+          "perspective_balance": 4,
+          "unsupported_claims_count": 2,
+          "composite": 0.58,
+          "reasoning": "El artículo afirma detalles específicos como la edad exacta (58 años), la fecha de última vista ('martes pasado') y el estado mental del segundo fallecido, los cuales no se encuentran en los chunks proporcionados. Aunque los chunks confirman que se hallaron cuerpos en Morón y La Plata, carecen de la información demográfica y temporal detallada que sustenta las afirmaciones más fuertes del texto."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12973,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 141223,
+        "judge_ms": 141125,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 4,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 4,
+          "composite": 0.62,
+          "reasoning": "El artículo master mezcla información verificable en los chunks (ataques médicos, día 34/35, retórica 'Edad de Piedra') con afirmaciones específicas que no están respaldadas por la evidencia disponible, como el llamamiento del presidente iraní o detalles sobre la destitución real de Bondi. Además, aunque se presentan tres perspectivas, dos de ellas (pro_gov y anti_gov) comparten casi idénticas afirmaciones sobre los ataques a instalaciones médicas y la retórica de Trump, lo que reduce significativamente el equilibrio real entre las voces."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 20,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 13050,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 12,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 1.0,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 363184,
+        "judge_ms": 33860,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 5,
+          "unsupported_claims_count": 2,
+          "composite": 0.78,
+          "reasoning": "La mayoría de las afirmaciones sobre la postura de Milei y la fecha límite para la declaración jurada están respaldadas por los chunks, aunque la mención específica de la fecha (31 de julio) no aparece explícitamente en el texto fuente. La cobertura es parcial ya que se omiten detalles sobre las denuncias específicas de Bullrich y la naturaleza exacta de los gastos cuestionados. Las tres perspectivas están bien equilibradas y reflejan claramente los diferentes ángulos sin contradicciones internas."
+        }
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 41,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12887,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 13,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 13,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 84268,
+        "judge_ms": 259380,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 6,
+          "composite": 0.66,
+          "reasoning": "El artículo master es mayormente fiel a los hechos centrales reportados en los chunks (condena de seis años, régimen semiabierto, celebración de Thelma Fardin), pero introduce detalles específicos como la fecha exacta del hecho y el rechazo de recursos que no están explícitamente detallados en las fuentes. La cobertura de fuentes es parcial ya que muchos chunks son irrelevantes o referencias a otros temas locales, limitando la verificación completa. El balance de perspectivas es deficiente porque los chunks no contienen información alguna para sustentar la perspectiva anti_gov, haciendo que esa visión sea puramente inventada por el artículo."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12883,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 122874,
+        "judge_ms": 29694,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 2,
+          "composite": 0.66,
+          "reasoning": "El artículo presenta afirmaciones sobre casos específicos (como la extorsión en Punta Alta y el abuso en Río Grande) que no tienen respaldo directo en los chunks proporcionados, lo que reduce la fidelidad a la evidencia disponible. Además, las tres perspectivas tienden a repetir los mismos hechos sin aportar contrastes significativos ni matices distintos, resultando en un equilibrio deficiente entre ellas."
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12829,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 174376,
+        "judge_ms": 54540,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 10,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma múltiples beneficios (modernización, inclusión financiera, seguridad) y riesgos (vulnerabilidades, falta de regulación) que no tienen respaldo en los chunks proporcionados, los cuales solo confirman el anuncio técnico de Coelsa sobre NFC sin alias. La perspectiva balance es baja porque dos de las tres miradas (neutral y pro_gov) coinciden en la neutralidad técnica del evento, mientras que la anti_gov aporta análisis crítico que no está presente en la evidencia fragmentada."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

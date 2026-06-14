@@ -137,17 +137,32 @@ class RAGContext:
         bias_text = self._format_bias()
         entity_text = self._format_entities()
 
-        # Detect non-political clusters so we can adjust the
-        # narrative framing. We ALWAYS emit the same 3 JSON keys
-        # ('neutral', 'pro_gov', 'anti_gov') — that's a fixed
-        # contract with the database schema in master_articles.
-        # What changes is the *label* the LLM writes in the
-        # 'resumen' header: for political clusters, pro_gov/
-        # anti_gov map to "encuadre oficialista" vs "encuadre
-        # opositor"; for non-political clusters they map to
-        # "enfoque de fuentes oficiales" vs "enfoque crítico"
-        # (same shape, no propaganda, just different framing
-        # language that won't push the LLM to invent politics).
+        system = self._build_system_prompt(
+            articles_text=articles_text, related_text=related_text,
+            bias_text=bias_text, entity_text=entity_text,
+        )
+        user = self._build_user_prompt(
+            articles_text=articles_text, related_text=related_text,
+            bias_text=bias_text, entity_text=entity_text,
+        )
+        return [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
+
+    def _build_system_prompt(
+        self,
+        articles_text: str = "",
+        related_text: str = "",
+        bias_text: str = "",
+        entity_text: str = "",
+        perspective: Optional[str] = None,
+    ) -> str:
+        """Build a system prompt. If `perspective` is None, build
+        the default 3-perspective prompt. If perspective is
+        'neutral' / 'pro_gov' / 'anti_gov', build a single-
+        perspective prompt that asks the LLM to focus on that
+        one viewpoint (used by 3-pass self-consistency)."""
         bias = self.bias_distribution
         is_political = (bias.get("pro", 0) + bias.get("anti", 0)) > 0
         if is_political:
@@ -163,23 +178,103 @@ class RAGContext:
                 "centrado en los afectados o versiones alternativas)"
             )
 
-        system = (
-            "Sos un asistente editorial que escribe artículos balanceados "
-            "sobre noticias argentinas. Respondé ÚNICAMENTE con JSON válido, "
-            "sin texto antes ni después. El JSON tiene exactamente 3 claves: "
-            f"'neutral', 'pro_gov', 'anti_gov'. Las dos últimas son: {framing}. "
-            "Cada una con 'titulo' (string) y 'resumen' (string, 200-400 palabras). "
-            "El neutral debe ser estrictamente balanceado, sin adjetivos "
-            "valorativos. Las otras dos deben reflejar encuadres claramente "
-            "distintos y reconocibles como tales — no propaganda. CRÍTICO: "
-            "usá SOLO la información del CONTEXTO. NO inventes hechos, "
-            "personas, lugares ni organizaciones que no aparezcan explícitamente "
-            "en el CONTEXTO o en ENTIDADES. Si el contexto no menciona algo, "
-            "NO lo menciones. Es preferible un resumen más corto pero exacto "
-            "a uno largo con alucinaciones."
-        )
+        if perspective is None:
+            # Default 3-perspective prompt (1 LLM call)
+            return (
+                "Sos un asistente editorial que escribe artículos balanceados "
+                "sobre noticias argentinas. Respondé ÚNICAMENTE con JSON válido, "
+                "sin texto antes ni después. El JSON tiene exactamente 3 claves: "
+                f"'neutral', 'pro_gov', 'anti_gov'. Las dos últimas son: {framing}. "
+                "Cada una con 'titulo' (string) y 'resumen' (string, 200-400 palabras). "
+                "El neutral debe ser estrictamente balanceado, sin adjetivos "
+                "valorativos. Las dos últimas deben reflejar encuadres claramente "
+                "distintos y reconocibles como tales — no propaganda. pro_gov y "
+                "anti_gov NO pueden ser el mismo texto con 1-2 palabras cambiadas; "
+                "deben destacar hechos distintos o usar tonos opuestos sobre "
+                "el mismo hecho. CRÍTICO: usá SOLO la información del CONTEXTO. "
+                "NO inventes hechos, personas, lugares ni organizaciones que no "
+                "aparezcan explícitamente en el CONTEXTO o en ENTIDADES."
+            )
+        elif perspective == "neutral":
+            return (
+                "Sos un periodista argentino que escribe el resumen NEUTRAL "
+                "de un evento. Tu trabajo es estrictamente informativo: "
+                "presentás los hechos del CONTEXTO sin tomar partido, sin "
+                "adjetivos valorativos, sin encuadre ideológico. Respondé "
+                "con JSON válido: {\"titulo\": \"...\", \"resumen\": \"...\"}. "
+                "El resumen debe ser 200-400 palabras. CRÍTICO: usá SOLO "
+                "la información del CONTEXTO. NO inventes hechos, personas, "
+                "lugares ni organizaciones que no aparezcan explícitamente en "
+                "el CONTEXTO o en ENTIDADES. Si el CONTEXTO no menciona algo, "
+                "NO lo menciones."
+            )
+        elif perspective == "pro_gov":
+            if is_political:
+                role = "escribís desde la perspectiva del GOBIERNO OFICIAL"
+                guidance = (
+                    "Destacá los logros y decisiones positivas del gobierno. "
+                    "Usá lenguaje positivo/constructivo sobre el actor oficial. "
+                    "Si el CONTEXTO tiene hechos positivos para el gobierno, "
+                    "resaltalos. Si tiene críticos, mencionalos brevemente sin "
+                    "enfatizar. NO inventes logros que no estén en el CONTEXTO."
+                )
+            else:
+                role = "escribís desde la perspectiva de fuentes OFICIALES/AUTORIDADES"
+                guidance = (
+                    "Presentá la posición institucional. Usá lenguaje que respete "
+                    "la versión oficial. Si el CONTEXTO tiene declaraciones de "
+                    "autoridades, citá textualmente. Si hay otras versiones en el "
+                    "CONTEXTO, mencionalas brevemente como 'versiones alternativas'. "
+                    "NO inventes declaraciones oficiales."
+                )
+            return (
+                f"Sos un periodista argentino que {role}. Tu trabajo es "
+                f"encuadrar la noticia desde esta perspectiva. {guidance} "
+                "Respondé con JSON válido: {\"titulo\": \"...\", \"resumen\": \"...\"}. "
+                "El resumen debe ser 200-400 palabras. CRÍTICO: usá SOLO la "
+                "información del CONTEXTO. NO inventes hechos, personas, "
+                "lugares ni organizaciones que no aparezcan explícitamente en "
+                "el CONTEXTO o en ENTIDADES."
+            )
+        elif perspective == "anti_gov":
+            if is_political:
+                role = "escribís desde la perspectiva CRÍTICA/OPOSITORA al gobierno"
+                guidance = (
+                    "Destacá las falencias, contradicciones y aspectos negativos "
+                    "del gobierno. Usá lenguaje crítico/escéptico. Si el CONTEXTO "
+                    "tiene hechos críticos para el gobierno, resaltalos. Si tiene "
+                    "positivos, mencionalos brevemente. NO inventes críticas que "
+                    "no estén en el CONTEXTO."
+                )
+            else:
+                role = "escribís desde la perspectiva CRÍTICA/ESCÉPTICA de fuentes independientes"
+                guidance = (
+                    "Cuestioná la versión oficial. Si el CONTEXTO tiene versiones "
+                    "alternativas a la oficial, priorizá esas. Si hay afectados "
+                    "o víctimas, centrate en su perspectiva. Usá lenguaje que "
+                    "desconfíe de la narrativa institucional. NO inventes "
+                    "denuncias o afectados que no estén en el CONTEXTO."
+                )
+            return (
+                f"Sos un periodista argentino que {role}. Tu trabajo es "
+                f"encuadrar la noticia desde esta perspectiva. {guidance} "
+                "Respondé con JSON válido: {\"titulo\": \"...\", \"resumen\": \"...\"}. "
+                "El resumen debe ser 200-400 palabras. CRÍTICO: usá SOLO la "
+                "información del CONTEXTO. NO inventes hechos, personas, "
+                "lugares ni organizaciones que no aparezcan explícitamente en "
+                "el CONTEXTO o en ENTIDADES."
+            )
+        else:
+            raise ValueError(f"unknown perspective: {perspective}")
 
-        user = (
+    def _build_user_prompt(
+        self,
+        articles_text: str,
+        related_text: str,
+        bias_text: str,
+        entity_text: str,
+    ) -> str:
+        return (
             f"## CONTEXTO — {len(self.cluster_articles)} noticias del mismo evento:\n"
             f"{articles_text}\n\n"
             f"## RELACIONADO — noticias similares y entidades vinculadas:\n"
@@ -193,16 +288,32 @@ class RAGContext:
             f"```json``` ni explicaciones."
         )
 
-        return [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ]
-
     def _format_articles(self) -> str:
         """Format the cluster's articles for the prompt. Sorted by
-        bias so the LLM sees the bias spectrum explicitly."""
+        bias so the LLM sees the bias spectrum explicitly.
+
+        Cluster filtering: if the cluster has at least 4 cards
+        with bias_score != 0 (i.e., at least 4 articles that the
+        bias detector actually scored), we DROMP the
+        bias_score=0 articles. Rationale: those are the
+        articles that never got LLM-analyzed (or were scored
+        as neutral by the keyword-only bias detector), and
+        including them in the synthesis context just adds
+        noise — they're typically off-topic cards that the
+        clusterer incorrectly grouped with the core event.
+        If the cluster has fewer than 4 scored articles, we
+        keep them all (we have no signal to filter on).
+        """
+        scored = [a for a in self.cluster_articles if a.get("bias_score", 0.0) != 0.0]
+        if len(scored) >= 4:
+            articles_to_use = scored
+            filter_note = f" (filtrado: {len(self.cluster_articles) - len(scored)} cards sin bias_score excluidas)"
+        else:
+            articles_to_use = self.cluster_articles
+            filter_note = ""
+
         sorted_articles = sorted(
-            self.cluster_articles,
+            articles_to_use,
             key=lambda a: a.get("bias_score", 0.0),
         )
         lines = []
@@ -212,7 +323,8 @@ class RAGContext:
             title = (a.get("title") or "").strip()
             summary = (a.get("summary") or "").strip()[:400]
             lines.append(f"{i}. [{tag} bias={bias:+.2f}] {title}\n   {summary}")
-        return "\n\n".join(lines) if lines else "(sin artículos)"
+        result = "\n\n".join(lines) if lines else "(sin artículos)"
+        return result + filter_note
 
     def _format_related(self) -> str:
         parts = []
@@ -308,7 +420,22 @@ class RAGEngine:
         return ctx
 
     def synthesize(self, cluster_id: str) -> Optional[SynthesizedPerspectives]:
-        """Full RAG pipeline: assemble context → prompt LLM → parse."""
+        """Full RAG pipeline: assemble context → prompt LLM → parse.
+
+        This is the 1-pass version: 1 LLM call that produces all
+        3 perspectives at once. Cheaper than synthesize_3pass
+        but the perspectives tend to be similar (the LLM writes
+        them in a single pass with shared wording). The eval
+        showed perspective_balance=2.6/5 with this approach.
+
+        We tried an auto-retry (max_retries=1 with temperature
+        0.5 on near-duplicate outputs) but it HURT
+        perspective_balance (2.6 → 2.0) because the LLM
+        became more "creative" but the perspectives were
+        less balanced (one short, one long, etc). Removed
+        to keep the eval signal clean. If a caller wants
+        explicit retry, they can wrap this in their own loop.
+        """
         ctx = self.assemble(cluster_id)
         if not ctx.cluster_articles:
             logger.info(f"synth_skip cluster={cluster_id} reason=empty_cluster")
@@ -343,6 +470,203 @@ class RAGEngine:
         self._log_query(perspectives)
         return perspectives
 
+    def synthesize_3pass(
+        self, cluster_id: str, concurrency: int = 3
+    ) -> Optional[SynthesizedPerspectives]:
+        """3-pass self-consistency synthesis (design doc §4.3).
+
+        Each perspective gets its OWN LLM call with a perspective-
+        specific system prompt. This forces the LLM to commit
+        to a single viewpoint per call instead of trying to
+        write 3 perspectives at once (where it tends to write
+        the same text with 1-2 word changes).
+
+        Pipeline:
+          1. assemble() the cluster context
+          2. Launch 3 LLM calls in parallel: one for neutral,
+             one for pro_gov, one for anti_gov. Each call has
+             a system prompt that locks the LLM into that
+             perspective and user prompt that includes the
+             CONTEXTO + RELACIONADO + SESGO + ENTIDADES.
+          3. Parse each call's JSON. If a call fails, fall back
+             to the 1-pass synth for that perspective only
+             (best-effort).
+          4. Compose the SynthesizedPerspectives result from
+             the 3 individual outputs.
+
+        Trade-off: 3 LLM calls vs 1, so 3x slower per cluster.
+        For 1,167 clusters that's ~5h vs ~2h. The design doc
+        §9.1 budget allows this for nightly batch; for
+        on-demand, use 1-pass.
+
+        Eval results vs 1-pass (6-cluster golden set):
+          + perspective_balance: +0.2 (the 3 perspectives
+            are genuinely different — judge saw distinct
+            tones and content)
+          - faithfulness: -0.3 (3 independent LLM calls
+            = 3 chances to hallucinate; the cluster filter
+            doesn't help when each call is independent)
+          composite: -0.02 (roughly a wash)
+
+        Recommendation: use 1-pass by default, this 3-pass
+        when you specifically need distinct perspectives
+        (e.g. for the "perspectivas" UI section). Both
+        paths are exposed so callers can pick.
+
+        Important: this 3-pass version was tested and FAILED
+        to beat 1-pass on the 6-cluster golden set. The
+        LLM's bias toward agreement is hard to break with
+        system prompt alone. A more productive direction
+        is to improve the clusterer (G1) so that the 1-pass
+        prompt has more distinct source material to work
+        with. Keeping this method around as an opt-in for
+        callers who want explicit perspective control.
+        """
+        import concurrent.futures
+
+        ctx = self.assemble(cluster_id)
+        if not ctx.cluster_articles:
+            logger.info(f"synth3p_skip cluster={cluster_id} reason=empty_cluster")
+            return None
+        # _format_* are methods on RAGContext (not on RAGEngine),
+        # so we call them via the ctx object.
+        articles_text = ctx._format_articles()
+        related_text = ctx._format_related()
+        bias_text = ctx._format_bias()
+        entity_text = ctx._format_entities()
+
+        # Build the shared user prompt (CONTEXTO + RELACIONADO + ...)
+        user_prompt = ctx._build_user_prompt(
+            articles_text=articles_text,
+            related_text=related_text,
+            bias_text=bias_text,
+            entity_text=entity_text,
+        )
+
+        def call_perspective(perspective: str) -> Tuple[str, Optional[Dict]]:
+            """One LLM call for one perspective. Returns
+            (perspective_name, parsed_dict_or_None)."""
+            system = ctx._build_system_prompt(perspective=perspective)
+            messages = [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_prompt},
+            ]
+            try:
+                raw = self.lm.chat(
+                    messages, model=RAG_MODEL, max_tokens=800, temperature=0.2
+                )
+            except LMStudioError as e:
+                logger.warning(f"synth3p_lm_failed perspective={perspective} err={e}")
+                return (perspective, None)
+            # Each call returns just one key (the perspective's
+            # own). We parse it and wrap into a dict that
+            # mimics the 1-pass output shape.
+            text = raw.strip()
+            text = re.sub(r"^```(?:json)?\s*", "", text)
+            text = re.sub(r"\s*```$", "", text)
+            start = text.find("{")
+            end = text.rfind("}")
+            if start < 0:
+                return (perspective, None)
+            try:
+                data = json.loads(text[start : end + 1] if end > start else text[start:])
+            except json.JSONDecodeError:
+                # Repair: append } if truncated
+                if end <= start:
+                    try:
+                        data = json.loads(text[start:] + "}")
+                    except json.JSONDecodeError:
+                        return (perspective, None)
+                else:
+                    return (perspective, None)
+            if not isinstance(data, dict):
+                return (perspective, None)
+            # The single-perspective LLM call returns a flat
+            # dict {titulo, resumen} or a nested one. Accept
+            # both and normalize.
+            if "titulo" in data and "resumen" in data:
+                return (perspective, {"titulo": data["titulo"], "resumen": data["resumen"]})
+            # Maybe it's wrapped: {"neutral": {"titulo", "resumen"}}
+            for k, v in data.items():
+                if isinstance(v, dict) and "titulo" in v and "resumen" in v:
+                    return (perspective, {"titulo": v["titulo"], "resumen": v["resumen"]})
+            return (perspective, None)
+
+        # Launch the 3 perspective calls in parallel. The
+        # LMStudioClient's multi-node LB will distribute the
+        # load across both Macs automatically.
+        t0 = time.monotonic()
+        results: Dict[str, Optional[Dict]] = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as ex:
+            futures = {
+                ex.submit(call_perspective, p): p
+                for p in ("neutral", "pro_gov", "anti_gov")
+            }
+            for fut in concurrent.futures.as_completed(futures):
+                perspective, data = fut.result()
+                results[perspective] = data
+        latency_ms = int((time.monotonic() - t0) * 1000)
+
+        # Fallback for failed perspectives: use the 1-pass
+        # synth's neutral/pro_gov/anti_gov outputs as fallback.
+        # This way, a 3-pass failure on one perspective doesn't
+        # kill the whole cluster.
+        failed = [p for p, d in results.items() if d is None]
+        if failed:
+            logger.info(
+                f"synth3p_partial_fail cluster={cluster_id} failed={failed} "
+                f"falling_back_to_1pass"
+            )
+            one_pass = self.synthesize(cluster_id)
+            if one_pass is None:
+                logger.error(f"synth3p_total_fail cluster={cluster_id}")
+                return None
+            # Map: results["pro_gov"] = one_pass.pro_gov etc
+            for p in failed:
+                if p == "neutral":
+                    results[p] = {"titulo": one_pass.neutral_title, "resumen": one_pass.neutral_summary}
+                elif p == "pro_gov":
+                    results[p] = {"titulo": one_pass.pro_gov_title, "resumen": one_pass.pro_gov_summary}
+                elif p == "anti_gov":
+                    results[p] = {"titulo": one_pass.anti_gov_title, "resumen": one_pass.anti_gov_summary}
+            # Use 1-pass latency as the fallback's share
+            latency_ms += one_pass.latency_ms
+
+        # All 3 perspectives are now populated. Compose.
+        # The `failed` list was filled in by the fallback path
+        # above, so we assert here to satisfy the type checker.
+        assert all(results.get(k) is not None for k in ("neutral", "pro_gov", "anti_gov")), (
+            f"synth3p_unexpected_missing_results cluster={cluster_id} results={results}"
+        )
+        # prompt_tokens is the sum across the 3 calls.
+        prompt_tokens = self._estimate_tokens([
+            {"role": "system", "content": ctx._build_system_prompt(perspective="neutral")},
+            {"role": "user", "content": user_prompt},
+        ]) * 3  # rough estimate
+        completion_tokens = sum(
+            len((d.get("resumen") or "").split()) for d in results.values() if d
+        )
+
+        # type: ignore[arg-type] — we asserted above that all 3
+        # perspectives are populated.
+        perspectives = SynthesizedPerspectives(
+            cluster_id=cluster_id,
+            neutral_title=results["neutral"]["titulo"],  # type: ignore[index]
+            neutral_summary=results["neutral"]["resumen"],  # type: ignore[index]
+            pro_gov_title=results["pro_gov"]["titulo"],  # type: ignore[index]
+            pro_gov_summary=results["pro_gov"]["resumen"],  # type: ignore[index]
+            anti_gov_title=results["anti_gov"]["titulo"],  # type: ignore[index]
+            anti_gov_summary=results["anti_gov"]["resumen"],  # type: ignore[index]
+            model=RAG_MODEL,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            latency_ms=latency_ms,
+            neighbors_used=ctx.neighbor_ids,
+            entities_used=[name for name, _ in ctx.top_entities],
+        )
+        self._log_query(perspectives)
+        return perspectives
+
     # ─── Stage A: KNN over vector store ───────────────────────
 
     # Minimum cosine similarity to accept a KNN neighbor. Below
@@ -360,25 +684,53 @@ class RAGEngine:
     # plenty. Bigger values just slow the SQL fetch.
     KNN_FETCH_LIMIT = 200
 
+    # MMR (Maximal Marginal Relevance) lambda. 1.0 = pure
+    # relevance, 0.0 = pure diversity.
+    #
+    # The eval showed MMR hurts at every lambda we tried
+    # (0.7 and 0.5) because the cluster centroids aren't
+    # tight enough — MMR reranks the top-K to be diverse
+    # FROM EACH OTHER, but in the process picks neighbors
+    # that are topically unrelated to the cluster's core
+    # event (e.g. for the Darthés cluster, MMR returned
+    # articles about the Pope, youth, communal events).
+    # Those off-topic neighbors confused the LLM and
+    # dropped faithfulness by 0.4 points.
+    #
+    # Set to 1.0 to disable MMR until the clusterer
+    # produces tighter centroids (G1 fix). At that point
+    # MMR can be re-enabled safely because the relevance
+    # of all K candidates will be high, and diversity
+    # within the top-K will be the dominant signal.
+    MMR_LAMBDA = 1.0  # disabled for now; revisit after G1
+
     def _knn_neighbors(
         self, text: str, exclude_cluster: str
     ) -> Tuple[List[str], List[str]]:
         """Embed `text`, find the top-K nearest cards in news_embeddings,
         return their IDs and a short summary for each. Excludes cards
         from the same cluster (those are already in the cluster context)
-        AND drops neighbors below KNN_MIN_SIMILARITY — these are too
-        unrelated to help the synthesis (we observed them introducing
-        off-topic content into the LLM output)."""
+        AND drops neighbors below KNN_MIN_SIMILARITY.
+
+        Selection is MMR (Maximal Marginal Relevance): among
+        candidates that pass the relevance threshold, greedily
+        pick the one that maximizes (lambda * relevance - (1-lambda)
+        * max_cosine_to_already_selected). This gives the LLM
+        diverse input — without MMR, the top-K are near-duplicates
+        and the synthesized perspectives are too similar
+        (baseline showed perspective_balance=2.67/5 without MMR).
+
+        Token-overlap filter: we require at least 1 significant
+        token shared between neighbor.title and the cluster
+        query. This stops embeddings from matching on a single
+        common word ("Argentina") in otherwise-unrelated news.
+        """
         try:
             query_vec = np.array(self.lm.embed(text), dtype=np.float32)
         except LMStudioError as e:
             logger.warning(f"knn_embed_failed: {e}")
             return [], []
         # Brute-force cosine over the full embeddings table.
-        # SQLite stores embeddings as JSON arrays. We parse on
-        # the fly. For 13k × 768 = 10M floats, ~5s in numpy on
-        # M4. If we ever need sub-second, switch to ANN
-        # (faiss / hnswlib).
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute(
                 "SELECT card_id, embedding, model FROM news_embeddings"
@@ -398,52 +750,78 @@ class RAGEngine:
         sims = (vecs @ query_vec) / (norms * qnorm)
         order = np.argsort(-sims)
         # Build a token set of the query for the second filter.
-        # We require at least 1 significant token overlap between
-        # the neighbor's title and the query. This stops embeddings
-        # from matching on a single word like "Argentina" in
-        # otherwise-unrelated news.
         query_tokens = set(_significant_tokens(text))
         cluster_card_ids = {a["id"] for a in self._fetch_cluster_articles_by_id(exclude_cluster)}
-        candidate_ids: List[Tuple[str, float]] = []
+        # Collect candidates passing relevance threshold + token filter.
+        # We store the (id, summary, vec, sim) tuple so we can do
+        # MMR reranking using the full vector.
+        candidates: List[Tuple[str, str, np.ndarray, float]] = []
         for idx in order:
             cid = ids[int(idx)]
             if cid in cluster_card_ids:
                 continue
             sim = float(sims[int(idx)])
             if sim < self.KNN_MIN_SIMILARITY:
-                break  # the rest are even lower; we can stop
-            candidate_ids.append((cid, sim))
-            if len(candidate_ids) >= self.KNN_FETCH_LIMIT:
                 break
-        if not candidate_ids:
+            candidates.append((cid, "", vecs[int(idx)], sim))
+            if len(candidates) >= self.KNN_FETCH_LIMIT:
+                break
+        if not candidates:
             return [], []
-        # Fetch titles for the candidates to apply the token filter
+        # Fetch titles+summaries to apply the token filter
         with sqlite3.connect(self.db_path) as conn:
-            placeholders = ",".join("?" * len(candidate_ids))
+            placeholders = ",".join("?" * len(candidates))
             rows2 = conn.execute(
                 f"SELECT id, title, summary FROM news_cards WHERE id IN ({placeholders})",
-                [c[0] for c in candidate_ids],
+                [c[0] for c in candidates],
             ).fetchall()
         id_to_row = {r[0]: r for r in rows2}
-        # Keep candidates with at least 1 shared significant token
-        # between neighbor.title and the cluster's query. We also
-        # accept if the title is short (could be a proper noun).
-        neighbor_ids: List[str] = []
-        neighbor_summaries: List[str] = []
-        for cid, _sim in candidate_ids:
+        # Apply token filter. We keep the candidate's vector so we
+        # can do MMR later.
+        filtered: List[Tuple[str, str, np.ndarray, float]] = []
+        for cid, _, vec, sim in candidates:
             row = id_to_row.get(cid)
             if not row:
                 continue
             _, title, summary = row
             neighbor_tokens = set(_significant_tokens(title or ""))
-            # If both queries share a token, or the neighbor
-            # has < 3 significant tokens (likely proper noun),
-            # accept it.
             if query_tokens & neighbor_tokens or len(neighbor_tokens) <= 2:
-                neighbor_ids.append(cid)
-                neighbor_summaries.append(f"{title}. {summary or ''}")
-                if len(neighbor_ids) >= self.top_k:
-                    break
+                # Build the summary string the caller wants
+                filtered.append((cid, f"{title}. {summary or ''}", vec, sim))
+        # MMR reranking. Greedy: at each step, pick the candidate
+        # with the highest MMR score = lambda * rel - (1-lambda) *
+        # max_cosine_to_already_selected. This avoids the "all 5
+        # neighbors are the same event reported 5 times" failure
+        # mode we saw in the baseline eval.
+        selected: List[Tuple[str, str, np.ndarray, float]] = []
+        selected_vecs: List[np.ndarray] = []
+        for _ in range(self.top_k):
+            if not filtered:
+                break
+            best_idx = -1
+            best_score = -float("inf")
+            for i, (cid, summary, vec, sim) in enumerate(filtered):
+                if not selected_vecs:
+                    mmr = sim
+                else:
+                    # Max cosine to any already-selected
+                    max_redundancy = 0.0
+                    for svec in selected_vecs:
+                        c = float(
+                            np.dot(vec, svec)
+                            / ((np.linalg.norm(vec) + 1e-9) * (np.linalg.norm(svec) + 1e-9))
+                        )
+                        if c > max_redundancy:
+                            max_redundancy = c
+                    mmr = self.MMR_LAMBDA * sim - (1 - self.MMR_LAMBDA) * max_redundancy
+                if mmr > best_score:
+                    best_score = mmr
+                    best_idx = i
+            cid, summary, vec, sim = filtered.pop(best_idx)
+            selected.append((cid, summary, vec, sim))
+            selected_vecs.append(vec)
+        neighbor_ids = [s[0] for s in selected]
+        neighbor_summaries = [s[1] for s in selected]
         return neighbor_ids, neighbor_summaries
 
     def _fetch_cluster_articles_by_id(self, cluster_id: str) -> List[Dict]:
@@ -594,17 +972,39 @@ class RAGEngine:
         'oficial'/'critico' labels are just narrative hints to
         the LLM; the JSON shape stays the same so the downstream
         schema in master_articles doesn't need branching).
+
+        Repair strategy: if the first json.loads fails, try
+        common repairs before giving up:
+          1. Truncated JSON (no closing brace) → append "}}"
+          2. Trailing comma → strip before }
+          3. Single-quote strings → replace with double quotes
+        If all repairs fail, return None (the caller logs
+        the bad raw and skips the cluster).
         """
         text = raw.strip()
         text = re.sub(r"^```(?:json)?\s*", "", text)
         text = re.sub(r"\s*```$", "", text)
+        # 1st attempt: extract outermost {...}
         start = text.find("{")
         end = text.rfind("}")
-        if start < 0 or end <= start:
+        if start < 0:
             return None
-        try:
-            data = json.loads(text[start : end + 1])
-        except json.JSONDecodeError:
+        candidate = text[start : end + 1] if end > start else text[start:]
+        data = self._try_parse_json(candidate)
+        if data is None:
+            # 2nd attempt: maybe the JSON was truncated mid-key —
+            # try to recover by appending a closing brace.
+            if not candidate.endswith("}"):
+                data = self._try_parse_json(candidate + "}")
+            if data is None:
+                # 3rd attempt: trailing comma before }
+                repaired = re.sub(r",(\s*[}\]])", r"\1", candidate)
+                data = self._try_parse_json(repaired)
+            if data is None:
+                # 4th attempt: single-quoted JSON (rare but happens)
+                repaired = candidate.replace("'", '"')
+                data = self._try_parse_json(repaired)
+        if data is None:
             return None
         # Validate shape
         for key in ("neutral", "pro_gov", "anti_gov"):
@@ -614,6 +1014,17 @@ class RAGEngine:
                 return None
             if "titulo" not in data[key] or "resumen" not in data[key]:
                 return None
+        return data
+
+    def _try_parse_json(self, text: str) -> Optional[Dict]:
+        """json.loads with a tight exception catch. Returns None
+        on any failure (parse error, non-dict result, etc)."""
+        try:
+            data = json.loads(text)
+        except (json.JSONDecodeError, ValueError):
+            return None
+        if not isinstance(data, dict):
+            return None
         return data
 
     def _estimate_tokens(self, messages: Sequence[Dict]) -> int:
