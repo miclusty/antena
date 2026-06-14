@@ -18,8 +18,13 @@ import { healthRoutes } from "./routes/health";
 import { synthesisRoutes } from "./routes/synthesis";
 import { followsRoutes } from "./routes/follows";
 import { handleRefreshCron } from "./crons/refresh";
+import { handleImagePipeline } from "./queues/image-pipeline";
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Module-style worker export: Hono handles `fetch`,
+// we add `scheduled` and `queue` for cron + queue
+// consumption.
 
 app.use("*", cors({
   origin: (origin) => {
@@ -82,12 +87,15 @@ app.get("/__cron/refresh", async (c) => {
   return c.json({ ok: true });
 });
 
-export default app;
-
-export async function scheduled(
-  _event: ScheduledController,
-  env: Env,
-  _ctx: ExecutionContext
-): Promise<void> {
-  await handleRefreshCron(env);
-}
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    await handleRefreshCron(env);
+  },
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    // The worker only ever produces ImagePipelineMessage,
+    // but the type signature on ExportedHandlerQueueHandler
+    // is unknown-typed. Cast to the expected shape.
+    await handleImagePipeline(batch as unknown as MessageBatch<{ type: "fetch_and_store"; hash: string; requestTime: number }>, env);
+  },
+} satisfies ExportedHandler<Env>;

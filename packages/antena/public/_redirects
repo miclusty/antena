@@ -2,12 +2,17 @@
 #
 # 1. non-www → www 301. Google penalizes duplicate content,
 #    so we canonicalize to https://www.antena.com.ar.
-# 2. Trailing-slash policy: Pages adds a trailing slash by
+# 2. /api/img/* → worker. The Pages site is static
+#    (no Astro adapter), so the image-resize proxy
+#    lives on the API worker. We 302 (not 301) so
+#    future moves don't poison the cache.
+# 3. Trailing-slash policy: Pages adds a trailing slash by
 #    default. We strip it for SEO consistency (the sitemap
 #    and canonical URLs use no trailing slash).
-# 3. /noticia/<id>/ → /noticia/<id> (same).
-# 4. /api/* and /functions/* are handled by the worker
-#    or Pages Functions; do NOT redirect those.
+# 4. /noticia/<id>/ → /noticia/<id> (same).
+# 5. /api/* and /functions/* are handled by the worker
+#    or Pages Functions; do NOT redirect those (other than
+#    the explicit /api/img/* → worker rule above).
 
 # ── non-www → www ──────────────────────────────────────────
 https://antena.com.ar/* https://www.antena.com.ar/:splat 301!
@@ -17,11 +22,8 @@ http://antena.com.ar/*  https://www.antena.com.ar/:splat 301!
 #    but explicit is better for edge cases) ────────────────
 http://www.antena.com.ar/* https://www.antena.com.ar/:splat 301!
 
-# Note: Pages serves /rss.xml, /sitemap-index.xml,
-# /llms.txt, /robots.txt, /noticia/<id> as directories
-# with index.html inside, which is why they redirect
-# to the trailing-slash form. We accept the trailing
-# slash for those XML endpoints because they're served
-# with the correct MIME type via _headers. For HTML
-# pages like /noticia/<id>/ the trailing slash is OK
-# because both forms resolve to the same content.
+# ── Image proxy ───────────────────────────────────────────
+# Frontend points directly at the API worker
+# (https://akira-api.miclusty.workers.dev/api/img?url=…)
+# using full URLs in the components. The worker has
+# CORS configured to allow https://www.antena.com.ar.

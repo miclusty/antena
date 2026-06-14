@@ -145,8 +145,8 @@ const canonical = `${SITE}/ciudad/${city}`;
         >
           {a.image_url && (
             <img
-              src={`/api/img/?url=${encodeURIComponent(a.image_url)}&w=600&q=72&fmt=webp&fit=cover`}
-              srcset={`/api/img/?url=${encodeURIComponent(a.image_url)}&w=300&q=68&fmt=webp&fit=cover 300w, /api/img/?url=${encodeURIComponent(a.image_url)}&w=600&q=72&fmt=webp&fit=cover 600w`}
+              src={`https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(a.image_url)}&w=600&q=72&fmt=webp&fit=cover`}
+              srcset={`https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(a.image_url)}&w=300&q=68&fmt=webp&fit=cover 300w, https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(a.image_url)}&w=600&q=72&fmt=webp&fit=cover 600w`}
               sizes="(max-width: 768px) 100vw, 460px"
               alt={a.title}
               width="600"

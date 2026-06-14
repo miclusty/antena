@@ -14,6 +14,7 @@ import ConnectionStatus from './components/ConnectionStatus';
 import ToastContainer from './components/Toast';
 import NewsletterSignup from './components/NewsletterSignup';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import PersonalizationBanner from './components/PersonalizationBanner';
 import PullToRefresh from './components/PullToRefresh';
 import { toast } from './components/Toast';
 import { useHaptic } from './lib/haptic';
@@ -330,10 +331,22 @@ export default function App() {
     document.documentElement.style.setProperty('--font-scale', String(readFontScale()));
     if (readDataSaver()) document.documentElement.classList.add('data-saver');
 
-    // First-run onboarding. The check is a `setSignal` (not an
-    // inline value) so we re-evaluate after the deferred read
-    // — the result is stable for the lifetime of the app.
-    if (!isOnboarded()) setOnboardingVisible(true);
+    // We used to auto-show a 3-step onboarding modal on
+    // first visit ("¿De dónde sos?" → categories → sources).
+    // That blocked the user before they ever saw a single
+    // story. We removed that flow in favor of an organic,
+    // in-context personalization:
+    //   1. Default to "Toda Argentina" (no city) on first
+    //      visit. A subtle banner offers to pin a city.
+    //   2. The filter UI (top of the feed) has a "Fijá
+    //      ciudad" / "Categorías" / "Seguí medios" link
+    //      that opens the same 3-step flow as a settings
+    //      page, not a modal.
+    //   3. Blindspot and SourceProfile get inline "Seguí"
+    //      prompts that don't require a separate flow.
+    // isOnboarded() is kept for compatibility (any other
+    // code that still references it doesn't break).
+    void isOnboarded;
 
     const urlState = parseURLState();
     if (urlState.category) setActiveCategory(urlState.category);
@@ -681,6 +694,13 @@ export default function App() {
                      />
 
                     <NewsletterSignup />
+
+                    <PersonalizationBanner
+                      showCityHint={!activeLocation() || activeLocation() === ''}
+                      showFollowHint={follows.follows.length === 0}
+                      showCategoryHint={!activeCategory() || activeCategory() === 'Todas'}
+                      onOpenOnboarding={() => setOnboardingVisible(true)}
+                    />
 
                     {/* Feed toolbar: density toggle + Mate mode */}
                     <div class="flex items-center justify-between px-4 pt-3 pb-1">

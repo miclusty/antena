@@ -281,7 +281,7 @@ export default function NewsCard(props: NewsCardProps) {
                 if (!u) return null;
                 return (
                   <img
-                    src={`/api/img/?url=${encodeURIComponent(u)}&w=260&q=72&fmt=webp&fit=cover`}
+                    src={`https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(u)}&w=260&q=72&fmt=webp&fit=cover`}
                     alt=""
                     class="w-full h-full object-cover"
                     loading="lazy"

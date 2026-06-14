@@ -189,8 +189,8 @@ const publisherLogo = `${SITE}/icons/icon.svg`;
       {article.image_url && (
         <figure class="mt-6">
           <img
-            src={`/api/img/?url=${encodeURIComponent(article.image_url)}&w=1200&q=75&fmt=webp&fit=cover`}
-            srcset={`/api/img/?url=${encodeURIComponent(article.image_url)}&w=600&q=70&fmt=webp&fit=cover 600w, /api/img/?url=${encodeURIComponent(article.image_url)}&w=1200&q=75&fmt=webp&fit=cover 1200w, /api/img/?url=${encodeURIComponent(article.image_url)}&w=1800&q=78&fmt=webp&fit=cover 1800w`}
+            src={`https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=1200&q=75&fmt=webp&fit=cover`}
+            srcset={`https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=600&q=70&fmt=webp&fit=cover 600w, https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=1200&q=75&fmt=webp&fit=cover 1200w, https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=1800&q=78&fmt=webp&fit=cover 1800w`}
             sizes="(max-width: 768px) 100vw, 920px"
             alt={article.title}
             width="1200"

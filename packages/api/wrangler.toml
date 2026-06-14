@@ -3,49 +3,49 @@ main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Production bindings. Local dev uses wrangler dev with
+# --local flag, which uses Miniflare's sqlite/R2/KV
+# emulators and doesn't need real IDs.
+#
+# The `name = "akira-api"` (no env suffix) keeps the
+# deployment at https://akira-api.miclusty.workers.dev,
+# which is the URL the frontend calls.
+
 # ── D1 ────────────────────────────────────────────────────────────
-# Local development uses Miniflare's sqlite at .wrangler/state/v3/d1/
-# For production values, see wrangler.production.toml.
+# Production database. Created 2026-06-12 in WEUR region.
 [[d1_databases]]
 binding = "DB"
-database_name = "antena"
-database_id = "local-placeholder"
+database_name = "antena-prod"
+database_id = "ef096b0b-bab6-4b0b-bf5a-30b2dd5bd17c"
+migrations_dir = "migrations"
 
-# ── KV ────────────────────────────────────────────────────────────
+# ── KV (edge cache) ───────────────────────────────────────────────
 [[kv_namespaces]]
 binding = "CACHE"
-id = "local-placeholder"
+id = "df27599523364a02bd294ff97acb1f5c"
 
-# ── R2 ────────────────────────────────────────────────────────────
-# Local mode: Miniflare's R2 emulator. Enable R2 in production
-# dashboard to use the real bucket.
+# ── R2 (image storage) ────────────────────────────────────────────
 # [[r2_buckets]]
 # binding = "IMAGES"
-# bucket_name = "antena-images-local"
+# bucket_name = "antena-images"
 
-# ── Vectorize ─────────────────────────────────────────────────────
-# Local mode: not supported. Bindings are stubbed.
+# ── Vectorize (semantic search) ───────────────────────────────────
 [[vectorize]]
 binding = "VECTORS"
-index_name = "news_embeddings_local"
+index_name = "news_embeddings"
 
-# ── Analytics Engine ──────────────────────────────────────────────
-[[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "feed_events_local"
-
-# ── Queues ────────────────────────────────────────────────────────
+# ── Queues (image pipeline) ───────────────────────────────────────
 [[queues.producers]]
 binding = "IMAGE_QUEUE"
-queue = "image-pipeline-local"
+queue = "image-pipeline"
 
 [[queues.consumers]]
-queue = "image-pipeline-local"
+queue = "image-pipeline"
 max_batch_size = 10
 max_batch_timeout = 30
 
 # ── Vars ──────────────────────────────────────────────────────────
 [vars]
-ENVIRONMENT = "local"
-API_BASE = "http://localhost:8800"
-PUBLIC_WEB_BASE = "http://localhost:4400"
+ENVIRONMENT = "production"
+API_BASE = "https://api.antena.com.ar"
+PUBLIC_WEB_BASE = "https://www.antena.com.ar"
