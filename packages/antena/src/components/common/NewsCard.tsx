@@ -61,6 +61,10 @@ export interface NewsCardProps {
   onRepost?: (id: string) => void;
   onOpenSource?: (id: string) => void;
   onViewCluster?: (id: string) => void;
+  /** Optional: when set, clicking the source avatar on the
+   *  card navigates to that source's profile page. Cards
+   *  without a known source id leave the avatar inert. */
+  onSourceClick?: (sourceId: number) => void;
 }
 
 export default function NewsCard(props: NewsCardProps) {
@@ -242,7 +246,14 @@ export default function NewsCard(props: NewsCardProps) {
             </span>
             <span class="text-text-tertiary">·</span>
           </Show>
-          <SourceLogo source={props.news.source} size={24} biasScore={props.news.biasScore} showBiasDot={false} />
+          <SourceLogo
+            source={props.news.source}
+            size={24}
+            biasScore={props.news.biasScore}
+            showBiasDot={false}
+            sourceId={props.news.sourceId ?? null}
+            onClick={props.onSourceClick}
+          />
           <span class="text-[16px] xl:text-[17px] text-text-secondary font-semibold">{props.news.source}</span>
           <span class="text-[16px] xl:text-[17px] text-text-tertiary">{ago()}</span>
           <Show when={trending()}>

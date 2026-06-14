@@ -6,6 +6,11 @@ export interface SourceLogoProps {
   biasScore?: number | null;
   size?: number;
   showBiasDot?: boolean;
+  /** When set (and `onClick` is also provided), the logo is
+   *  clickable and routes to the source profile. Inert when
+   *  null so bare logos don't navigate spuriously. */
+  sourceId?: number | null;
+  onClick?: (sourceId: number) => void;
 }
 
 function hashStr(s: string): number {
@@ -45,9 +50,15 @@ export default function SourceLogo(props: SourceLogoProps) {
   const dotSize = () => Math.max(6, Math.round(size() * 0.22));
   const dotOffset = () => Math.max(0, Math.round(size() * 0.06));
 
+  const isClickable = () => !!(props.onClick && props.sourceId);
+
   return (
     <div
-      class="relative inline-flex items-center justify-center rounded-full overflow-hidden shrink-0"
+      class={`relative inline-flex items-center justify-center rounded-full overflow-hidden shrink-0 ${isClickable() ? "cursor-pointer hover:opacity-80 active:scale-95 transition-all" : ""}`}
+      onClick={isClickable() ? (e) => { e.stopPropagation(); props.onClick!(props.sourceId!); } : undefined}
+      role={isClickable() ? "button" : undefined}
+      tabIndex={isClickable() ? 0 : undefined}
+      onKeyDown={isClickable() ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); props.onClick!(props.sourceId!); } } : undefined}
       style={{
         width: `${size()}px`,
         height: `${size()}px`,

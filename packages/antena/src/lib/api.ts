@@ -81,6 +81,12 @@ export interface FeedResponse {
   per_page: number;
   location: string | null;
   category: string | null;
+  /** Server-side timestamp of when this response was generated.
+   *  The /api/news/feed handler in routes/news.ts always sets it
+   *  (used for cache diagnostics and for the "actualizado hace X"
+   *  hint in the "estás al día" divider). Older cached responses
+   *  may omit it; treat as null in that case. */
+  served_at?: string;
 }
 
 export interface StatsResponse {
@@ -331,10 +337,16 @@ export interface ApiSourceEntry {
   url: string;
   type?: string;
   reliability_score?: number;
+  bias_score?: number;
   is_active?: number;
   news_count?: number;
   location_name?: string | null;
   province?: string | null;
+}
+
+export interface ApiSourceProfile {
+  source: ApiSourceEntry;
+  news: ApiNewsCard[];
 }
 
 export async function fetchSources(limit = 50): Promise<ApiSourceEntry[]> {
@@ -344,6 +356,16 @@ export async function fetchSources(limit = 50): Promise<ApiSourceEntry[]> {
     return (await res.json()) as ApiSourceEntry[];
   } catch {
     return [];
+  }
+}
+
+export async function fetchSourceProfile(id: number): Promise<ApiSourceProfile | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/stats/sources/${id}`);
+    if (!res.ok) return null;
+    return (await res.json()) as ApiSourceProfile;
+  } catch {
+    return null;
   }
 }
 

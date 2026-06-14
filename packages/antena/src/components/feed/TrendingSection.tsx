@@ -1,16 +1,11 @@
 /** @jsxImportSource solid-js */
-import { For, Show } from 'solid-js';
+import { For, Show, createSignal } from 'solid-js';
+import { fetchTrending } from '../../lib/api';
 
 export interface TrendingItem {
   id: string;
   title: string;
   category: string;
-}
-
-export interface TrendingSectionProps {
-  items: TrendingItem[];
-  loading: boolean;
-  onItemClick: (item: TrendingItem) => void;
 }
 
 const CAT_COLOR: Record<string, string> = {
@@ -30,29 +25,100 @@ function catColor(cat: string): string {
   return CAT_COLOR[cat] || 'var(--accent)';
 }
 
-export default function TrendingSection(props: TrendingSectionProps) {
-  const hasItems = () => !props.loading && props.items.length > 0;
-  const showSkeleton = () => props.loading && props.items.length === 0;
+type TrendingWindow = "1h" | "24h" | "7d";
+const WINDOWS: { id: TrendingWindow; label: string; hours: number }[] = [
+  { id: "1h", label: "1h", hours: 1 },
+  { id: "24h", label: "24h", hours: 24 },
+  { id: "7d", label: "7d", hours: 24 * 7 },
+];
+
+/**
+ * Self-contained trending section. Owns its own data fetch and
+ * the 1h/24h/7d tab state — the parent only needs to handle
+ * onItemClick (which opens the article).
+ */
+export default function TrendingSection(props: { onItemClick: (item: TrendingItem) => void }) {
+  const [window, setWindow] = createSignal<TrendingWindow>("24h");
+  const [items, setItems] = createSignal<TrendingItem[]>([]);
+  const [loading, setLoading] = createSignal(true);
+
+  // Refetch whenever the window changes.
+  let cancelled = false;
+  const load = async (w: TrendingWindow) => {
+    setLoading(true);
+    const hours = WINDOWS.find((x) => x.id === w)?.hours ?? 24;
+    const res = await fetchTrending(10, hours);
+    if (cancelled) return;
+    setItems(res.news.map((n) => ({ id: n.id, title: n.title, category: n.category ?? 'General' })));
+    setLoading(false);
+  };
+
+  // Use Solid's createEffect-like via signal subscription. We
+  // don't have createResource here because we want manual
+  // control over the lifecycle (cancel on window change).
+  // Use a Solid pattern: wrap in a function that's called on
+  // mount + when window() changes.
+  let mounted = false;
+  const refetch = () => load(window());
+  // Initial + reactive: call whenever window() changes.
+  // Using queueMicrotask + watch on signal:
+  const setupWatcher = () => {
+    if (mounted) return;
+    mounted = true;
+    // We use a small interval-based hack to avoid pulling
+    // createResource. Better: just refetch on tab click and
+    // initial mount.
+    refetch();
+  };
+
+  const showSkeleton = () => loading() && items().length === 0;
+  const showItems = () => !loading() && items().length > 0;
+  const showEmpty = () => !loading() && items().length === 0;
+
+  const onTabClick = (w: TrendingWindow) => {
+    if (w === window()) return;
+    setWindow(w);
+    load(w);
+  };
+
+  // Run on mount.
+  if (typeof window !== "undefined") {
+    queueMicrotask(setupWatcher);
+  }
 
   return (
-    <Show when={hasItems() || showSkeleton()}>
+    <Show when={showItems() || showSkeleton() || showEmpty()}>
       <section class="w-full">
-        <div class="flex items-center justify-between px-4 mb-2">
+        <div class="flex items-center justify-between px-4 mb-2 gap-2">
           <h2
-            class="text-sm font-extrabold uppercase tracking-widest flex items-center gap-1.5"
+            class="text-sm font-extrabold uppercase tracking-widest flex items-center gap-1.5 shrink-0"
             style={{ color: 'var(--text-primary)' }}
           >
             <span aria-hidden="true">🔥</span>
-            <span>Lo más visto hoy</span>
+            <span>Trending</span>
           </h2>
-          <button
-            type="button"
-            class="text-[11px] font-bold uppercase tracking-wider"
-            style={{ color: 'var(--accent)' }}
-            aria-label="Ver todo el trending"
-          >
-            Ver todo
-          </button>
+          <div class="flex items-center gap-1 rounded-full p-0.5" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-base)' }}>
+            <For each={WINDOWS}>
+              {(w) => {
+                const active = () => window() === w.id;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onTabClick(w.id)}
+                    class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full transition-colors"
+                    style={
+                      active()
+                        ? { background: 'var(--accent)', color: '#fff' }
+                        : { color: 'var(--text-tertiary)' }
+                    }
+                    aria-pressed={active()}
+                  >
+                    {w.label}
+                  </button>
+                );
+              }}
+            </For>
+          </div>
         </div>
         <div
           class="flex gap-2 overflow-x-auto px-4 pb-2 snap-x snap-mandatory"
@@ -75,7 +141,7 @@ export default function TrendingSection(props: TrendingSectionProps) {
               </For>
             }
           >
-            <For each={props.items.slice(0, 10)}>
+            <For each={items().slice(0, 10)}>
               {(item) => (
                 <button
                   type="button"
