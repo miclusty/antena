@@ -95,6 +95,16 @@ export function useFollows() {
     return isFollowing(sourceId) ? unfollow(sourceId) : follow(sourceId);
   };
 
+  /** Force a re-fetch from the server. Used after onboarding
+   *  where multiple sources are followed in quick succession
+   *  via the API directly (not via the follow() helper) — we
+   *  need to pull the actual server state so the "Siguiendo"
+   *  tab works immediately. */
+  const refresh = async (): Promise<void> => {
+    const next = await fetchFollows();
+    setFollows(next);
+  };
+
   return {
     follows,
     followedIds,
@@ -102,6 +112,7 @@ export function useFollows() {
     follow,
     unfollow,
     toggle,
+    refresh,
     loaded,
   };
 }

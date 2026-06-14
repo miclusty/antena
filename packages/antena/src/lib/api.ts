@@ -325,6 +325,28 @@ export interface FollowedSource {
   createdAt: string;
 }
 
+export interface ApiSourceEntry {
+  id: number;
+  name: string;
+  url: string;
+  type?: string;
+  reliability_score?: number;
+  is_active?: number;
+  news_count?: number;
+  location_name?: string | null;
+  province?: string | null;
+}
+
+export async function fetchSources(limit = 50): Promise<ApiSourceEntry[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/stats/sources?limit=${limit}`);
+    if (!res.ok) return [];
+    return (await res.json()) as ApiSourceEntry[];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchFollows(): Promise<FollowedSource[]> {
   const deviceId = getDeviceId();
   if (!deviceId) return [];
