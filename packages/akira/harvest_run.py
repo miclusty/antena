@@ -13,7 +13,7 @@ from email.utils import parsedate_to_datetime
 _PKG_ROOT = os.path.dirname(os.path.abspath(__file__))
 if _PKG_ROOT not in sys.path:
     sys.path.insert(0, _PKG_ROOT)
-from extractors.base import extract_byline  # noqa: E402
+from extractors.base import extract_byline, MAX_AUTHOR_LEN  # noqa: E402
 
 def _parse_date(value):
     if not value:
@@ -193,7 +193,10 @@ async def process_sources():
                     # we still get a free shot via the byline
                     # regex on the page HTML when the extractor
                     # provides it under item['html'].
-                    author = (item.get("author") or "").strip()[:120]
+                    # extract_byline clamps to MAX_AUTHOR_LEN; we
+                    # apply the same cap to the RSS-supplied
+                    # author so the DB column never overflows.
+                    author = (item.get("author") or "").strip()[:MAX_AUTHOR_LEN]
                     if not author and item.get("html"):
                         author = extract_byline(item["html"])
                     # bias_score and category left NULL — AKIRA cascade will enrich them

@@ -66,6 +66,12 @@ BYLINE_PATTERNS = [
 ]
 
 
+# Cap the author column so a malformed regex match can't blow
+# past the DB column width. Mirrored in the D1 schema
+# (news_cards.author) and in the harvest INSERT path.
+MAX_AUTHOR_LEN = 120
+
+
 def extract_byline(html: str) -> str:
     """Best-effort byline extraction from raw HTML.
 
@@ -76,7 +82,9 @@ def extract_byline(html: str) -> str:
 
     Filters out common non-author matches (site name, "Home",
     "Staff", single-character strings) so the regexes don't
-    return garbage.
+    return garbage. The return is guaranteed to be at most
+    MAX_AUTHOR_LEN characters; anything longer is treated
+    as a non-match and the next pattern is tried.
     """
     if not html:
         return ""
@@ -86,7 +94,7 @@ def extract_byline(html: str) -> str:
             continue
         candidate = m.group(1).strip()
         # Reject obvious non-authors.
-        if not candidate or len(candidate) < 3 or len(candidate) > 120:
+        if not candidate or len(candidate) < 3 or len(candidate) > MAX_AUTHOR_LEN:
             continue
         if candidate.lower() in {"home", "staff", "editorial", "redaccion", "redacción"}:
             continue

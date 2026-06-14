@@ -597,7 +597,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         <OtrasVocesCta
           otherSources={clusterData().filter((a) => a.id !== n().id)}
           currentId={n().id}
-          onSelect={props.onArticleSelect || (() => {})}
+          onSelect={props.onArticleSelect}
         />
 
         {/* Signal Gauge */}
@@ -712,7 +712,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           <ClusterView
             clusterId={n().clusterId}
             articles={clusterData()}
-            onArticleSelect={props.onArticleSelect || (() => {})}
+            onArticleSelect={props.onArticleSelect}
           />
         </Show>
       </main>

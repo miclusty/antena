@@ -9,7 +9,7 @@ import BottomSheet from '../common/BottomSheet';
 interface OtrasVocesCtaProps {
   otherSources: NewsItem[];
   currentId: string;
-  onSelect: (article: NewsItem) => void;
+  onSelect?: (article: NewsItem) => void;
 }
 
 /**
@@ -117,7 +117,7 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
                   onClick={() => {
                     haptic.vibrate('tap');
                     setSheetOpen(false);
-                    props.onSelect(article);
+                    props.onSelect?.(article);
                   }}
                   class="group flex items-stretch gap-3 w-full px-4 py-3 min-h-[64px] text-left hover:bg-bg-hover active:bg-bg-hover transition-colors border-b border-border-base"
                 >

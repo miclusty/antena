@@ -6,7 +6,7 @@ import { useHaptic } from '../../lib/haptic';
 interface ClusterViewProps {
   clusterId: string;
   articles: NewsItem[];
-  onArticleSelect: (article: NewsItem) => void;
+  onArticleSelect?: (article: NewsItem) => void;
 }
 
 export default function ClusterView(props: ClusterViewProps) {
@@ -36,7 +36,7 @@ export default function ClusterView(props: ClusterViewProps) {
         <For each={props.articles.slice(1, 8)}>
           {(article) => (
             <button
-              onClick={() => { haptic.vibrate('tap'); props.onArticleSelect(article); }}
+              onClick={() => { haptic.vibrate('tap'); props.onArticleSelect?.(article); }}
               class="group flex items-stretch gap-3 min-h-[56px] pl-2 pr-3 py-2.5 rounded-lg transition-all text-left border border-transparent hover:bg-bg-hover hover:border-border-base active:scale-[0.99] active:bg-bg-hover"
             >
               {/* Bias color stripe (left edge) */}

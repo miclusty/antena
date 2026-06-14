@@ -469,39 +469,31 @@ export interface VoteResponse {
   myVote: -1 | 0 | 1;
 }
 
-export async function fetchVote(
-  newsId: string,
-  vote: -1 | 0 | 1,
-): Promise<VoteResponse | null> {
+async function postJson<T>(path: string, body: Record<string, unknown> = {}): Promise<T | null> {
   const deviceId = getDeviceId();
   if (!deviceId) return null;
   try {
-    const res = await fetch(`${API_BASE}/api/news/${newsId}/vote`, {
+    const res = await fetch(`${API_BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: deviceId, vote }),
+      body: JSON.stringify({ device_id: deviceId, ...body }),
     });
     if (!res.ok) return null;
-    return (await res.json()) as VoteResponse;
+    return (await res.json()) as T;
   } catch {
     return null;
   }
 }
 
+export async function fetchVote(
+  newsId: string,
+  vote: -1 | 0 | 1,
+): Promise<VoteResponse | null> {
+  return postJson<VoteResponse>(`/api/news/${newsId}/vote`, { vote });
+}
+
 export async function fetchRepost(newsId: string): Promise<{ reposts: number; alreadyReposted: boolean } | null> {
-  const deviceId = getDeviceId();
-  if (!deviceId) return null;
-  try {
-    const res = await fetch(`${API_BASE}/api/news/${newsId}/repost`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ device_id: deviceId }),
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
+  return postJson<{ reposts: number; alreadyReposted: boolean }>(`/api/news/${newsId}/repost`, {});
 }
 
 export async function fetchUnrepost(newsId: string): Promise<{ reposts: number; removed: boolean } | null> {
