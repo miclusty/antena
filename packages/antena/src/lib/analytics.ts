@@ -42,12 +42,15 @@ function beacon(body: string): boolean {
 function fetchBeacon(body: string): void {
   if (typeof fetch === 'undefined') return;
   try {
+    // Suppress unhandled-rejection when the endpoint is
+    // unreachable (offline, blocked, 4xx). `void` on its
+    // own does not catch the rejection — we need .catch.
     void fetch(TRACK_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
       keepalive: true,
-    });
+    }).catch(() => { /* best-effort analytics */     });
   } catch {
     // best-effort
   }

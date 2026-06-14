@@ -453,6 +453,9 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                   alt=""
                   class="w-full h-64 md:h-80 object-cover cursor-zoom-in"
                   loading="lazy"
+                  decoding="async"
+                  width="800"
+                  height="320"
                   onClick={() => setLightboxOpen(true)}
                   onError={(e) => {
                     const parent = (e.target as HTMLImageElement).parentElement;

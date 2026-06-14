@@ -1,5 +1,5 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createResource, createEffect, createMemo, For, Show, onMount, onCleanup } from 'solid-js';
+import { createSignal, createResource, createEffect, createMemo, For, Show, onMount, onCleanup, lazy, Suspense } from 'solid-js';
 import type { NewsItem } from './lib/types';
 import NewsCard from './components/common/NewsCard';
 import BottomNav, { type TabId } from './components/common/BottomNav';
@@ -7,10 +7,7 @@ import FeedTabs from './components/common/FeedTabs';
 import Header from './components/layout/Header';
 import LeftSidebar from './components/layout/LeftSidebar';
 import RightSidebar from './components/layout/RightSidebar';
-import ArticleDetail from './components/article/ArticleDetail';
 import LocationSelector from './components/common/LocationSelector';
-import BookmarksView from './components/bookmarks/BookmarksView';
-import ReadLaterView from './components/readlater/ReadLaterView';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import EmptyState from './components/common/EmptyState';
 import ConnectionStatus from './components/ConnectionStatus';
@@ -29,10 +26,17 @@ import TrendingSection from './components/feed/TrendingSection';
 import BlindspotSection from './components/feed/BlindspotSection';
 import MapSection from './components/MapSection';
 import CitySelector from './components/common/CitySelector';
-import BreakingView from './components/feed/BreakingView';
-import MobileDrawer from './components/menu/MobileDrawer';
 import SourceLogo from './components/common/SourceLogo';
 import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, fetchTrending, fetchCities, fetchFeaturedStory, fetchBlindspot, fetchVote, fetchRepost, type FeedResponse, type ApiNewsCard } from './lib/api';
+
+// Lazy-loaded views (code-split out of the main bundle).
+// Each is only downloaded when the user navigates to it.
+const ArticleDetail = lazy(() => import('./components/article/ArticleDetail'));
+const BookmarksView = lazy(() => import('./components/bookmarks/BookmarksView'));
+const ReadLaterView = lazy(() => import('./components/readlater/ReadLaterView'));
+const BreakingView = lazy(() => import('./components/feed/BreakingView'));
+const MobileDrawer = lazy(() => import('./components/menu/MobileDrawer'));
+const OnboardingView = lazy(() => import('./components/onboarding/OnboardingView').then(m => ({ default: m.default })));
 import { mapNewsCard } from './lib/mappers';
 import { parseURLState, updateURL, clearURL } from './lib/urlState';
 import { resolveCustomTabSelection } from './lib/feed-controls';
@@ -40,7 +44,7 @@ import { readDensity, writeDensity, type Density } from './lib/preferences';
 import { readFontScale, readDataSaver } from './lib/preferences';
 import DensityToggle from './components/common/DensityToggle';
 import ModoMate from './components/common/ModoMate';
-import OnboardingView, { isOnboarded } from './components/onboarding/OnboardingView';
+import { isOnboarded } from './components/onboarding/OnboardingView';
 import TimeFilters, { type TimeFilter } from './components/common/TimeFilters';
 import QualityFilters, { type QualityFilter } from './components/common/QualityFilters';
 import {

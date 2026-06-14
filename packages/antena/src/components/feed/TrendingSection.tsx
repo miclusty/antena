@@ -37,7 +37,13 @@ const WINDOWS: { id: TrendingWindow; label: string; hours: number }[] = [
  * the 1h/24h/7d tab state — the parent only needs to handle
  * onItemClick (which opens the article).
  */
-export default function TrendingSection(props: { onItemClick: (item: TrendingItem) => void }) {
+export interface TrendingSectionProps {
+  items?: TrendingItem[];
+  loading?: boolean;
+  onItemClick: (item: TrendingItem) => void;
+}
+
+export default function TrendingSection(props: TrendingSectionProps) {
   const [window, setWindow] = createSignal<TrendingWindow>("24h");
   const [items, setItems] = createSignal<TrendingItem[]>([]);
   const [loading, setLoading] = createSignal(true);

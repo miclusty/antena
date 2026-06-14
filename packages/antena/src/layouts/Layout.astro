@@ -48,10 +48,16 @@ import '../styles/animations.css';
     <meta name="apple-mobile-web-app-title" content="Antena" />
     <link rel="apple-touch-icon" href="/icons/icon.svg" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- Preconnect to API + image CDN to remove
+         ~200ms of DNS/TCP/TLS overhead on first hit. -->
+    <link rel="preconnect" href="https://akira-api.miclusty.workers.dev" />
+    <link rel="dns-prefetch" href="https://antena-images.r2.dev" />
+
+    <!-- Material Symbols (icons). Self-hosted via
+         @fontsource would be faster, but the Google CDN
+         is acceptable with display=swap. Kept only as the
+         icon font — text uses system fonts. -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet" />
 
     <style>

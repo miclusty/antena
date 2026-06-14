@@ -272,7 +272,7 @@ export default function NewsCard(props: NewsCardProps) {
               class="shrink-0 w-[130px] h-[85px] rounded-xl overflow-hidden bg-bg-hover"
               data-hide-on-data-saver="true"
             >
-              <img src={props.news.imageUrl} alt="" class="w-full h-full object-cover" loading="lazy" />
+              <img src={props.news.imageUrl} alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="130" height="85" />
             </div>
           </Show>
 

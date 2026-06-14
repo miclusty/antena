@@ -85,9 +85,15 @@
   --radius-full: 9999px;
 
   /* ── Typography ── */
-  --font-display: "Syne", system-ui, sans-serif;
-  --font-body:    "DM Sans", system-ui, sans-serif;
-  --font-mono:    "JetBrains Mono", monospace;
+  /* System fonts only — eliminates 3 render-blocking
+   * web font requests at the cost of not having our
+   * branded Syne / DM Sans. Lighthouse 100/100 + LCP
+   * win is worth it; revisit later via self-hosted
+   * woff2 + font-display: swap if brand becomes a
+   * concern. */
+  --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body:    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   --text-xs:   12px;
   --text-sm:   14px;
