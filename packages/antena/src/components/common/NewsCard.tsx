@@ -298,7 +298,7 @@ export default function NewsCard(props: NewsCardProps) {
             <h2 class="text-[22px] xl:text-[24px] font-bold leading-snug text-text-primary group-hover:underline group-hover:decoration-text-tertiary/30">
               {props.news.title}
             </h2>
-            <p class="text-[16px] xl:text-[17px] text-text-secondary mt-1.5 leading-relaxed line-clamp-3">
+            <p class="text-[16px] xl:text-[17px] text-text-secondary mt-1.5 leading-relaxed line-clamp-2">
               {props.news.summary}
             </p>
           </div>
