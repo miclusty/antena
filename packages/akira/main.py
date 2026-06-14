@@ -1005,7 +1005,9 @@ async def batch_synthesize(limit: int = 100, _auth=Depends(_check_admin)):
 
 @app.get("/synthesis/master/{cluster_id}", response_model=MasterArticle)
 async def get_master_article(cluster_id: str):
-    """Get the master article for a cluster."""
+    """Get the master article for a cluster. Includes the 3
+    RAG perspectives (neutral, pro_gov, anti_gov) if they were
+    synthesized by the RAG engine."""
 
     conn = sqlite3.connect(settings.db_path)
     conn.row_factory = sqlite3.Row
@@ -1025,8 +1027,51 @@ async def get_master_article(cluster_id: str):
             "bias_max": 0,
             "bias_avg": 0,
             "created_at": "",
+            "neutral_perspective": "",
+            "pro_gov_perspective": "",
+            "anti_gov_perspective": "",
+            "rag_neighbors": 0,
+            "rag_entities": 0,
+            "rag_model": "",
         }
 
+    # Pull the latest rag_queries row for this cluster so we can
+    # surface metadata: how many neighbors and entities were
+    # injected into the prompt, and which LLM wrote the output.
+    rag_neighbors = 0
+    rag_entities = 0
+    rag_model = ""
+    try:
+        with sqlite3.connect(settings.db_path) as rag_conn:
+            rag_row = rag_conn.execute(
+                """
+                SELECT neighbors_used, entities_used, model
+                FROM rag_queries
+                WHERE cluster_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (cluster_id,),
+            ).fetchone()
+            if rag_row:
+                import json as _json
+                try:
+                    rag_neighbors = len(_json.loads(rag_row[0] or "[]"))
+                    rag_entities = len(_json.loads(rag_row[1] or "[]"))
+                except (ValueError, TypeError):
+                    pass
+                rag_model = rag_row[2] or ""
+    except sqlite3.OperationalError:
+        # rag_queries table may not exist yet on first deploy
+        pass
+
+    # The 3 perspectives are stored as text columns. The neutral
+    # one is duplicated in `summary` (for backward compat) and
+    # the pro/anti ones in officialist_perspective /
+    # opposition_perspective. We render the full text (title +
+    # body joined) for the API response.
+    pro_text = row["officialist_perspective"] or ""
+    anti_text = row["opposition_perspective"] or ""
     return {
         "id": row["id"],
         "cluster_id": row["cluster_id"],
@@ -1037,6 +1082,45 @@ async def get_master_article(cluster_id: str):
         "bias_max": row["bias_max"],
         "bias_avg": row["bias_avg"],
         "created_at": row["created_at"],
+        "neutral_perspective": row["neutral_perspective"] or row["summary"] or "",
+        "pro_gov_perspective": pro_text,
+        "anti_gov_perspective": anti_text,
+        "rag_neighbors": rag_neighbors,
+        "rag_entities": rag_entities,
+        "rag_model": rag_model,
+    }
+
+
+@app.post("/cluster/{cluster_id}/synthesize-rag")
+async def synthesize_cluster_rag(cluster_id: str, _auth=Depends(_check_admin)):
+    """Synthesize a single cluster into 3 RAG perspectives
+    (neutral / pro_gov / anti_gov). Slower than the legacy
+    `/cluster/{id}/synthesize` endpoint (one LLM call per
+    cluster, ~30s) but produces 3 distinct viewpoints."""
+    from core.rag import RAGEngine
+
+    def _do_synth():
+        engine = RAGEngine(db_path=settings.db_path)
+        return engine.synthesize(cluster_id)
+
+    loop = asyncio.get_running_loop()
+    p = await loop.run_in_executor(None, _do_synth)
+    if p is None:
+        return {
+            "ok": False,
+            "cluster_id": cluster_id,
+            "error": "synthesis_failed_or_empty_cluster",
+        }
+    return {
+        "ok": True,
+        "cluster_id": p.cluster_id,
+        "model": p.model,
+        "latency_ms": p.latency_ms,
+        "neighbors_used": len(p.neighbors_used),
+        "entities_used": p.entities_used,
+        "neutral_title": p.neutral_title,
+        "pro_gov_title": p.pro_gov_title,
+        "anti_gov_title": p.anti_gov_title,
     }
 
 

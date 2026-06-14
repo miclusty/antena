@@ -166,3 +166,15 @@ class MasterArticle(BaseModel):
     bias_max: float
     bias_avg: float
     created_at: str
+    # 3-perspective RAG output. Each perspective has its own
+    # title + summary. The `neutral_*` fields duplicate the
+    # top-level title/summary so callers that want a single
+    # "neutral view" can keep using the existing fields. The
+    # `pro_gov_*` and `anti_gov_*` fields are only populated
+    # when the cluster was synthesized with the RAG engine.
+    neutral_perspective: str = ""
+    pro_gov_perspective: str = ""
+    anti_gov_perspective: str = ""
+    rag_neighbors: int = 0      # how many KNN neighbors were used
+    rag_entities: int = 0       # how many top entities were injected
+    rag_model: str = ""         # which LLM wrote the perspectives
