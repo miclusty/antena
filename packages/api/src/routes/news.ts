@@ -76,6 +76,11 @@ newsRoutes.get("/feed", async (c) => {
       total,
       page: Math.floor(params.offset / params.limit) + 1,
       per_page: params.limit,
+      // `served_at` lets the frontend detect when the response
+      // was cached and surface a "Updated X ago" hint. Also a
+      // useful marker for the D1 sync pipeline to know when
+      // a given cache hit happened.
+      served_at: new Date().toISOString(),
     };
     return c.json(response);
   }, {
