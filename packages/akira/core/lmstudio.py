@@ -58,8 +58,22 @@ DEFAULT_CHAT_MODEL = "qwen3.5-4b"
 DEFAULT_EMBED_MODEL = "text-embedding-nomic-embed-text-v1.5"
 
 # Per-node failure tracking
+# We use a tiered failure model:
+#   - 1-2 consecutive failures: keep trying, but mark the call
+#     as a "soft failure" (logged as warning). The next call
+#     might succeed (transient network blip).
+#   - 3+ consecutive failures: trip the circuit breaker. The
+#     node is marked UNHEALTHY for COOLDOWN_SECONDS. This
+#     prevents the LB from picking a dead node and wasting
+#     REQUEST_TIMEOUT_EMBED seconds per attempt.
+#   - After COOLDOWN_SECONDS, the node is retried once. If it
+#     succeeds, it's healthy again. If it fails, the cooldown
+#     restarts.
 NODE_FAILURE_THRESHOLD = 3
 NODE_COOLDOWN_SECONDS = 60.0
+# How long to wait for a single HTTP request before counting
+# it as a failure. The health probe uses HEALTH_PROBE_TIMEOUT
+# (shorter) so we can detect a dead node in <5s.
 HEALTH_PROBE_TIMEOUT = 5.0
 REQUEST_TIMEOUT_EMBED = 30.0
 REQUEST_TIMEOUT_CHAT = 180.0
@@ -106,6 +120,10 @@ class _NodeState:
     # when two nodes have the same in-flight count.
     latency_samples: List[float] = field(default_factory=list)
     LATENCY_WINDOW = 20
+    # When this node last came back from a DOWN state, used to
+    # throttle the "RECOVERED" log line so we don't spam every
+    # 60s if a node is flapping. 0.0 = never recovered yet.
+    last_recovery_log_at: float = 0.0
 
     def cooldown_remaining(self) -> float:
         if not self.is_healthy:
@@ -286,6 +304,14 @@ class LMStudioClient:
         `path` is the URL path (e.g. "/v1/embeddings"). The full URL
         is built from the chosen node's base + this path, so each
         attempt uses the node the round-robin actually picked.
+
+        Circuit-breaker note: when a node is marked UNHEALTHY
+        (3+ consecutive failures), it sits in cooldown for
+        NODE_COOLDOWN_SECONDS. While in cooldown, _pick_node
+        skips it. After the cooldown expires, the next call to
+        _pick_node may pick it again — that call doubles as a
+        health probe. If it succeeds, the node is back online;
+        if it fails, the cooldown restarts.
         """
         body = json.dumps(payload).encode("utf-8")
         nodes_tried: List[str] = []
@@ -308,12 +334,26 @@ class LMStudioClient:
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
                     raw = json.loads(resp.read().decode("utf-8"))
                 latency = time.monotonic() - t0
+                # Detect "came back from down state": we just
+                # succeeded, but the previous attempt was <5s
+                # ago and failed. Simpler heuristic: if the
+                # node's failures were >0 right before this
+                # success, log the recovery.
                 with self._lock:
+                    was_failing = node.failures > 0
                     node.failures = 0
                     node.is_healthy = True
                     node.last_success_at = time.monotonic()
                     node.in_flight -= 1
                     node.record_latency(latency)
+                if was_failing:
+                    now = time.monotonic()
+                    if now - node.last_recovery_log_at > 300:
+                        logger.info(
+                            f"LM Studio node RECOVERED: {node.url} "
+                            f"(after recent failures)"
+                        )
+                        node.last_recovery_log_at = now
                 return raw
             except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as e:
                 with self._lock:
@@ -332,11 +372,36 @@ class LMStudioClient:
             node.failures += 1
             node.last_failure_at = time.monotonic()
             if node.failures >= NODE_FAILURE_THRESHOLD:
+                was_healthy = node.is_healthy
                 node.is_healthy = False
-                logger.error(
-                    f"LM Studio node marked DOWN: {node.url} "
-                    f"({node.failures} consecutive failures)"
-                )
+                if was_healthy:
+                    logger.error(
+                        f"LM Studio node marked DOWN: {node.url} "
+                        f"({node.failures} consecutive failures: {error[:80]}). "
+                        f"Will retry in {NODE_COOLDOWN_SECONDS}s."
+                    )
+
+    def active_nodes(self) -> List[str]:
+        """Return URLs of currently-healthy nodes. Useful for
+        ops dashboards and the per-node logging in scripts."""
+        with self._lock:
+            return [n.url for n in self._nodes if n.is_healthy]
+
+    def probe_node(self, url: str) -> bool:
+        """Manually probe a specific node. Returns True if it
+        responds within HEALTH_PROBE_TIMEOUT. Does not change
+        the node's failure state — this is a passive check.
+
+        Used by ops scripts to see if a node that's been marked
+        down has come back. The next _pick_node call will also
+        retry it automatically once the cooldown expires."""
+        try:
+            req = urllib.request.Request(f"{url}/v1/models", method="GET")
+            with urllib.request.urlopen(req, timeout=HEALTH_PROBE_TIMEOUT) as resp:
+                resp.read()
+            return True
+        except Exception:
+            return False
 
 
 # ─── Module-level default instance ────────────────────────────────
