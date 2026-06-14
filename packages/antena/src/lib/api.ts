@@ -26,6 +26,7 @@ export interface ApiNewsCard {
   source_names?: string[];
   source_name?: string | null;
   source_url?: string | null;
+  source_id?: number | null;
   location_name?: string | null;
   location_province?: string | null;
   published_at: string | null;
@@ -258,4 +259,104 @@ export async function fetchCities(): Promise<ApiCity[]> {
 export async function fetchBlindspot(limit = 10) {
   const res = await fetch(`${API_BASE}/api/news/blindspot?limit=${limit}`);
   return (await res.json()) as { items: any[]; total: number };
+}
+
+// ─── Source follows ────────────────────────────────────────
+// Until we have real auth, follows are scoped to a device_id —
+// a UUID generated on first visit and stored in localStorage.
+// The feed endpoint (with ?following=true) reads it back to
+// filter the feed to the user's followed sources.
+
+const DEVICE_ID_KEY = "antena-device-id";
+
+function getDeviceId(): string {
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = (typeof crypto !== "undefined" && "randomUUID" in crypto)
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    try {
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    } catch {
+      /* private mode — keep in-memory only */
+    }
+  }
+  return id;
+}
+
+export function getAntenaDeviceId(): string {
+  return getDeviceId();
+}
+
+export interface FollowedSource {
+  sourceId: number;
+  sourceName: string | null;
+  sourceUrl: string | null;
+  sourceDomain: string | null;
+  createdAt: string;
+}
+
+export async function fetchFollows(): Promise<FollowedSource[]> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return [];
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/me/follows?device_id=${encodeURIComponent(deviceId)}`
+    );
+    if (!res.ok) return [];
+    const body = (await res.json()) as { follows: FollowedSource[] };
+    return body.follows ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function followSource(sourceId: number): Promise<boolean> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return false;
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/sources/${sourceId}/follow?device_id=${encodeURIComponent(deviceId)}`,
+      { method: "POST" }
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function unfollowSource(sourceId: number): Promise<boolean> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return false;
+  try {
+    const res = await fetch(
+      `${API_BASE}/api/sources/${sourceId}/follow?device_id=${encodeURIComponent(deviceId)}`,
+      { method: "DELETE" }
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchFeedFiltered(
+  options: { following?: boolean; sourceIds?: number[]; category?: string; location_id?: number; limit?: number; offset?: number }
+): Promise<FeedResponse> {
+  const params = new URLSearchParams();
+  if (options.following) {
+    const deviceId = getDeviceId();
+    if (deviceId) params.set("following", "true");
+    params.set("device_id", deviceId);
+  }
+  if (options.sourceIds && options.sourceIds.length > 0) {
+    params.set("source_ids", options.sourceIds.join(","));
+  }
+  if (options.category) params.set("category", options.category);
+  if (options.location_id) params.set("location_id", String(options.location_id));
+  if (options.limit) params.set("limit", String(options.limit));
+  if (options.offset) params.set("offset", String(options.offset));
+  const res = await fetch(`${API_BASE}/api/news/feed?${params}`);
+  if (!res.ok) throw new Error(`Failed to fetch feed: ${res.status}`);
+  return res.json();
 }

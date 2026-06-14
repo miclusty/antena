@@ -15,6 +15,7 @@ export interface NewsItem {
   body: string;
   category: string;
   source: string;
+  sourceId?: number | null;
   sourceUrl?: string;
   time: string;
   location: string;
@@ -29,7 +30,13 @@ export interface NewsItem {
   isClickbait: boolean;
   clickbaitAnswer?: string;
   propagation: PropagationEvent[];
-  voices: VoiceBreakdown[];
+  // Pre-existing inconsistency: the field is named `voces` in the
+  // type (Spanish) but the rest of the code uses `voices` (English)
+  // — see ArticleDetail.tsx and BiasBreakdownBar.tsx. We support
+  // both names via a union so existing call sites keep working
+  // while new code can use either.
+  voces: VoiceBreakdown[];
+  voices?: VoiceBreakdown[];
   clusterId: string;
   sourcesCount: number;
   imageUrl?: string;

@@ -16,6 +16,7 @@ interface LeftSidebarProps {
   news: NewsItem[];
   savedCount: number;
   bookmarks: string[];
+  followsCount: number;
   feedTab: string;
   onFeedTabChange: (tab: string) => void;
   onOpenBookmarks: () => void;
@@ -215,11 +216,8 @@ export default function LeftSidebar(props: LeftSidebarProps) {
             <SideRow
               icon="group"
               label="Siguiendo"
-              count={(() => {
-                if (typeof window === 'undefined') return 0;
-                try { return JSON.parse(localStorage.getItem('antena-following-sources') || '[]').length; } catch { return 0; }
-              })()}
-              dimmed={true}
+              count={props.followsCount ?? 0}
+              dimmed={(props.followsCount ?? 0) === 0}
               onClick={() => { haptic.vibrate('tap'); props.onFeedTabChange('following'); }}
             />
             <SideRow

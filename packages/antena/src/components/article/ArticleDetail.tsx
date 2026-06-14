@@ -82,7 +82,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
   const realVoices = (): VoiceBreakdown[] => {
     const articles = clusterData();
-    if (!articles || articles.length <= 1) return n().voices;
+    if (!articles || articles.length <= 1) return n().voces ?? [];
     const biasMap: Record<string, number> = { 'Oficialista': 1, 'Opositor': -1, 'Neutral': 0 };
     const scores = articles.map(a => biasMap[a.bias] ?? 0);
     const officialist = scores.filter(s => s > 0).length;
@@ -96,9 +96,9 @@ export default function ArticleDetail(props: ArticleDetailProps) {
     ].filter(v => v.pct > 0);
   };
 
-  const voices = () => {
+  const voces = () => {
     const rv = realVoices();
-    return rv.length > 0 ? rv : n().voices;
+    return rv.length > 0 ? rv : (n().voces ?? []);
   };
 
   const cleanLocation = () => {
@@ -350,7 +350,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           <h2 class="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--text-tertiary)' }}>
             Desglose de Voces
           </h2>
-          <BiasBreakdownBar voices={voices()} barClass="h-5" labelClass="text-xs" />
+          <BiasBreakdownBar voices={voces()} barClass="h-5" labelClass="text-xs" />
         </section>
 
         {/* Clickbait Answer */}

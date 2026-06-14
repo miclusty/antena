@@ -192,6 +192,7 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     body: stripHtml(card.body || card.summary),
     category,
     source: sourceName,
+    sourceId: card.source_id ?? null,
     sourceUrl: card.source_url || undefined,
     time: formatTime(card.published_at || card.created_at),
     location,
@@ -208,7 +209,7 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     sourcesCount: sourceCount,
     imageUrl: card.image_url || undefined,
     publishedAt: card.published_at || card.created_at,
-    voices: computeVoices([{ bias_score: card.bias_score }]),
+    voces: computeVoices([{ bias_score: card.bias_score }]),
     propagation: [],
   };
 }

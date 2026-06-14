@@ -21,6 +21,7 @@ import { cacheNews, getCachedNews, markAsRead } from './lib/db';
 import { useInfiniteScroll } from './lib/hooks';
 import { saveScrollPos, restoreScrollPos } from './lib/scroll';
 import { useBookmarks } from './lib/bookmarks';
+import { useFollows } from './lib/follows';
 import FeaturedStory from './components/feed/FeaturedStory';
 import TrendingSection from './components/feed/TrendingSection';
 import CitySelector from './components/common/CitySelector';
@@ -94,6 +95,7 @@ export default function App() {
   const haptic = useHaptic();
 
   const { bookmarks, isBookmarked, toggleBookmark } = useBookmarks();
+  const follows = useFollows();
 
   const shareNews = async (news: NewsItem) => {
     haptic.vibrate('tap');
@@ -241,13 +243,17 @@ export default function App() {
     let items = allNews();
     const tab = activeFeedTab();
     if (tab === 'following') {
-      const followedSources = (() => {
-        if (typeof window === 'undefined') return [];
-        try { return JSON.parse(localStorage.getItem('antena-following-sources') || '[]'); }
-        catch { return []; }
-      })() as string[];
-      if (followedSources.length > 0) {
-        items = items.filter(n => followedSources.includes(n.source));
+      // Filter by the user's followed source ids (loaded from
+      // server-side D1 via useFollows).
+      const followedIds = follows.followedIds();
+      if (followedIds.size > 0) {
+        items = items.filter(
+          (n) => n.sourceId != null && followedIds.has(n.sourceId),
+        );
+      } else {
+        // No follows yet — empty the tab so the user is prompted
+        // to follow a source.
+        items = [];
       }
     }
     const q = searchQuery().toLowerCase().trim();
@@ -343,6 +349,7 @@ export default function App() {
       news={mappedNews()}
       savedCount={bookmarks().length}
       bookmarks={bookmarks()}
+      followsCount={follows.followedIds().size}
       feedTab={activeFeedTab()}
       onFeedTabChange={(tab) => { haptic.vibrate('tap'); setActiveFeedTab(tab); }}
       onOpenBookmarks={() => handleViewChange('bookmarks')}

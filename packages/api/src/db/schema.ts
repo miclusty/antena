@@ -12,7 +12,7 @@
 //  - Foreign keys declared but not enforced (D1 limitation)
 // ═══════════════════════════════════════════════════════════════
 
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ─── categories ──────────────────────────────────────────────
 export const categories = sqliteTable("categories", {
@@ -164,6 +164,31 @@ export const masterArticles = sqliteTable(
 export type MasterArticle = typeof masterArticles.$inferSelect;
 export type NewMasterArticle = typeof masterArticles.$inferInsert;
 
+// ─── Source follows ────────────────────────────────────────────────
+// Tracks which sources a user follows. Until we have real auth
+// (see TECHNICAL_DEBT.md), the user is identified by an anonymous
+// device_id (a UUID generated client-side and stored in
+// localStorage). The (device_id, source_id) pair is unique — a
+// device can only follow a source once. The followed source's
+// news then shows up in the "Siguiendo" feed tab.
+export const sourceFollows = sqliteTable(
+  "source_follows",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    deviceId: text("device_id").notNull(),
+    sourceId: integer("source_id").notNull(),
+    createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  },
+  (t) => ({
+    byDevice: index("idx_follows_device").on(t.deviceId),
+    bySource: index("idx_follows_source").on(t.sourceId),
+    uniquePair: uniqueIndex("uniq_follows_device_source").on(t.deviceId, t.sourceId),
+  })
+);
+
+export type SourceFollow = typeof sourceFollows.$inferSelect;
+export type NewSourceFollow = typeof sourceFollows.$inferInsert;
+
 // ─── Table reference map (for typed query helpers) ───────────
 export const tables = {
   categories,
@@ -172,4 +197,5 @@ export const tables = {
   clusters,
   newsCards,
   masterArticles,
+  sourceFollows,
 } as const;

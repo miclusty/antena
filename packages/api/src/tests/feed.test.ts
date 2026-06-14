@@ -72,6 +72,13 @@ CREATE TABLE news_cards (
   published_at TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+CREATE TABLE source_follows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  device_id TEXT NOT NULL,
+  source_id INTEGER NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+CREATE UNIQUE INDEX uniq_follows_device_source ON source_follows (device_id, source_id);
 CREATE VIRTUAL TABLE IF NOT EXISTS news_cards_fts USING fts5(
   id, title, summary, content=''
 );
@@ -88,6 +95,7 @@ async function seed() {
     `INSERT INTO locations (id, name, province, type) VALUES (1, 'Córdoba', 'CBA', 'ciudad'), (2, 'Buenos Aires', 'BA', 'provincia')`,
     `INSERT INTO sources (id, name, url, is_active) VALUES (1, 'La Nación', 'https://lanacion.com.ar', 1), (2, 'Ámbito', 'https://ambito.com', 1)`,
     `INSERT INTO news_cards (id, location_id, title, summary, source_id, source_name, category, bias_score, is_gacetilla, sources_count, cluster_id, published_at) VALUES ('n-1', 1, 'Dólar sube 5%', 'El dolar blue subio 5% hoy', 1, 'La Nación', 'economia', 0.3, 0, 2, 'c-1', '2026-06-10T12:00:00Z'), ('n-2', 1, 'Córdoba elige intendente', 'Elecciones municipales', 1, 'La Nación', 'politica', 0.1, 0, 1, NULL, '2026-06-10T10:00:00Z')`,
+    `INSERT INTO source_follows (device_id, source_id) VALUES ('dev-A', 1), ('dev-A', 2)`,
   ]) {
     await env.DB.exec(insertSql);
   }
@@ -147,6 +155,56 @@ describe("/api/news/feed", () => {
   it("accepts min_quality filter", async () => {
     const res = await SELF.fetch("http://example.com/api/news/feed?min_quality=0.5");
     expect(res.status).toBe(200);
+  });
+
+  it("filters to followed sources when ?following=true & device_id set", async () => {
+    // dev-A follows sources 1 and 2 (the two seeded sources).
+    // Without ?following=true, both news are returned. With it, the
+    // feed is restricted to those sources — which IS all of them,
+    // so we filter further by source.
+    const res = await SELF.fetch(
+      "http://example.com/api/news/feed?following=true&device_id=dev-A"
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { news: { id: string }[]; total: number };
+    // Both seeded news come from source_id=1, which dev-A follows.
+    expect(body.total).toBe(2);
+  });
+
+  it("returns empty when device follows no sources", async () => {
+    const res = await SELF.fetch(
+      "http://example.com/api/news/feed?following=true&device_id=dev-with-no-follows"
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { news: unknown[]; total: number };
+    expect(body.total).toBe(0);
+  });
+
+  it("ignores following=true if no device_id provided", async () => {
+    // Missing device_id should not 500 — the filter just becomes
+    // a no-op and the global feed is returned.
+    const res = await SELF.fetch("http://example.com/api/news/feed?following=true");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { news: unknown[]; total: number };
+    expect(body.total).toBe(2);
+  });
+
+  it("filters by explicit source_ids list", async () => {
+    const res = await SELF.fetch("http://example.com/api/news/feed?source_ids=1");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { news: { id: string }[]; total: number };
+    expect(body.total).toBe(2);
+    expect(body.news.every((n) => n.id.startsWith("n-"))).toBe(true);
+  });
+
+  it("ignores invalid source_ids silently", async () => {
+    // Non-numeric values in the list are filtered out by the
+    // route. A comma-separated list like "1,abc,0,-5" should be
+    // treated as just [1].
+    const res = await SELF.fetch("http://example.com/api/news/feed?source_ids=1,abc,0,-5");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { news: unknown[]; total: number };
+    expect(body.total).toBe(2);
   });
 
   // TODO(Phase 8+): workerd's caches.default doesn't preserve Cache-Control

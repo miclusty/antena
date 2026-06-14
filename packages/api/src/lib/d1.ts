@@ -2,7 +2,16 @@ import type { NewsCard, Location, Category, Source } from "./types";
 
 export async function getNewsFeed(
   db: D1Database,
-  options: { location_id?: number; category?: string; limit?: number; offset?: number }
+  options: {
+    location_id?: number;
+    category?: string;
+    limit?: number;
+    offset?: number;
+    /** Restrict to news from sources the device follows. */
+    followingDeviceId?: string;
+    /** Restrict to specific source ids (comma-separated string or number[]). */
+    sourceIds?: number[];
+  }
 ): Promise<{ news: NewsCard[]; total: number }> {
   const limit = options.limit ?? 20;
   const offset = options.offset ?? 0;
@@ -18,7 +27,59 @@ export async function getNewsFeed(
   if (options.location_id) { query += " AND nc.location_id = ?"; params.push(options.location_id); }
   if (options.category) { query += " AND nc.category = ?"; params.push(options.category); }
 
-  const countQuery = query.replace(/SELECT.*?FROM/, "SELECT COUNT(*) as count FROM");
+  // Filter to only the sources this device follows. Joined
+  // against source_follows (device_id, source_id).
+  if (options.followingDeviceId) {
+    query += `
+      AND nc.source_id IN (
+        SELECT sf.source_id FROM source_follows sf
+        WHERE sf.device_id = ?
+      )
+    `;
+    params.push(options.followingDeviceId);
+  }
+
+  if (options.sourceIds && options.sourceIds.length > 0) {
+    // Build "(?, ?, …)" placeholder list to avoid SQL injection.
+    const placeholders = options.sourceIds.map(() => "?").join(",");
+    query += ` AND nc.source_id IN (${placeholders})`;
+    params.push(...options.sourceIds);
+  }
+
+  // Build a separate count query. We do this with a hand-rolled
+  // SELECT-FROM replacement that uses a non-greedy match on the
+  // OUTERMOST SELECT...FROM only — the old approach used
+  // /SELECT.*?FROM/ which greedily ate into any inner sub-queries
+  // (e.g. the `IN (SELECT … FROM source_follows …)` we use for
+  // the `following` filter), producing broken SQL.
+  //
+  // Strategy: replace the leading "SELECT <columns>" with
+  // "SELECT COUNT(*)" — anything between the leading SELECT and
+  // the first top-level FROM is replaced. We walk char-by-char
+  // tracking parenthesis depth so the inner SELECT of a subquery
+  // doesn't trip the replacement.
+  function toCountQuery(q: string): string {
+    // Find the first "SELECT" ignoring leading whitespace.
+    const trimmed = q.trimStart();
+    const leadingWs = q.length - trimmed.length;
+    const selectStart = q.indexOf("SELECT", leadingWs);
+    if (selectStart === -1) return q;
+    // Walk forward, tracking paren depth, until we hit a FROM
+    // at depth 0.
+    let i = selectStart + "SELECT".length;
+    let depth = 0;
+    while (i < q.length) {
+      const ch = q[i];
+      if (ch === "(") depth++;
+      else if (ch === ")") depth--;
+      else if (depth === 0 && q.slice(i, i + 5).toUpperCase() === " FROM") {
+        return q.slice(0, selectStart) + "SELECT COUNT(*) as count" + q.slice(i);
+      }
+      i++;
+    }
+    return q;
+  }
+  const countQuery = toCountQuery(query);
   const countResult = await db.prepare(countQuery).bind(...params).first<{ count: number }>();
   const total = countResult?.count ?? 0;
 

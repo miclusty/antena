@@ -24,7 +24,7 @@ export function createMockNews(overrides: Partial<NewsItem> = {}): NewsItem {
     sourcesCount: 3,
     imageUrl: "https://example.com/img.jpg",
     publishedAt: new Date().toISOString(),
-    voices: [
+    voces: [
       { label: "Oficialista", color: "#75AADB", pct: 50 },
       { label: "Neutral", color: "#968C83", pct: 25 },
       { label: "Opositor", color: "#F5C542", pct: 25 },

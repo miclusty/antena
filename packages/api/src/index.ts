@@ -16,6 +16,7 @@ import { statsRoutes } from "./routes/stats";
 import { extractUnifiedRoutes } from "./routes/extract-unified";
 import { healthRoutes } from "./routes/health";
 import { synthesisRoutes } from "./routes/synthesis";
+import { followsRoutes } from "./routes/follows";
 import { handleRefreshCron } from "./crons/refresh";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -58,6 +59,7 @@ app.route("/api/stats", statsRoutes);
 app.route("/api/extract", extractUnifiedRoutes);
 app.route("/health", healthRoutes);
 app.route("/api/synthesis", synthesisRoutes);
+app.route("/api", followsRoutes);
 app.route("/", sitemapRoutes);
 
 // Simple health endpoint

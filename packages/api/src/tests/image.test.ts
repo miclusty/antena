@@ -37,6 +37,15 @@ describe("/api/img/:hash", () => {
 
   it("returns 404 when image not in R2", async () => {
     const getSpy = vi.spyOn(env.IMAGES, "get").mockResolvedValue(null);
+    // The route now does a D1 lookup for the news card before
+    // deciding to enqueue. Stub it so the test doesn't need a
+    // full D1 schema seeded.
+    const dbSpy = vi.spyOn(env.DB, "prepare").mockImplementation(((query: string) => {
+      if (query.includes("FROM news_cards")) {
+        return { bind: () => ({ first: async () => null }) };
+      }
+      return env.DB.prepare(query);
+    }) as unknown as typeof env.DB.prepare);
 
     const res = await SELF.fetch("http://example.com/api/img/notfound");
     expect(res.status).toBe(404);
@@ -45,6 +54,7 @@ describe("/api/img/:hash", () => {
     expect(body.hash).toBe("notfound");
 
     getSpy.mockRestore();
+    dbSpy.mockRestore();
   });
 
   it("returns 400 on invalid w param", async () => {
@@ -64,10 +74,20 @@ describe("/api/img/:hash", () => {
 
   it("accepts valid params (returns 404 when not in R2)", async () => {
     const getSpy = vi.spyOn(env.IMAGES, "get").mockResolvedValue(null);
+    // Mock the news-cards query that the route runs before deciding
+    // to enqueue: with no card found, we skip the enqueue and
+    // return 404 directly.
+    const dbSpy = vi.spyOn(env.DB, "prepare").mockImplementation(((query: string) => {
+      if (query.includes("FROM news_cards")) {
+        return { bind: () => ({ first: async () => null }) };
+      }
+      return env.DB.prepare(query);
+    }) as unknown as typeof env.DB.prepare);
 
     const res = await SELF.fetch("http://example.com/api/img/abc?w=800&fmt=webp&fit=cover");
     expect(res.status).toBe(404);
 
     getSpy.mockRestore();
+    dbSpy.mockRestore();
   });
 });

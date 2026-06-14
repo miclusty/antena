@@ -8,6 +8,27 @@ export const feedParamsSchema = z.object({
   bias: z.enum(["all", "left", "right", "neutral"]).optional(),
   time: z.enum(["hour", "today", "week", "all"]).optional(),
   min_quality: z.coerce.number().min(0).max(1).optional(),
+  /**
+   * If true, the feed is restricted to news from sources the
+   * caller follows. Identified by `X-Device-Id` header or
+   * `device_id` query param (same as the follows API).
+   *
+   * Note: z.coerce.boolean() in zod 3.23+ does NOT parse "true"/"false"
+   * strings (it only handles actual booleans or undefined). So we use
+   * a string union + transform.
+   */
+  following: z
+    .union([z.literal("true"), z.literal("false"), z.literal("1"), z.literal("0"), z.boolean()])
+    .optional()
+    .transform((v) => v === "true" || v === "1" || v === true),
+  /**
+   * Comma-separated list of source_ids. When set (and `following`
+   * is false / unset), the feed is restricted to those sources
+   * directamente. The frontend uses this to scope a custom-tab feed
+   * to a single source when the user has selected "see more
+   * from this source" from a card.
+   */
+  source_ids: z.string().max(2048).optional(),
 });
 
 export const articleIdSchema = z.object({

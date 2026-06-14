@@ -66,7 +66,7 @@ function resultToNewsItem(r: SearchResult): NewsItem {
     isGacetilla: false,
     isClickbait: false,
     propagation: [],
-    voices: [],
+    voces: [],
     clusterId: '',
     sourcesCount: 1,
     imageUrl: r.imageUrl,

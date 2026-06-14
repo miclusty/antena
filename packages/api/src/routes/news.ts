@@ -45,8 +45,30 @@ newsRoutes.get("/feed", async (c) => {
   }
   const params = parsed.data;
 
+  // Resolve the device id (if any) for the `following=true` filter.
+  // Same precedence as the follows API: header first, then query.
+  const deviceId =
+    c.req.header("X-Device-Id") ??
+    c.req.query("device_id") ??
+    undefined;
+  const followingDeviceId = params.following && deviceId ? deviceId : undefined;
+  // Parse comma-separated source_ids into a number array.
+  const sourceIds = params.source_ids
+    ? params.source_ids
+        .split(",")
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => Number.isFinite(n) && n > 0)
+    : undefined;
+
   return withCache(async () => {
-    const { news, total } = await getNewsFeed(c.env.DB, params);
+    const { news, total } = await getNewsFeed(c.env.DB, {
+      location_id: params.location_id,
+      category: params.category,
+      limit: params.limit,
+      offset: params.offset,
+      followingDeviceId,
+      sourceIds,
+    });
     const response: FeedResponse = {
       news,
       location: null,
@@ -56,7 +78,13 @@ newsRoutes.get("/feed", async (c) => {
       per_page: params.limit,
     };
     return c.json(response);
-  }, { ttl: 60, swr: 300 })(c.req.raw);
+  }, {
+    // Skip cache when the feed is personalized (following=true
+    // or source_ids=…). Both produce per-device results that
+    // should never be served to another user.
+    ttl: followingDeviceId || sourceIds ? 0 : 60,
+    swr: followingDeviceId || sourceIds ? 0 : 300,
+  })(c.req.raw);
 });
 
 newsRoutes.get("/breaking", async (c) => {

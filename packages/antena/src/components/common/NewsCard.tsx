@@ -6,6 +6,7 @@ import { isRead } from '../../lib/db';
 import { buildWhatsAppUrl } from '../../lib/share';
 import { trackEvent } from '../../lib/analytics';
 import SourceLogo from './SourceLogo';
+import FollowButton from './FollowButton';
 
 // ─── Avatar ──────────────────────────────────────────────────
 const AVATAR_COLORS = ['#FF4D5A','#F59E0B','#10B981','#3B82F6','#8B5CF6','#06B6D4','#EC4899','#EF4444'];
@@ -300,6 +301,9 @@ export default function NewsCard(props: NewsCardProps) {
             >
               <span class="w-[20px] h-[20px] flex items-center justify-center" innerHTML={SVG_BKMK_20} />
             </button>
+            <Show when={props.news.sourceId != null && props.news.sourceId > 0}>
+              <FollowButton sourceId={props.news.sourceId!} size="sm" />
+            </Show>
             <button
               onClick={handleShareWhatsApp}
               aria-label="Compartir por WhatsApp"
