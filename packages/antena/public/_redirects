@@ -17,8 +17,11 @@ http://www.antena.com.ar/*  https://antena.com.ar/:splat 301!
 #    but explicit is better for edge cases) ────────────────
 http://antena.com.ar/* https://antena.com.ar/:splat 301!
 
-# ── Strip trailing slashes for HTML pages (SEO consistency) ─
-# RSS / sitemap / robots / llms are explicit exceptions
-# because Pages serves them as directory/index.html.
-/noticia/:id/ /noticia/:id 301
-/noticia/:id /noticia/:id 200
+# Note: Pages serves /rss.xml, /sitemap-index.xml,
+# /llms.txt, /robots.txt, /noticia/<id> as directories
+# with index.html inside, which is why they redirect
+# to the trailing-slash form. We accept the trailing
+# slash for those XML endpoints because they're served
+# with the correct MIME type via _headers. For HTML
+# pages like /noticia/<id>/ the trailing slash is OK
+# because both forms resolve to the same content.
