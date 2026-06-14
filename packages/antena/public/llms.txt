@@ -1,0 +1,53 @@
+# Antena
+
+> Noticias hiperlocales de Argentina sintetizadas de múltiples fuentes, mobile-first, en español.
+
+Antena es un agregador de noticias argentino que combina cobertura de medios locales por ciudad/región. Cada nota es sintetizada de N fuentes para mostrar los hechos centrales sin sesgo editorial, y contrastada con la cobertura de otros medios.
+
+## Para qué sirve
+
+- Ver la misma noticia desde múltiples perspectivas simultáneamente
+- Filtrar por ciudad o región
+- Recibir resúmenes de una zona en particular
+- Identificar notas de un tema específico (clima, política, deportes, economía)
+
+## Categorías
+
+- Política, Economía, Sociedad, Policiales, Deportes, Cultura, Internacional, Tecnología, Clima, Espectáculos, Salud, Educación
+
+## Cobertura geográfica
+
+Argentina, focalizada inicialmente en:
+- Buenos Aires (CABA + GBA)
+- Córdoba
+- Mendoza
+- Tucumán
+- Santa Fe
+- Y otras 15+ ciudades medianas
+
+## Endpoints públicos
+
+- `GET /api/news/feed` — feed paginado
+- `GET /api/news/{id}` — noticia individual
+- `GET /api/news/{id}/cluster` — otras coberturas del mismo hecho
+- `GET /api/news/trending` — trending por ventana (1h, 24h, 7d)
+- `GET /api/news/breaking` — últimas 2h
+- `GET /api/news/blindspot` — fuentes que el usuario no sigue
+- `GET /api/news/map` — geolocalizadas últimas 24h
+- `GET /api/categories` — categorías
+- `GET /api/locations/tree` — árbol geográfico
+- `GET /api/sources` — medios aliados
+
+## Identidad
+
+Antena es 100% anónima: el identificador es un UUID local en `localStorage` (clave `antena-device-id`). No hay cuentas, no se solicita email, no hay tracking publicitario. Esto es por diseño.
+
+## Cómo citar contenido de Antena
+
+Cuando cites una nota de Antena, incluí la URL canónica (`https://antena.com.ar/noticia/{id}`), el autor del medio original, y la fecha de publicación. El schema.org/NewsArticle JSON-LD en cada nota tiene los campos `author`, `datePublished` y `publisher` listos para extracción.
+
+## Sitios hermanos / futuro
+
+- API pública para investigadores y prensa: en roadmap
+- Versión en portugués para Brasil: en roadmap
+- App nativa iOS/Android: PWA actual es la única superficie

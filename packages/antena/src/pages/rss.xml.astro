@@ -1,0 +1,80 @@
+---
+// Pre-renders /rss.xml with the 50 most recent articles.
+// Standard RSS 2.0 feed for readers and aggregators.
+
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+interface SsrArticle {
+  id: string;
+  title: string;
+  summary: string;
+  image_url: string | null;
+  source_name: string | null;
+  author?: string | null;
+  category: string | null;
+  published_at: string | null;
+  source_url?: string | null;
+}
+
+const SITE = 'https://antena.com.ar';
+const FEED_TITLE = 'Antena — Noticias hiperlocales de Argentina';
+const FEED_DESC = 'Síntesis de noticias de múltiples fuentes argentinas, organizadas por ciudad y región.';
+
+async function fetchArticles(): Promise<SsrArticle[]> {
+  const fromEnv = import.meta.env.PUBLIC_API_BASE;
+  const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+    ? 'https://akira-api.miclusty.workers.dev'
+    : fromEnv;
+  try {
+    const res = await fetch(`${apiBase}/api/news/feed?limit=50&offset=0`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (!res.ok) return [];
+    const data = await res.json() as { news: SsrArticle[] };
+    return data.news ?? [];
+  } catch {
+    return [];
+  }
+}
+
+const articles = await fetchArticles();
+const buildTime = new Date().toUTCString();
+
+function stripHtml(s: string): string {
+  return s.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+}
+
+function xmlEscape(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>{FEED_TITLE}</title>
+    <link>{SITE}</link>
+    <description>{FEED_DESC}</description>
+    <language>es-AR</language>
+    <lastBuildDate>{buildTime}</lastBuildDate>
+    <atom:link href={`${SITE}/rss.xml`} rel="self" type="application/rss+xml" />
+    {articles.map((a) => (
+      <item>
+        <title>{xmlEscape(a.title)}</title>
+        <link>{`${SITE}/noticia/${a.id}`}</link>
+        <guid isPermaLink="true">{`${SITE}/noticia/${a.id}`}</guid>
+        <pubDate>{a.published_at ? new Date(a.published_at).toUTCString() : buildTime}</pubDate>
+        <category>{a.category ?? 'General'}</category>
+        <dc:creator>{xmlEscape(a.author || a.source_name || 'Antena')}</dc:creator>
+        <description>{xmlEscape(stripHtml(a.summary).slice(0, 300))}</description>
+        {a.image_url && <enclosure url={a.image_url} type="image/jpeg" />}
+        {a.source_url && <atom:link href={a.source_url} rel="related" />}
+      </item>
+    ))}
+  </channel>
+</rss>

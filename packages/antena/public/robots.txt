@@ -1,0 +1,55 @@
+User-agent: *
+Allow: /
+
+# ── AI crawlers (explicitly allowed) ─────────────────────
+# We want our news indexed by LLMs (ChatGPT, Claude,
+# Perplexity, etc.) so people can ask "what's the news
+# in Argentina" and get cited Antena content. Modern AI
+# bots respect robots.txt; older ones ignore it but the
+# allow directive is still the right signal.
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+# Block only what we don't want scraped (admin, API).
+Disallow: /api/
+Disallow: /functions/
+Disallow: /registerSW.js
+
+Sitemap: https://antena.com.ar/sitemap-index.xml

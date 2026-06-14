@@ -1,0 +1,61 @@
+---
+// Pre-renders /sitemap-index.xml at build time with the
+// 100 most recent article URLs + the static pages. Sitemaps
+// are a primary SEO signal — every shareable URL should be
+// in one of these files so crawlers (Google, Bing,
+// DuckDuckGo, AI scrapers) can discover it.
+
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+interface SsrArticle {
+  id: string;
+  published_at: string | null;
+}
+
+const SITE = 'https://antena.com.ar';
+
+async function fetchArticles(): Promise<SsrArticle[]> {
+  const fromEnv = import.meta.env.PUBLIC_API_BASE;
+  const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+    ? 'https://akira-api.miclusty.workers.dev'
+    : fromEnv;
+  try {
+    const res = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (!res.ok) return [];
+    const data = await res.json() as { news: SsrArticle[] };
+    return data.news ?? [];
+  } catch {
+    return [];
+  }
+}
+
+const articles = await fetchArticles();
+const now = new Date().toISOString();
+
+const urls = [
+  { loc: `${SITE}/`, lastmod: now, changefreq: 'hourly', priority: '1.0' },
+  { loc: `${SITE}/buscar`, lastmod: now, changefreq: 'weekly', priority: '0.6' },
+  { loc: `${SITE}/settings`, lastmod: now, changefreq: 'monthly', priority: '0.3' },
+  ...articles.map((a) => ({
+    loc: `${SITE}/noticia/${a.id}`,
+    lastmod: a.published_at ?? now,
+    changefreq: 'weekly',
+    priority: '0.8',
+  })),
+];
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls.map((u) => (
+  <url>
+    <loc>{u.loc}</loc>
+    <lastmod>{u.lastmod}</lastmod>
+    <changefreq>{u.changefreq}</changefreq>
+    <priority>{u.priority}</priority>
+  </url>
+))}
+</urlset>

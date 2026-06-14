@@ -1,35 +1,181 @@
 ---
+// Pre-renders every recent news card at build time so each
+// /noticia/<id> URL has full meta tags, Open Graph, and
+// JSON-LD NewsArticle schema for SEO and LLM crawlers.
+//
+// The actual interactive article view is rendered
+// client-side by App.tsx (Solid island), so this page is
+// the SEO/SSR surface. Anything not in getStaticPaths
+// (e.g. brand-new cards) hits Astro's 404 and gets
+// caught by the client-side router — acceptable for v1
+// since cards are usually hours old by the time they're
+// shared.
+
+import Layout from '../../layouts/Layout.astro';
+
 export const prerender = true;
 
-// Pre-render a small set of placeholder paths. The actual article view
-// is handled client-side by App.tsx (Solid islands), so these static
-// pages are just SEO-friendly fallbacks. The real /noticia/{id} routing
-// runs in the browser via the App component.
-export function getStaticPaths() {
-  return [
-    { params: { id: 'index' } },
-  ];
+interface SsrArticle {
+  id: string;
+  title: string;
+  summary: string;
+  body?: string | null;
+  image_url: string | null;
+  source_name: string | null;
+  author?: string | null;
+  category: string | null;
+  location_name: string | null;
+  published_at: string | null;
+  source_url?: string | null;
 }
 
-const { id } = Astro.params;
-const apiBase = import.meta.env.PUBLIC_API_BASE || 'http://localhost:8787';
-const news = id === 'index' ? null : await fetch(`${apiBase}/api/news/${id}`).then((r) => r.json()).catch(() => null);
+export async function getStaticPaths() {
+  // The API is reachable at build time via the worker
+  // URL. If unavailable (offline build), return an empty
+  // set so the build still succeeds.
+  // Skip localhost during production builds — it always
+  // fails to connect and produces empty paths.
+  const fromEnv = import.meta.env.PUBLIC_API_BASE;
+  const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+    ? 'https://akira-api.miclusty.workers.dev'
+    : fromEnv;
+  console.log(`[noticia] getStaticPaths: fetching from ${apiBase}`);
+  try {
+    const res = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    console.log(`[noticia] getStaticPaths: status ${res.status}`);
+    if (!res.ok) return [];
+    const data = await res.json() as { news: SsrArticle[] };
+    console.log(`[noticia] getStaticPaths: ${data.news?.length ?? 0} articles`);
+    return (data.news ?? []).map((n) => ({
+      params: { id: n.id },
+      props: { article: n },
+    }));
+  } catch (e) {
+    console.log(`[noticia] getStaticPaths: error ${e}`);
+    return [];
+  }
+}
+
+const { article } = Astro.props as { article: SsrArticle };
+
+const SITE = 'https://antena.com.ar';
+const url = `${SITE}/noticia/${article.id}`;
+const title = `${article.title} — Antena`;
+const description = article.summary?.slice(0, 200) || 'Noticia en Antena';
+const image = article.image_url || `${SITE}/icons/og-default.png`;
+const author = article.author || article.source_name || 'Antena';
+const publishedAt = article.published_at || new Date().toISOString();
+const publisherName = 'Antena';
+const publisherLogo = `${SITE}/icons/icon.svg`;
 ---
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>{news?.title || 'Noticia'} — Antena</title>
-    <meta property="og:title" content={news?.title || 'Antena'} />
-    <meta property="og:description" content={news?.summary || ''} />
-    <meta property="og:image" content={news?.image_url || '/icons/icon.svg'} />
+<Layout>
+  <Fragment slot="head">
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={url} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={article.title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={url} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content="Antena" />
+    <meta property="article:published_time" content={publishedAt} />
+    <meta property="article:author" content={author} />
+    {article.category && <meta property="article:section" content={article.category} />}
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-  </head>
-  <body>
-    <article>
-      <h1>{news?.title || 'Noticia'}</h1>
-      <p>{news?.summary || ''}</p>
-      <a href="/">← Volver al feed</a>
+    <meta name="twitter:title" content={article.title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Structured data: NewsArticle for Google + LLMs -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'NewsArticle',
+      'headline': article.title,
+      'description': description,
+      'image': [image],
+      'datePublished': publishedAt,
+      'dateModified': publishedAt,
+      'author': [{
+        '@type': 'Person',
+        'name': author,
+      }],
+      'publisher': {
+        '@type': 'Organization',
+        'name': publisherName,
+        'logo': {
+          '@type': 'ImageObject',
+          'url': publisherLogo,
+        },
+      },
+      'mainEntityOfPage': {
+        '@type': 'WebPage',
+        '@id': url,
+      },
+      'articleSection': article.category || 'General',
+      'inLanguage': 'es-AR',
+      'isAccessibleForFree': true,
+      ...(article.source_url ? { 'url': article.source_url } : {}),
+    })} />
+  </Fragment>
+
+  <main id="main-content" class="max-w-[680px] mx-auto px-4 py-8">
+    <a href="/" class="text-sm" style={{ color: 'var(--accent)' }}>← Volver al feed</a>
+    <article class="mt-6">
+      <header>
+        <p class="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>
+          {article.category || 'General'}
+          {article.location_name && <> · {article.location_name}</>}
+        </p>
+        <h1 class="text-[28px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+          {article.title}
+        </h1>
+        <p class="mt-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+          Por <span style={{ color: 'var(--text-secondary)' }}>{author}</span>
+          {' · '}
+          <time datetime={publishedAt}>
+            {new Date(publishedAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </time>
+        </p>
+      </header>
+
+      {article.image_url && (
+        <figure class="mt-6">
+          <img
+            src={article.image_url}
+            alt={article.title}
+            width="1200"
+            height="630"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            class="w-full h-auto rounded-xl"
+          />
+        </figure>
+      )}
+
+      <p class="mt-6 text-lg leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+        {article.summary}
+      </p>
+
+      {article.body && (
+        <div class="mt-4 text-base leading-relaxed prose" style={{ color: 'var(--text-secondary)' }}>
+          {article.body}
+        </div>
+      )}
+
+      <p class="mt-8 text-sm">
+        <a href={url} class="font-semibold" style={{ color: 'var(--accent)' }}>Leer en Antena →</a>
+      </p>
     </article>
-  </body>
-</html>
+  </main>
+</Layout>
