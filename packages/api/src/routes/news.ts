@@ -69,7 +69,7 @@ newsRoutes.get("/feed", async (c) => {
       followingDeviceId,
       sourceIds,
     });
-    const response: FeedResponse = {
+    const response: FeedResponse & { served_at: string } = {
       news,
       location: null,
       category: params.category ?? null,
