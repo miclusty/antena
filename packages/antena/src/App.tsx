@@ -12,6 +12,8 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import EmptyState from './components/common/EmptyState';
 import ConnectionStatus from './components/ConnectionStatus';
 import ToastContainer from './components/Toast';
+import NewsletterSignup from './components/NewsletterSignup';
+import PwaInstallPrompt from './components/PwaInstallPrompt';
 import PullToRefresh from './components/PullToRefresh';
 import { toast } from './components/Toast';
 import { useHaptic } from './lib/haptic';
@@ -461,6 +463,7 @@ export default function App() {
     <ErrorBoundary>
       <ConnectionStatus />
       <ToastContainer />
+      <PwaInstallPrompt />
 
       <div id="main-content" class="min-h-screen bg-bg-base">
 
@@ -674,8 +677,10 @@ export default function App() {
                       onPointClick={(id) => {
                         const full = mappedNews().find(n => n.id === id);
                         if (full) handleNewsClick(full);
-                      }}
-                    />
+                       }}
+                     />
+
+                    <NewsletterSignup />
 
                     {/* Feed toolbar: density toggle + Mate mode */}
                     <div class="flex items-center justify-between px-4 pt-3 pb-1">
