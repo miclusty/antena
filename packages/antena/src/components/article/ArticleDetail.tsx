@@ -1,5 +1,5 @@
 /** @jsxImportSource solid-js */
-import { createResource, For, Show, createMemo, createSignal } from 'solid-js';
+import { createResource, For, Show, createMemo, createSignal, onMount } from 'solid-js';
 import type { NewsItem, VoiceBreakdown } from '../../lib/types';
 import { fetchNewsByCluster, fetchMasterArticle, fetchFeedback, fetchReport, type MasterArticle, type ReportReason } from '../../lib/api';
 import { mapNewsCard, stripHtml } from '../../lib/mappers';
@@ -19,7 +19,7 @@ import ReportSheet from './ReportSheet';
 import { speak as ttsSpeak, stop as ttsStop, isSupported as ttsSupported, isSpeaking as ttsIsSpeaking } from '../../lib/speech';
 import TableOfContents from './TableOfContents';
 import ImageLightbox from './ImageLightbox';
-import { readingTimeText, remainingReadingMinutes } from '../../lib/reading-progress';
+import { readingTimeText, remainingReadingMinutes, computeScrollPct } from '../../lib/reading-progress';
 
 interface ArticleDetailProps {
   news: NewsItem;
@@ -206,6 +206,29 @@ export default function ArticleDetail(props: ArticleDetailProps) {
     return readingTimeText(displaySummary());
   };
 
+  // S3.9 — Live countdown of remaining reading time. A
+  // window-level scroll listener keeps a signal in sync
+  // with the user's progress through the article.
+  const [scrollPct, setScrollPct] = createSignal(0);
+  const totalMinutes = () => {
+    const words = displaySummary().trim().split(/\s+/).length;
+    return Math.max(1, Math.ceil(words / 200));
+  };
+  const remainingMinutes = () => remainingReadingMinutes(totalMinutes(), scrollPct());
+  onMount(() => {
+    if (typeof window === "undefined") return;
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollPct(computeScrollPct(window.scrollY, max));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    // Cleanup. Solid's onMount returns a cleanup fn when
+    // called without onCleanup; the parent already wraps
+    // the component in a way that disposes on unmount.
+    return () => window.removeEventListener("scroll", onScroll);
+  });
+
   const signalColor = () => n().signalLevel >= 7 ? 'var(--accent)' : n().signalLevel >= 4 ? 'var(--warning)' : 'var(--text-tertiary)';
 
   return (
@@ -312,6 +335,23 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{n().time}</span>
           <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
           <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{readingTime()}</span>
+          <Show when={scrollPct() > 0.05 && remainingMinutes() > 0}>
+            <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
+            <span
+              class="text-sm inline-flex items-center gap-1"
+              style={{ color: 'var(--accent)' }}
+              aria-live="polite"
+            >
+              <span
+                class="material-symbols-rounded text-sm leading-none"
+                style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
+                aria-hidden="true"
+              >
+                schedule
+              </span>
+              Te quedan {remainingMinutes()} min
+            </span>
+          </Show>
           <Show when={cleanLocation()}>
             <>
               <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
