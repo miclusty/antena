@@ -34,8 +34,10 @@ import { mapNewsCard } from './lib/mappers';
 import { parseURLState, updateURL, clearURL } from './lib/urlState';
 import { resolveCustomTabSelection } from './lib/feed-controls';
 import { readDensity, writeDensity, type Density } from './lib/preferences';
+import { readFontScale, readDataSaver } from './lib/preferences';
 import DensityToggle from './components/common/DensityToggle';
 import ModoMate from './components/common/ModoMate';
+import OnboardingView, { isOnboarded } from './components/onboarding/OnboardingView';
 import TimeFilters, { type TimeFilter } from './components/common/TimeFilters';
 import QualityFilters, { type QualityFilter } from './components/common/QualityFilters';
 import {
@@ -111,6 +113,7 @@ export default function App() {
   const [mateMode, setMateMode] = createSignal(false);
   const [filterState, setFilterState] = createSignal<FeedFilterState>({ ...DEFAULT_FILTERS });
   const [showFilters, setShowFilters] = createSignal(false);
+  const [onboardingVisible, setOnboardingVisible] = createSignal(false);
 
   const updateTime = (t: TimeFilter) => { setFilterState(s => ({ ...s, time: t })); resetFeed(); };
   const updateQuality = (q: QualityFilter) => { setFilterState(s => ({ ...s, quality: q })); resetFeed(); };
@@ -901,6 +904,24 @@ export default function App() {
         newsItems={mappedNews().map(n => ({ title: n.title, summary: n.summary }))}
         currentIndex={0}
       />
+
+      <Show when={onboardingVisible()}>
+        <OnboardingView
+          onComplete={({ cityId, categorySlugs }) => {
+            setOnboardingVisible(false);
+            if (cityId) setActiveLocation(String(cityId));
+            const firstCat = categorySlugs[0];
+            if (firstCat) {
+              const cat = categories().find((c) => c.slug === firstCat);
+              if (cat) setActiveCategory(cat.name);
+            }
+            resetFeed();
+            // Re-load follows so the "Siguiendo" tab works immediately.
+            void follows.refresh();
+          }}
+          onSkip={() => setOnboardingVisible(false)}
+        />
+      </Show>
 
       <MobileDrawer
         open={drawerOpen()}
