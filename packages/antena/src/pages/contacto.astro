@@ -1,0 +1,45 @@
+---
+// /contacto — minimal contact page. Required for E-E-A-T.
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+const SITE = 'https://antena.com.ar';
+---
+<Layout
+  title="Contacto"
+  description="Contacto de Antena. Reporte de errores, sugerencias, alianzas comerciales o prensa."
+  canonical={`${SITE}/contacto`}
+>
+  <main id="main-content" class="max-w-[680px] mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+      Contacto
+    </h1>
+    <p class="text-lg mb-6" style={{ color: 'var(--text-secondary)' }}>
+      Si encontraste un error, tenés una sugerencia, o querés explorar una alianza, escribinos.
+    </p>
+
+    <div class="grid gap-4">
+      <div class="rounded-xl border p-4" style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}>
+        <h2 class="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Errores y sugerencias</h2>
+        <p class="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Antena es un proyecto chico. Respondemos bugs y sugerencias por email en <a href="mailto:hola@antena.com.ar" class="font-semibold underline" style={{ color: 'var(--accent)' }}>hola@antena.com.ar</a>.
+        </p>
+      </div>
+
+      <div class="rounded-xl border p-4" style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}>
+        <h2 class="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Prensa y alianzas</h2>
+        <p class="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Si sos medio, periodista, o empresa interesada en integración: <a href="mailto:prensa@antena.com.ar" class="font-semibold underline" style={{ color: 'var(--accent)' }}>prensa@antena.com.ar</a>.
+        </p>
+      </div>
+
+      <div class="rounded-xl border p-4" style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}>
+        <h2 class="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Reportar una nota</h2>
+        <p class="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Si una nota es incorrecta, desactualizada o infringe derechos: usá el botón "Reportar" dentro de cada nota, o escribí a <a href="mailto:legal@antena.com.ar" class="font-semibold underline" style={{ color: 'var(--accent)' }}>legal@antena.com.ar</a>.
+        </p>
+      </div>
+    </div>
+  </main>
+</Layout>

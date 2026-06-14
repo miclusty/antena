@@ -1,7 +1,19 @@
 # Cloudflare Pages headers
-# Serve generated XML files with the correct MIME type
-# so crawlers, feed readers, and tools recognize them.
 
+# ── Security headers (all pages) ─────────────────────────
+# HSTS preload: tell browsers to always use HTTPS for
+# the next year. Add antena.com.ar to hstspreload.org
+# once verified in production.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()
+  X-XSS-Protection: 0
+  Cross-Origin-Opener-Policy: same-origin
+
+# ── MIME types for SEO endpoints ─────────────────────────
 /rss.xml
   Content-Type: application/rss+xml; charset=utf-8
 
@@ -14,7 +26,7 @@
 /robots.txt
   Content-Type: text/plain; charset=utf-8
 
-# Cache static assets aggressively
+# ── Cache control ────────────────────────────────────────
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 

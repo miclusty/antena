@@ -1,0 +1,55 @@
+---
+// /privacidad — privacy policy. Required for App Store,
+// Play Store, AdSense, Google News, and EU compliance
+// (GDPR-style transparency even though Argentina has
+// its own data protection regime under the PDPA law 25.326).
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+const SITE = 'https://antena.com.ar';
+---
+<Layout
+  title="Política de privacidad"
+  description="Política de privacidad de Antena. Qué datos recolectamos, qué NO recolectamos, y tus derechos."
+  canonical={`${SITE}/privacidad`}
+>
+  <main id="main-content" class="max-w-[680px] mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+      Política de privacidad
+    </h1>
+    <p class="text-sm mb-6" style={{ color: 'var(--text-tertiary)' }}>Última actualización: junio 2026</p>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Qué datos almacenamos</h2>
+    <ul class="text-base space-y-2 mb-6" style={{ color: 'var(--text-secondary)' }}>
+      <li>• <strong>UUID local</strong> generado en tu primera visita. Vive en tu <code>localStorage</code> (clave <code>antena-device-id</code>). Nunca se asocia a tu identidad real.</li>
+      <li>• <strong>Preferencias</strong> (tema, tamaño de fuente, modo de lectura). También en <code>localStorage</code>.</li>
+      <li>• <strong>Bookmarks y cola de "leer después"</strong> en <code>localStorage</code>. Si borrás el cache, los perdés.</li>
+      <li>• <strong>Votos, follows, feedback útil</strong> — asociados al UUID, sin PII. Borrar el cache te da un nuevo UUID y "olvidamos" tu historial.</li>
+    </ul>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Qué NO recolectamos</h2>
+    <ul class="text-base space-y-2 mb-6" style={{ color: 'var(--text-secondary)' }}>
+      <li>• <strong>No email</strong> salvo que te suscribas al newsletter.</li>
+      <li>• <strong>No nombre real</strong>, no DNI, no número de teléfono.</li>
+      <li>• <strong>No geolocalización</strong> (el permiso está deshabilitado por defecto en <code>Permissions-Policy</code>).</li>
+      <li>• <strong>No cookies de terceros</strong>. Cero Google Analytics, cero Meta Pixel, cero TikTok Pixel.</li>
+      <li>• <strong>No fingerprinting</strong>. No usamos canvas, audio, ni WebGL fingerprinting.</li>
+    </ul>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Tus derechos (PDPA 25.326)</h2>
+    <p class="text-base mb-4" style={{ color: 'var(--text-secondary)' }}>
+      Podés en cualquier momento:
+    </p>
+    <ul class="text-base space-y-2 mb-6" style={{ color: 'var(--text-secondary)' }}>
+      <li>• <strong>Eliminar tu device_id</strong>: abrí la consola del navegador y corré <code>localStorage.removeItem('antena-device-id')</code>. El próximo fetch generará un UUID nuevo y tu historial previo queda huérfano en D1.</li>
+      <li>• <strong>Eliminar todo el estado local</strong>: "Configuración → Borrar datos" o <code>localStorage.clear()</code>.</li>
+      <li>• <strong>Pedir un export de tus datos</strong>: escribinos a <a href="mailto:privacidad@antena.com.ar" class="font-semibold underline" style={{ color: 'var(--accent)' }}>privacidad@antena.com.ar</a>.</li>
+    </ul>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Cómo financíamos el servicio</h2>
+    <p class="text-base" style={{ color: 'var(--text-secondary)' }}>
+      Antena es 100% open source (repos en GitHub). El hosting corre sobre Cloudflare Pages + Workers (donación del programa Cloudflare for Startups). El equipo trabaja ad-honorem por ahora. No vendemos datos. No mostramos ads (todavía). Si te sirve, <a href="/about" class="font-semibold underline" style={{ color: 'var(--accent)' }}>mirá cómo apoyar el proyecto</a>.
+    </p>
+  </main>
+</Layout>

@@ -1,0 +1,50 @@
+---
+// 404 page. Cloudflare Pages serves this when a route
+// doesn't match a generated static page. Same Layout
+// as the rest, with proper SEO meta + JSON-LD so search
+// engines see a valid page (not just a 404) and users
+// can navigate back to something useful.
+import Layout from '../layouts/Layout.astro';
+import MaterialIcon from '../components/common/MaterialIcon';
+
+export const prerender = true;
+---
+<Layout
+  title="404 — No encontrada"
+  description="La página que buscás no existe o fue removida. Volvé al feed o usá el buscador para encontrar lo que buscás."
+  canonical="https://antena.com.ar/404"
+>
+  <main id="main-content" class="min-h-[60vh] flex flex-col items-center justify-center px-4 py-16 text-center">
+    <p
+      class="text-[80px] sm:text-[120px] font-extrabold leading-none mb-2"
+      style={{ color: 'var(--accent)' }}
+      aria-hidden="true"
+    >
+      404
+    </p>
+    <h1 class="text-2xl sm:text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+      Esta nota no existe (todavía)
+    </h1>
+    <p class="text-base max-w-md mb-8" style={{ color: 'var(--text-secondary)' }}>
+      La URL que seguiste no matchea ninguna nota en Antena. Es posible que la nota haya sido removida o que el link tenga un typo.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <a
+        href="/"
+        class="px-6 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold transition-colors"
+        style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+      >
+        <MaterialIcon name="home" size="base" class="text-base " style={{ }} aria-hidden="true" />
+        Ir al feed
+      </a>
+      <a
+        href="/buscar"
+        class="px-6 min-h-[48px] inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold transition-colors border"
+        style={{ background: 'transparent', 'border-color': 'var(--accent)', color: 'var(--accent)' }}
+      >
+        <MaterialIcon name="search" size="base" class="text-base " style={{ }} aria-hidden="true" />
+        Buscar
+      </a>
+    </div>
+  </main>
+</Layout>

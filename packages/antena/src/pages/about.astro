@@ -1,0 +1,65 @@
+---
+// /about — E-E-A-T + legal transparency. Required for
+// AdSense / Google News approval and for users to trust
+// the source. AboutPage + Organization JSON-LD reinforces
+// Knowledge Graph signals.
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+const SITE = 'https://antena.com.ar';
+---
+<Layout
+  title="Sobre Antena"
+  description="Antena es un agregador de noticias argentino mobile-first. Sintetizamos cobertura de múltiples medios para mostrarte los hechos centrales sin sesgo editorial."
+  canonical={`${SITE}/about`}
+>
+  <Fragment slot="head">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sobre Antena" />
+    <meta property="og:image" content={`${SITE}/og-default.png`} />
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'AboutPage',
+      'name': 'Sobre Antena',
+      'url': `${SITE}/about`,
+      'mainEntity': { '@id': `${SITE}#organization` },
+      'inLanguage': 'es-AR',
+    })} />
+  </Fragment>
+
+  <main id="main-content" class="max-w-[680px] mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+      Sobre Antena
+    </h1>
+    <p class="text-lg mb-6" style={{ color: 'var(--text-secondary)' }}>
+      Antena es un agregador de noticias argentino. Sintetizamos la cobertura de medios locales por ciudad y región, para que puedas ver la misma noticia desde múltiples perspectivas en un solo lugar.
+    </p>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Cómo funciona</h2>
+    <p class="text-base mb-4" style={{ color: 'var(--text-secondary)' }}>
+      Cada 2 horas, AKIRA (nuestro motor de extracción serverless) descarga feeds RSS, sitios WordPress, sitemaps y resultados de Google News de más de 200 medios argentinos. Extrae el contenido, lo deduplica por evento, identifica la ciudad y categoría, y lo guarda en una base de datos distribuida en Cloudflare D1.
+    </p>
+    <p class="text-base mb-4" style={{ color: 'var(--text-secondary)' }}>
+      Cuando abrís Antena, ves las notas más relevantes de tu ciudad, agrupadas por evento con todas las perspectivas disponibles, y rankeadas por calidad editorial. La cobertura de cada hecho se muestra como un "cluster" — un conjunto de notas de diferentes medios sobre lo mismo.
+    </p>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Nuestra promesa</h2>
+    <ul class="text-base space-y-2 mb-6" style={{ color: 'var(--text-secondary)' }}>
+      <li><strong style={{ color: 'var(--text-primary)' }}>Sin tracking.</strong> No usamos cookies de terceros, ni Google Analytics, ni Facebook Pixel. Tu identidad es un UUID local que nunca sale de tu dispositivo.</li>
+      <li><strong style={{ color: 'var(--text-primary)' }}>Sin algoritmo oculto.</strong> El ranking es por calidad editorial verificada + recencia + cobertura de fuentes. Publicamos los pesos del score en la sección de transparencia.</li>
+      <li><strong style={{ color: 'var(--text-primary)' }}>Mobile-first.</strong> Diseñado para abrirse en 2G y leerse en 2 minutos en el colectivo.</li>
+      <li><strong style={{ color: 'var(--text-primary)' }}>Sin paywalls.</strong> Todo el contenido es público y enlaza a la fuente original.</li>
+    </ul>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Equipo</h2>
+    <p class="text-base mb-4" style={{ color: 'var(--text-secondary)' }}>
+      Antena es un proyecto open source desarrollado por un equipo chico de devs y periodistas argentinos. No pertenecemos a ningún grupo de medios. Nuestro financiamiento viene del modelo SaaS B2B (API para empresas) y donaciones opcionales.
+    </p>
+
+    <h2 class="text-xl font-bold mt-8 mb-3" style={{ color: 'var(--text-primary)' }}>Contacto</h2>
+    <p class="text-base" style={{ color: 'var(--text-secondary)' }}>
+      Para reportar errores, sugerencias o alianzas: <a href="/contacto" class="font-semibold underline" style={{ color: 'var(--accent)' }}>contacto</a>. Para temas legales: <a href="/privacidad" class="font-semibold underline" style={{ color: 'var(--accent)' }}>privacidad</a>.
+    </p>
+  </main>
+</Layout>
