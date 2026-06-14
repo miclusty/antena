@@ -9,7 +9,7 @@ interface Props {
 }
 
 const { title, description, canonical } = Astro.props as Props;
-const SITE = 'https://antena.com.ar';
+const SITE = 'https://www.antena.com.ar';
 const pageTitle = title ? `${title} — Antena` : 'Antena — Sintonizá tu realidad';
 const pageDescription = description ?? 'Antena — Noticias sintetizadas de múltiples fuentes de cada localidad argentina. Mobile-first, sin tracking, 100% en español.';
 const pageCanonical = canonical ?? SITE;
@@ -28,8 +28,8 @@ const pageCanonical = canonical ?? SITE;
     <meta property="og:title" content="Antena — Noticias HiperLocales de Argentina" />
     <meta property="og:description" content="Síntesis de noticias de múltiples fuentes de cada localidad argentina. Mobile-first, sin tracking, 100% en español." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://antena.com.ar" />
-    <meta property="og:image" content="https://antena.com.ar/og-default.png" />
+    <meta property="og:url" content="https://www.antena.com.ar" />
+    <meta property="og:image" content="https://www.antena.com.ar/og-default.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="es_AR" />
@@ -39,12 +39,12 @@ const pageCanonical = canonical ?? SITE;
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Antena — Noticias HiperLocales de Argentina" />
     <meta name="twitter:description" content="Síntesis de noticias de múltiples fuentes de cada localidad argentina." />
-    <meta name="twitter:image" content="https://antena.com.ar/og-default.png" />
+    <meta name="twitter:image" content="https://www.antena.com.ar/og-default.png" />
     <meta name="twitter:site" content="@antena_ar" />
 
     <!-- hreflang: single locale (es-AR), no alternates yet -->
-    <link rel="alternate" hreflang="es-AR" href="https://antena.com.ar" />
-    <link rel="alternate" hreflang="x-default" href="https://antena.com.ar" />
+    <link rel="alternate" hreflang="es-AR" href="https://www.antena.com.ar" />
+    <link rel="alternate" hreflang="x-default" href="https://www.antena.com.ar" />
 
     <!-- RSS / Atom discovery -->
     <link rel="alternate" type="application/rss+xml" title="Antena — Feed RSS" href="/rss.xml" />
@@ -56,15 +56,15 @@ const pageCanonical = canonical ?? SITE;
       '@type': 'WebSite',
       'name': 'Antena',
       'alternateName': 'Antena — Noticias HiperLocales',
-      'url': 'https://antena.com.ar',
+      'url': 'https://www.antena.com.ar',
       'description': 'Síntesis de noticias de múltiples fuentes de cada localidad argentina',
       'inLanguage': 'es-AR',
-      'publisher': { '@id': 'https://antena.com.ar/#organization' },
+      'publisher': { '@id': 'https://www.antena.com.ar/#organization' },
       'potentialAction': {
         '@type': 'SearchAction',
         'target': {
           '@type': 'EntryPoint',
-          'urlTemplate': 'https://antena.com.ar/buscar?q={search_term_string}',
+          'urlTemplate': 'https://www.antena.com.ar/buscar?q={search_term_string}',
         },
         'query-input': 'required name=search_term_string',
       },
@@ -74,12 +74,12 @@ const pageCanonical = canonical ?? SITE;
     <script type="application/ld+json" set:html={JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'NewsMediaOrganization',
-      '@id': 'https://antena.com.ar/#organization',
+      '@id': 'https://www.antena.com.ar/#organization',
       'name': 'Antena',
-      'url': 'https://antena.com.ar',
+      'url': 'https://www.antena.com.ar',
       'logo': {
         '@type': 'ImageObject',
-        'url': 'https://antena.com.ar/icons/icon.svg',
+        'url': 'https://www.antena.com.ar/icons/icon.svg',
         'width': 512,
         'height': 512,
       },

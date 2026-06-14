@@ -21,7 +21,7 @@ const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
 // the submitter owns the domain. Pages serves /public
 // at the root, so this file is exposed at
 // /indexnow-key.txt.
-export const INDEXNOW_VERIFY_URL = `https://antena.com.ar/${INDEXNOW_KEY}.txt`;
+export const INDEXNOW_VERIFY_URL = `https://www.antena.com.ar/${INDEXNOW_KEY}.txt`;
 
 /** Submit a list of URLs to IndexNow. Returns the number
  *  of URLs accepted (200) or 0 on error. */

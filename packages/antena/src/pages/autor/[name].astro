@@ -25,7 +25,7 @@ interface SsrArticle {
   published_at: string | null;
 }
 
-const SITE = 'https://antena.com.ar';
+const SITE = 'https://www.antena.com.ar';
 
 export async function getStaticPaths() {
   function slug(name: string): string {
@@ -88,7 +88,7 @@ const canonical = `${SITE}/autor/${slug(authorName)}`;
     <meta property="og:type" content="profile" />
     <meta property="og:title" content={`${authorName} · Antena`} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content="https://antena.com.ar/og-default.png" />
+    <meta property="og:image" content="https://www.antena.com.ar/og-default.png" />
 
     <!-- Person JSON-LD for E-E-A-T + Knowledge Graph -->
     <script type="application/ld+json" set:html={JSON.stringify({
@@ -99,7 +99,7 @@ const canonical = `${SITE}/autor/${slug(authorName)}`;
       'jobTitle': 'Periodista',
       'worksFor': {
         '@type': 'NewsMediaOrganization',
-        '@id': 'https://antena.com.ar/#organization',
+        '@id': 'https://www.antena.com.ar/#organization',
         'name': 'Antena',
       },
       'knowsAbout': Array.from(new Set(articles.map((a) => a.category).filter(Boolean))),

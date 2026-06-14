@@ -44,7 +44,7 @@ Antena es 100% anónima: el identificador es un UUID local en `localStorage` (cl
 
 ## Cómo citar contenido de Antena
 
-Cuando cites una nota de Antena, incluí la URL canónica (`https://antena.com.ar/noticia/{id}`), el autor del medio original, y la fecha de publicación. El schema.org/NewsArticle JSON-LD en cada nota tiene los campos `author`, `datePublished` y `publisher` listos para extracción.
+Cuando cites una nota de Antena, incluí la URL canónica (`https://www.antena.com.ar/noticia/{id}`), el autor del medio original, y la fecha de publicación. El schema.org/NewsArticle JSON-LD en cada nota tiene los campos `author`, `datePublished` y `publisher` listos para extracción.
 
 ## Sitios hermanos / futuro
 

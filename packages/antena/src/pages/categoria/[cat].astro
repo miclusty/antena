@@ -19,7 +19,7 @@ interface SsrArticle {
   published_at: string | null;
 }
 
-const SITE = 'https://antena.com.ar';
+const SITE = 'https://www.antena.com.ar';
 
 export async function getStaticPaths() {
   const slugify = (s: string) => s
@@ -74,7 +74,7 @@ const canonical = `${SITE}/categoria/${cat}`;
     <meta property="og:type" content="website" />
     <meta property="og:title" content={`Noticias de ${category} — Antena`} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content="https://antena.com.ar/og-default.png" />
+    <meta property="og:image" content="https://www.antena.com.ar/og-default.png" />
 
     <script type="application/ld+json" set:html={JSON.stringify({
       '@context': 'https://schema.org',
@@ -101,7 +101,7 @@ const canonical = `${SITE}/categoria/${cat}`;
       'description': `Cobertura de noticias de ${category} en Argentina`,
       'url': canonical,
       'inLanguage': 'es-AR',
-      'isPartOf': { '@id': 'https://antena.com.ar/#website' },
+      'isPartOf': { '@id': 'https://www.antena.com.ar/#website' },
       'about': category,
     })} />
   </Fragment>

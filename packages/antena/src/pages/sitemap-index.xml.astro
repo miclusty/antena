@@ -14,7 +14,7 @@ interface SsrArticle {
   published_at: string | null;
 }
 
-const SITE = 'https://antena.com.ar';
+const SITE = 'https://www.antena.com.ar';
 
 async function fetchArticles(): Promise<SsrArticle[]> {
   const fromEnv = import.meta.env.PUBLIC_API_BASE;

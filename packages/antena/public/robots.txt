@@ -52,4 +52,4 @@ Disallow: /api/
 Disallow: /functions/
 Disallow: /registerSW.js
 
-Sitemap: https://antena.com.ar/sitemap-index.xml
+Sitemap: https://www.antena.com.ar/sitemap-index.xml

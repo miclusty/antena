@@ -2,6 +2,17 @@
 
 Cloudflare 100% edge-native news platform. Mobile-first Reddit/X.com-style feed, extraction engine on the edge, D1 database, R2 images, Vectorize search, Analytics Engine telemetry.
 
+## Canonical domain (locked decision)
+
+**The site is `https://www.antena.com.ar` (with www).** All canonical URLs, sitemap, RSS, OG, and JSON-LD must use this host. The apex `antena.com.ar` 301-redirects to `www.antena.com.ar` via Cloudflare Pages `_redirects` (`packages/antena/public/_redirects`). Do not introduce any new code that points to the apex `antena.com.ar/` — if you find one, fix it. The 301 rule is:
+
+```
+https://antena.com.ar/* https://www.antena.com.ar/:splat 301!
+http://antena.com.ar/*  https://www.antena.com.ar/:splat 301!
+```
+
+**Why www:** user preference (locked decision). Matches the convention that many established news sites use (cnn.com, bbc.com, nytimes.com are all apex, but wsj.com, ft.com, theguardian.com use www). Google treats them equally in ranking, but you must pick one and stay consistent or get penalized for duplicate content.
+
 ## Quick Start
 
 ```bash

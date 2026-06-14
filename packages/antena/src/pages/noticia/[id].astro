@@ -60,7 +60,7 @@ export async function getStaticPaths() {
 
 const { article } = Astro.props as { article: SsrArticle };
 
-const SITE = 'https://antena.com.ar';
+const SITE = 'https://www.antena.com.ar';
 const url = `${SITE}/noticia/${article.id}`;
 const title = `${article.title} — Antena`;
 const description = article.summary?.slice(0, 200) || 'Noticia en Antena';
