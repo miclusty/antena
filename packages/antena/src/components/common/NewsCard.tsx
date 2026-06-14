@@ -272,7 +272,25 @@ export default function NewsCard(props: NewsCardProps) {
               class="shrink-0 w-[130px] h-[85px] rounded-xl overflow-hidden bg-bg-hover"
               data-hide-on-data-saver="true"
             >
-              <img src={props.news.imageUrl} alt="" class="w-full h-full object-cover" loading="lazy" decoding="async" width="130" height="85" />
+              {(() => {
+                // Resize via the /api/img/ edge endpoint.
+                // At 130×85 (the rendered size) we serve a
+                // single 2x variant. If the original image
+                // is missing, we leave the slot empty.
+                const u = props.news.imageUrl;
+                if (!u) return null;
+                return (
+                  <img
+                    src={`/api/img/?url=${encodeURIComponent(u)}&w=260&q=72&fmt=webp&fit=cover`}
+                    alt=""
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                    width="130"
+                    height="85"
+                  />
+                );
+              })()}
             </div>
           </Show>
 

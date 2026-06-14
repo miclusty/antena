@@ -39,7 +39,10 @@ describe("NewsCard", () => {
     const { container } = render(() => <NewsCard news={news} onClick={() => {}} />);
     const img = container.querySelector("img");
     expect(img).toBeTruthy();
-    expect(img?.getAttribute("src")).toBe("https://example.com/img.jpg");
+    // The src is now a /api/img/ proxy URL — we just
+    // verify the upstream URL is encoded in the query.
+    expect(img?.getAttribute("src")).toContain("api/img");
+    expect(img?.getAttribute("src")).toContain(encodeURIComponent("https://example.com/img.jpg"));
   });
 
   it("does not render image when imageUrl is missing", () => {

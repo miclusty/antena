@@ -449,7 +449,9 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             <Show when={media().videos.length === 0 && media().images.length <= 1 && n().imageUrl}>
               <div class="relative w-full rounded-lg overflow-hidden">
                 <img
-                  src={n().imageUrl!}
+                  src={`/api/img/?url=${encodeURIComponent(n().imageUrl!)}&w=1600&q=75&fmt=webp&fit=cover`}
+                  srcset={`/api/img/?url=${encodeURIComponent(n().imageUrl!)}&w=400&q=70&fmt=webp&fit=cover 400w, /api/img/?url=${encodeURIComponent(n().imageUrl!)}&w=800&q=72&fmt=webp&fit=cover 800w, /api/img/?url=${encodeURIComponent(n().imageUrl!)}&w=1600&q=75&fmt=webp&fit=cover 1600w`}
+                  sizes="(max-width: 768px) 100vw, 800px"
                   alt=""
                   class="w-full h-64 md:h-80 object-cover cursor-zoom-in"
                   loading="lazy"
