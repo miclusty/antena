@@ -145,8 +145,36 @@ def aggregate(per_query: List[dict]) -> dict:
     all_metrics()). Returns a single dict with each key's
     mean across all queries. The aggregate is what the eval
     harness writes to its JSON report.
+
+    Nested dicts (e.g. semantic_overlap_in_cluster) are
+    recursively aggregated. Keys whose values are int/float
+    are averaged; non-numeric values are skipped.
     """
     if not per_query:
         return {}
-    keys = per_query[0].keys()
-    return {k: sum(q[k] for q in per_query) / len(per_query) for k in keys}
+
+    def avg_numeric(values):
+        return sum(v for v in values if isinstance(v, (int, float))) / max(
+            len([v for v in values if isinstance(v, (int, float))]), 1
+        )
+
+    def walk(items):
+        if not items:
+            return {}
+        keys = set()
+        for it in items:
+            keys.update(it.keys())
+        out = {}
+        for k in keys:
+            values = [it.get(k) for it in items]
+            # If all values are dicts, recurse
+            if all(isinstance(v, dict) for v in values if v is not None):
+                out[k] = walk([v for v in values if v is not None])
+            elif all(isinstance(v, (int, float)) for v in values if v is not None):
+                out[k] = avg_numeric(values)
+            else:
+                # Mixed or non-numeric: skip
+                continue
+        return out
+
+    return walk(per_query)

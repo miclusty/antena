@@ -1,0 +1,76 @@
+{
+  "date": "2026-06-14T16:32:37.759078+00:00",
+  "type": "pure_clustering_baseline",
+  "no_llm_required": true,
+  "n_clusters": 6,
+  "overall_precision": 0.5804,
+  "overall_recall": 1.0,
+  "per_cluster": [
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "cluster_size": 20,
+      "n_relevant_in_cluster": 8,
+      "n_relevant_elsewhere": 0,
+      "n_irrelevant_in_cluster": 12,
+      "n_irrelevant_elsewhere": 0,
+      "precision": 0.4,
+      "recall": 1.0
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "cluster_size": 11,
+      "n_relevant_in_cluster": 9,
+      "n_relevant_elsewhere": 0,
+      "n_irrelevant_in_cluster": 2,
+      "n_irrelevant_elsewhere": 0,
+      "precision": 0.818,
+      "recall": 1.0
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "cluster_size": 12,
+      "n_relevant_in_cluster": 12,
+      "n_relevant_elsewhere": 0,
+      "n_irrelevant_in_cluster": 0,
+      "n_irrelevant_elsewhere": 0,
+      "precision": 1.0,
+      "recall": 1.0
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "cluster_size": 41,
+      "n_relevant_in_cluster": 13,
+      "n_relevant_elsewhere": 0,
+      "n_irrelevant_in_cluster": 28,
+      "n_irrelevant_elsewhere": 0,
+      "precision": 0.317,
+      "recall": 1.0
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "cluster_size": 15,
+      "n_relevant_in_cluster": 12,
+      "n_relevant_elsewhere": 0,
+      "n_irrelevant_in_cluster": 2,
+      "n_irrelevant_elsewhere": 0,
+      "precision": 0.857,
+      "recall": 1.0
+    },
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "cluster_size": 14,
+      "n_relevant_in_cluster": 11,
+      "n_relevant_elsewhere": 0,
+      "n_irrelevant_in_cluster": 3,
+      "n_irrelevant_elsewhere": 0,
+      "precision": 0.786,
+      "recall": 1.0
+    }
+  ]
+}

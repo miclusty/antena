@@ -1,0 +1,321 @@
+{
+  "date": "2026-06-14T17:11:40.186174+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 6,
+  "elapsed_seconds": 196.4,
+  "retrieval_metrics_aggregate": {
+    "latency_ms_assemble": 9303.3333,
+    "recall_at_5": 0.0,
+    "hit_rate_at_5": 0.0,
+    "precision_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "precision_at_20": 0.0,
+    "recall_at_20": 0.0,
+    "ndcg_at_20": 0.0,
+    "n_relevant_in_cluster": 10.6667,
+    "n_neighbor_returned": 5.0,
+    "precision_at_10": 0.0,
+    "hit_rate_at_1": 0.0,
+    "semantic_overlap_in_cluster": {
+      "n_relevant_in_cluster": 10.6667,
+      "mean_overlap_tokens": 1.7,
+      "n_neighbors": 5.0,
+      "max_overlap_tokens": 3.3333
+    },
+    "ndcg_at_10": 0.0,
+    "n_relevant_out_of_cluster": 0.1667,
+    "n_irrelevant_in_cluster": 7.8333,
+    "ndcg_at_5": 0.0,
+    "mrr": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "faithfulness": 3.8333,
+    "perspective_balance": 2.6667,
+    "unsupported_claims_count": 4.0,
+    "source_coverage": 3.0,
+    "composite": 0.67
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 14,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 4509,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 3,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 67336,
+        "judge_ms": 77838,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 7,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma detalles específicos como el nombre 'Tito', su profesión de cantante de hip hop, la fecha de última vista ('martes pasado') y la preocupación vecinal que no están respaldados por ningún chunk del cluster. Además, aunque se menciona un hallazgo en La Plata en los tres textos, solo los chunks confirman el hecho del cuerpo encontrado sin especificar la identidad del fallecido ni detalles sobre la resolución de conflictos menores como el caso menonita o las negociaciones laborales."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 1879,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 157731,
+        "judge_ms": 33803,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 4,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 7,
+          "composite": 0.62,
+          "reasoning": "La mayoría de los eventos específicos (retiro en dos semanas, presupuesto histórico para asentamientos, lanzamiento de Artemis II) no están respaldados por ningún chunk, lo que reduce la fidelidad a un 3. Aunque se cubren temas como el ataque al Instituto Pasteur y las amenazas de Trump, faltan detalles sobre incidentes marítimos con Emiratos Árabes Unidos y la cronología exacta del día 35 mencionada en la perspectiva anti_gov. Las tres perspectivas tienden a repetir afirmaciones idénticas (retiro tras desmantelamiento nuclear, ataques al Instituto Pasteur) sin aportar matices distintos, lo que baja el equilibrio de perspectivas."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 20,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12374,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 12,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 1.0,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 143986,
+        "judge_ms": 15735,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 5,
+          "unsupported_claims_count": 3,
+          "composite": 0.78,
+          "reasoning": "El artículo master es fiel a los chunks principales sobre Adorni y el Milken, pero incluye afirmaciones específicas sobre 'encuentros con empresarios globales' que no están explícitamente detalladas en los textos de evidencia disponibles. La cobertura de fuentes es parcial porque omite detalles sobre la declaración jurada antes del 31 de julio que sí aparecen en un chunk específico. Las tres perspectivas (neutral, pro_gov, anti_gov) están bien equilibradas y reflejan las distintas facetas del mismo evento sin contradicciones internas."
+        }
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 41,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12353,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 13,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 13,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 38405,
+        "judge_ms": 22124,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 2,
+          "perspective_balance": 3,
+          "unsupported_claims_count": 3,
+          "composite": 0.64,
+          "reasoning": "El artículo menciona detalles específicos como el rechazo de recursos y la celebración mediante un video emotivo que, aunque parcialmente respaldados por algunos chunks, no están explícitamente detallados en los textos disponibles. La cobertura de fuentes es baja porque la mayoría de los chunks son irrelevantes o solo confirman hechos básicos sin contexto adicional. Las tres perspectivas están presentes y equilibradas, reflejando neutralidad, apoyo gubernamental y crítica al régimen penitenciario."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12353,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 170247,
+        "judge_ms": 13763,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 2,
+          "composite": 0.66,
+          "reasoning": "El artículo menciona detalles específicos como el uso del juicio abreviado en Punta Alta para el caso de la hija de una pareja y las circunstancias exactas del caso de Alexis Maximiliano Ramírez, información que no aparece explícitamente en los chunks proporcionados. Además, aunque se presentan tres perspectivas, dos de ellas (pro_gov y anti_gov) comparten casi idénticos hechos sobre Daniel Umaño y el director de escuela, lo que reduce la variedad real de puntos de vista. Finalmente, faltan citas directas de las fuentes para respaldar completamente los detalles narrativos."
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 12352,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 34098,
+        "judge_ms": 48880,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 2,
+          "composite": 0.66,
+          "reasoning": "El artículo master afirma que la medida busca facilitar transacciones mediante el acercamiento físico, lo cual es una inferencia no explícita en los chunks que solo mencionan la tecnología NFC y la eliminación del alias; además, la descripción de eliminar la necesidad de datos numéricos específicos para cada operación excede la información disponible. La cobertura de fuentes es parcial porque varios titulares se repiten sin contenido adicional sobre las perspectivas pro_gov o anti_gov, y aunque se presentan tres puntos de vista, el balance es bajo ya que los chunks no desarrollan suficientemente las diferencias entre ellos."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}
