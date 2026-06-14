@@ -220,7 +220,14 @@ export async function fetchMasterArticle(clusterId: string): Promise<MasterArtic
   const res = await safeFetch(`${API_BASE}/api/synthesis/master/${clusterId}`);
   if (!res) return null;
   const data = await res.json();
-  if (!data.title) return null;
+  // The worker returns `{ synthesis: null, reason: ... }`
+  // (200) when AKIRA isn't configured in this environment,
+  // and `{ synthesis: null, reason: "not_found" }` (404)
+  // when AKIRA is reachable but no master exists yet.
+  // Both are "no master" — return null and let the UI
+  // show the raw news card.
+  if (data?.synthesis === null) return null;
+  if (!data?.title) return null;
   return data;
 }
 
