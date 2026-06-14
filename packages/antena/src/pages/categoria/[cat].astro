@@ -1,0 +1,167 @@
+---
+// /categoria/[cat].astro — Topic hub per category.
+// Same pattern as /ciudad/[city] but for editorial
+// verticals (Política, Economía, Deportes, etc.).
+// Strong internal-linking + cross-clustering boost SEO.
+
+import Layout from '../../layouts/Layout.astro';
+export const prerender = true;
+
+interface SsrArticle {
+  id: string;
+  title: string;
+  summary: string;
+  image_url: string | null;
+  source_name: string | null;
+  author: string | null;
+  category: string | null;
+  location_name: string | null;
+  published_at: string | null;
+}
+
+const SITE = 'https://antena.com.ar';
+
+export async function getStaticPaths() {
+  const slugify = (s: string) => s
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const fromEnv = import.meta.env.PUBLIC_API_BASE;
+  const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+    ? 'https://akira-api.miclusty.workers.dev'
+    : fromEnv;
+  let paths: { params: { cat: string }; props: { category: string; articles: SsrArticle[] } }[] = [];
+  try {
+    const res = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (res.ok) {
+      const data = await res.json() as { news: SsrArticle[] };
+      const byCat = new Map<string, SsrArticle[]>();
+      for (const a of data.news ?? []) {
+        const c = (a.category || '').trim();
+        if (!c) continue;
+        const arr = byCat.get(c) ?? [];
+        arr.push(a);
+        byCat.set(c, arr);
+      }
+      const sorted = Array.from(byCat.entries())
+        .sort((a, b) => b[1].length - a[1].length)
+        .slice(0, 15);
+      paths = sorted.map(([category, articles]) => ({
+        params: { cat: slugify(category) },
+        props: { category, articles },
+      }));
+    }
+  } catch {}
+  return paths;
+}
+
+const { cat } = Astro.params;
+const { category, articles } = Astro.props as { category: string; articles: SsrArticle[] };
+if (!articles || articles.length === 0) {
+  return Astro.redirect('/');
+}
+const canonical = `${SITE}/categoria/${cat}`;
+---
+<Layout
+  title={`Noticias de ${category}`}
+  description={`Todas las noticias de ${category} en Antena. Cobertura sintetizada de múltiples fuentes, mobile-first, en español.`}
+  canonical={canonical}
+>
+  <Fragment slot="head">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`Noticias de ${category} — Antena`} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content="https://antena.com.ar/og-default.png" />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      'name': `Noticias de ${category}`,
+      'description': `Cobertura de noticias de ${category} en Argentina`,
+      'url': canonical,
+      'itemListElement': articles.slice(0, 20).map((a, i) => ({
+        '@type': 'ListItem',
+        'position': i + 1,
+        'item': {
+          '@type': 'NewsArticle',
+          'headline': a.title,
+          'url': `${SITE}/noticia/${a.id}`,
+          'datePublished': a.published_at,
+        },
+      })),
+    })} />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': `Noticias de ${category}`,
+      'description': `Cobertura de noticias de ${category} en Argentina`,
+      'url': canonical,
+      'inLanguage': 'es-AR',
+      'isPartOf': { '@id': 'https://antena.com.ar/#website' },
+      'about': category,
+    })} />
+  </Fragment>
+
+  <main id="main-content" class="max-w-[920px] mx-auto px-4 py-8">
+    <a href="/" class="text-sm" style={{ color: 'var(--accent)' }}>← Volver al feed</a>
+    <header class="mt-6">
+      <p class="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
+        Categoría
+      </p>
+      <h1 class="text-3xl md:text-4xl font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+        Noticias de {category}
+      </h1>
+      <p class="mt-3 text-base" style={{ color: 'var(--text-secondary)' }}>
+        Cobertura sintetizada de {articles.length} {articles.length === 1 ? 'noticia' : 'noticias'} recientes de {category} en Argentina.
+      </p>
+    </header>
+
+    <h2 class="text-xs font-bold uppercase tracking-widest mt-8 mb-3" style={{ color: 'var(--text-tertiary)' }}>
+      Últimas notas
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {articles.map((a) => (
+        <a
+          href={`/noticia/${a.id}`}
+          class="block rounded-xl border p-4 transition-colors hover:bg-bg-hover"
+          style={{ 'border-color': 'var(--border-base)' }}
+        >
+          {a.image_url && (
+            <img
+              src={a.image_url}
+              alt={a.title}
+              width="600"
+              height="300"
+              loading="lazy"
+              decoding="async"
+              class="w-full h-40 object-cover rounded-lg mb-3"
+            />
+          )}
+          <p class="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-tertiary)' }}>
+            {a.location_name || 'Argentina'}
+            {a.author && <> · {a.author}</>}
+          </p>
+          <h3 class="text-base font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>
+            {a.title}
+          </h3>
+          <p class="text-sm mt-2 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+            {a.summary.replace(/<[^>]+>/g, '').slice(0, 160)}
+          </p>
+          {a.published_at && (
+            <time
+              datetime={a.published_at}
+              class="text-[10px] mt-2 block"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              {new Date(a.published_at).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </time>
+          )}
+        </a>
+      ))}
+    </div>
+  </main>
+</Layout>

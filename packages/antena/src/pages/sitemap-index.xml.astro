@@ -36,10 +36,52 @@ async function fetchArticles(): Promise<SsrArticle[]> {
 const articles = await fetchArticles();
 const now = new Date().toISOString();
 
+// Collect unique cities + categories from the article set.
+const cities = new Set<string>();
+const categories = new Set<string>();
+for (const a of articles) {
+  // We don't have location_name in SsrArticle here, so we
+  // also pull the feed separately for hub discovery.
+}
+const fromEnv = import.meta.env.PUBLIC_API_BASE;
+const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+  ? 'https://akira-api.miclusty.workers.dev'
+  : fromEnv;
+try {
+  const res = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
+    headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+  });
+  if (res.ok) {
+    const data = await res.json() as { news: { location_name: string | null; category: string | null }[] };
+    for (const a of data.news ?? []) {
+      if (a.location_name) cities.add(a.location_name);
+      if (a.category) categories.add(a.category);
+    }
+  }
+} catch {}
+
+const slugify = (s: string) => s
+  .toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
 const urls = [
   { loc: `${SITE}/`, lastmod: now, changefreq: 'hourly', priority: '1.0' },
   { loc: `${SITE}/buscar`, lastmod: now, changefreq: 'weekly', priority: '0.6' },
   { loc: `${SITE}/settings`, lastmod: now, changefreq: 'monthly', priority: '0.3' },
+  ...Array.from(cities).slice(0, 20).map((c) => ({
+    loc: `${SITE}/ciudad/${slugify(c)}`,
+    lastmod: now,
+    changefreq: 'hourly',
+    priority: '0.8',
+  })),
+  ...Array.from(categories).slice(0, 15).map((c) => ({
+    loc: `${SITE}/categoria/${slugify(c)}`,
+    lastmod: now,
+    changefreq: 'hourly',
+    priority: '0.8',
+  })),
   ...articles.map((a) => ({
     loc: `${SITE}/noticia/${a.id}`,
     lastmod: a.published_at ?? now,
