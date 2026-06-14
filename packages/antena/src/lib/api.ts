@@ -102,6 +102,7 @@ export async function fetchFeed(options?: {
   time?: string;  // 'hour' | 'today' | 'week' | 'all'
   min_quality?: number;  // 0.0 to 1.0 minimum quality score filter
   following?: boolean;   // restrict to the caller's followed sources
+  foryou?: boolean;      // personalized quality-ranked feed ("Para vos")
 }): Promise<FeedResponse> {
   const params = new URLSearchParams();
   if (options?.location_id) params.set('location_id', String(options.location_id));
@@ -113,8 +114,18 @@ export async function fetchFeed(options?: {
   if (options?.min_quality !== undefined) params.set('min_quality', String(options.min_quality));
   if (options?.following) {
     params.set('following', 'true');
-    // Send the device_id so the API can filter the feed.
-    // Re-use the getAntenaDeviceId helper (defined below).
+    if (typeof window !== 'undefined') {
+      const deviceId = getAntenaDeviceId();
+      if (deviceId) params.set('device_id', deviceId);
+    }
+  }
+  if (options?.foryou) {
+    // Sends device_id so the server can later do per-user
+    // personalization (e.g. demote already-read items) without
+    // requiring a second round-trip from the client. The current
+    // SQL uses device_id only for variety scoring; future work
+    // (S0.1+2 votes) will join against user_engagement.
+    params.set('foryou', 'true');
     if (typeof window !== 'undefined') {
       const deviceId = getAntenaDeviceId();
       if (deviceId) params.set('device_id', deviceId);

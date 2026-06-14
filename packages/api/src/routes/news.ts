@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import type { Env, FeedResponse, NewsCard } from "../lib/types";
-import { getNewsFeed, getNewsById, getNewsByCluster, getFeaturedStory } from "../lib/d1";
+import { getNewsFeed, getNewsById, getNewsByCluster, getFeaturedStory, getBlindspot } from "../lib/d1";
 import {
   articleIdSchema,
   feedParamsSchema,
@@ -68,6 +68,7 @@ newsRoutes.get("/feed", async (c) => {
       offset: params.offset,
       followingDeviceId,
       sourceIds,
+      foryou: params.foryou,
     });
     const response: FeedResponse & { served_at: string } = {
       news,
@@ -84,11 +85,11 @@ newsRoutes.get("/feed", async (c) => {
     };
     return c.json(response);
   }, {
-    // Skip cache when the feed is personalized (following=true
-    // or source_ids=…). Both produce per-device results that
-    // should never be served to another user.
-    ttl: followingDeviceId || sourceIds ? 0 : 30,
-    swr: followingDeviceId || sourceIds ? 0 : 300,
+    // Skip cache when the feed is personalized (following=true,
+    // source_ids=…, or foryou=true). foryou uses a RANDOM() tie-
+    // breaker so caching it would defeat the variety goal.
+    ttl: followingDeviceId || sourceIds || params.foryou ? 0 : 30,
+    swr: followingDeviceId || sourceIds || params.foryou ? 0 : 300,
   })(c.req.raw);
 });
 

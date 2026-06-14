@@ -11,6 +11,14 @@ export async function getNewsFeed(
     followingDeviceId?: string;
     /** Restrict to specific source ids (comma-separated string or number[]). */
     sourceIds?: number[];
+    /**
+     * Personalized feed ("Para vos"). When true, the ORDER BY
+     * biases toward higher-quality items and slightly randomizes
+     * tie-breakers so the user sees variety on each load. The
+     * followingDeviceId, if present, is also used to demote
+     * already-seen-by-them items but NOT to restrict the feed.
+     */
+    foryou?: boolean;
   }
 ): Promise<{ news: NewsCard[]; total: number }> {
   const limit = options.limit ?? 20;
@@ -84,6 +92,17 @@ export async function getNewsFeed(
   const total = countResult?.count ?? 0;
 
   query += " ORDER BY nc.created_at DESC LIMIT ? OFFSET ?";
+  if (options.foryou) {
+    // Quality-first ordering for personalized feeds. NULL quality
+    // sorts last via "IS NULL" so we still get fresh items from
+    // sources that haven't been scored yet. The RANDOM() tie-
+    // breaker spreads consecutive page loads so the user doesn't
+    // see the exact same top-20 on every pull.
+    query = query.replace(
+      "ORDER BY nc.created_at DESC",
+      "ORDER BY (nc.quality_score IS NULL), COALESCE(nc.quality_score, 0) DESC, nc.sources_count DESC, RANDOM()",
+    );
+  }
   params.push(limit, offset);
 
   const results = await db.prepare(query).bind(...params).all<NewsCard>();

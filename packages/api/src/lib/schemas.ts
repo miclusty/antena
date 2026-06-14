@@ -29,6 +29,17 @@ export const feedParamsSchema = z.object({
    * from this source" from a card.
    */
   source_ids: z.string().max(2048).optional(),
+  /**
+   * Personalized feed ("Para vos"). Biases ORDER BY toward quality
+   * + randomization for variety. Mutually exclusive with
+   * `following` (a "Siguiendo" tab is a strict follow-only filter;
+   * "Para vos" is a quality-ranked feed that still shows items
+   * from non-followed sources).
+   */
+  foryou: z
+    .union([z.literal("true"), z.literal("false"), z.literal("1"), z.literal("0"), z.boolean()])
+    .optional()
+    .transform((v) => v === "true" || v === "1" || v === true),
 });
 
 export const articleIdSchema = z.object({
