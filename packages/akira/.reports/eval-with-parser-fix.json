@@ -1,0 +1,314 @@
+{
+  "date": "2026-06-14T18:10:31.467735+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 5,
+  "elapsed_seconds": 387.2,
+  "retrieval_metrics_aggregate": {
+    "n_relevant_in_cluster": 10.6667,
+    "n_irrelevant_in_cluster": 7.8333,
+    "recall_at_5": 0.0,
+    "precision_at_10": 0.0,
+    "mrr": 0.0,
+    "semantic_overlap_in_cluster": {
+      "n_neighbors": 5.0,
+      "n_relevant_in_cluster": 10.6667,
+      "max_overlap_tokens": 3.3333,
+      "mean_overlap_tokens": 1.7
+    },
+    "recall_at_20": 0.0,
+    "ndcg_at_20": 0.0,
+    "n_relevant_out_of_cluster": 0.1667,
+    "ndcg_at_5": 0.0,
+    "ndcg_at_10": 0.0,
+    "n_neighbor_returned": 5.0,
+    "hit_rate_at_5": 0.0,
+    "precision_at_5": 0.0,
+    "latency_ms_assemble": 12780.0,
+    "recall_at_10": 0.0,
+    "hit_rate_at_1": 0.0,
+    "precision_at_20": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "unsupported_claims_count": 3.6,
+    "composite": 0.676,
+    "faithfulness": 3.8,
+    "source_coverage": 3.2,
+    "perspective_balance": 2.6
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 14,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 14728,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 3,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 372434,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 14918,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 134566,
+        "judge_ms": 149791,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 4,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 5,
+          "composite": 0.62,
+          "reasoning": "El artículo master presenta afirmaciones específicas sobre fechas (jueves), nombres de funcionarios iraníes y detalles operativos que no están respaldados por los chunks disponibles. Además, las tres perspectivas (neutral, pro_gov, anti_gov) comparten casi idénticos fragmentos textuales sobre la destitución de Pam Bondi y la advertencia 'Edad de Piedra', lo que indica una falta de equilibrio real en la cobertura de fuentes y una dependencia excesiva de un solo conjunto de información."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 20,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 14918,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 12,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 1.0,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 299742,
+        "judge_ms": 37785,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 5,
+          "unsupported_claims_count": 2,
+          "composite": 0.78,
+          "reasoning": "El artículo menciona explícitamente que Milei cuestiona al periodismo y defiende la Constitución, lo cual no está respaldado en los chunks donde solo se cita su frase sobre 'carnicería mediática' o su postura general sin ese matiz constitucional específico. Asimismo, aunque el resumen afirma que Bullrich pidió una declaración inmediata, los chunks solo confirman que ella pidió que Adorni presente la declaración de inmediato, sin especificar que fuera en relación con la fecha límite del 31 de julio mencionada por Milei."
+        }
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 41,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 15006,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 13,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 13,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 85841,
+        "judge_ms": 94587,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 2,
+          "composite": 0.66,
+          "reasoning": "La mayoría del contenido factual sobre la condena y el tribunal está respaldado por varios chunks, pero las afirmaciones sobre que se rechazaron 'excepciones' específicas no aparecen en la evidencia disponible. Además, la declaración de que este caso es 'emblemático' es una interpretación subjetiva que no se encuentra en los textos fuente. Finalmente, las tres perspectivas (neutral, pro_gov, anti_gov) presentan exactamente el mismo texto idéntico, lo que indica un balance deficiente ya que no hay variación ni contraste entre ellas."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 2506,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 275387,
+        "judge_ms": 33687,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 2,
+          "composite": 0.66,
+          "reasoning": "El artículo menciona una solicitud de pena específica (entre 5 y 7 años) para el caso de Río Grande, mientras que los chunks solo confirman la acusación y la fiscalización sin detallar esa cifra exacta. Asimismo, afirma que se detuvo a un hombre por abuso contra su sobrina en Bahía Blanca, pero los chunks indican que ese individuo ya había sido condenado previamente (10 años 6 meses) antes de este nuevo proceso, lo cual contradice la idea de una mera detención reciente sin antecedentes mencionados."
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 14604,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 94019,
+        "judge_ms": 51914,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 7,
+          "composite": 0.66,
+          "reasoning": "El artículo master presenta afirmaciones sobre beneficios de experiencia de usuario y alineación con políticas económicas que no están respaldadas por los chunks, los cuales solo confirman el anuncio técnico y su función para combatir el efectivo. La perspectiva anti_gov introduce preocupaciones sobre privacidad y centralización que tampoco aparecen en la evidencia disponible. Además, aunque se cubren las tres perspectivas solicitadas, dos de ellas (pro_gov y neutral) comparten información idéntica mientras que la tercera aporta análisis crítico no presente en los datos."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

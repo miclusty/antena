@@ -1,0 +1,314 @@
+{
+  "date": "2026-06-14T18:17:27.451546+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 5,
+  "elapsed_seconds": 383.9,
+  "retrieval_metrics_aggregate": {
+    "hit_rate_at_1": 0.0,
+    "recall_at_5": 0.0,
+    "mrr": 0.0,
+    "recall_at_20": 0.0,
+    "hit_rate_at_5": 0.0,
+    "latency_ms_assemble": 11967.5,
+    "n_relevant_in_cluster": 10.6667,
+    "ndcg_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "n_neighbor_returned": 5.0,
+    "precision_at_10": 0.0,
+    "precision_at_5": 0.0,
+    "n_irrelevant_in_cluster": 7.8333,
+    "n_relevant_out_of_cluster": 0.1667,
+    "semantic_overlap_in_cluster": {
+      "n_relevant_in_cluster": 10.6667,
+      "max_overlap_tokens": 3.3333,
+      "mean_overlap_tokens": 1.7,
+      "n_neighbors": 5.0
+    },
+    "ndcg_at_20": 0.0,
+    "precision_at_20": 0.0,
+    "ndcg_at_10": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "faithfulness": 4.0,
+    "unsupported_claims_count": 3.0,
+    "source_coverage": 3.0,
+    "composite": 0.684,
+    "perspective_balance": 2.6
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 14,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 14057,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 3,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 122513,
+        "judge_ms": 156682,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 4,
+          "composite": 0.66,
+          "reasoning": "El artículo introduce detalles específicos como el apodo 'Tito' y la afición al hip hop que no están respaldados en los chunks proporcionados, lo que reduce la fidelidad. Además, aunque se mencionan las tres perspectivas (neutral, pro_gov, anti_gov), dos de ellas (pro_gov y anti_gov) comparten casi idénticas afirmaciones sobre el hallazgo del cuerpo en La Plata y Brasil, lo que indica un desbalance en la cobertura real de las fuentes. Finalmente, los chunks son fragmentados y no cubren completamente todos los detalles narrativos del artículo master."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 2596,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 309901,
+        "judge_ms": 41462,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "La mayoría de las afirmaciones sobre ataques a instalaciones médicas, el día 34 de la guerra y la advertencia de Trump están respaldadas por los chunks, pero se inventan detalles específicos como el llamamiento del presidente iraní, el lanzamiento de misiles iraníes tras la declaración de Trump y el tratado para el estrecho de Ormuz que no aparecen en la evidencia. Además, dos perspectivas (neutral y pro_gov) repiten casi idénticas afirmaciones sin aportar matices distintos, lo que reduce significativamente el equilibrio entre las tres visiones."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 20,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 16085,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 12,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 1.0,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 90074,
+        "judge_ms": 36547,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 5,
+          "unsupported_claims_count": 2,
+          "composite": 0.78,
+          "reasoning": "La mayoría de las afirmaciones sobre el respaldo de Milei a Adorni, los aumentos en prepagas y la fecha límite para la declaración jurada están respaldadas por múltiples chunks. Sin embargo, la fuente original no menciona explícitamente que el apoyo se comunicó mediante publicaciones en redes sociales con mensajes de dirigentes, ni detalla que las cuentas estén 'en regla' como frase exacta, lo que reduce ligeramente la fidelidad y cobertura. Las tres perspectivas (neutral, pro_gov, anti_gov) están bien equilibradas y reflejan los diferentes ángulos presentados en el artículo sin contradicciones graves."
+        }
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 41,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 10902,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 13,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 13,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 83881,
+        "judge_ms": 126248,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "La mayoría de los hechos centrales (condena de 6 años, régimen semiabierto, hecho en 2018, rechazo de recursos) están respaldados por chunks específicos, pero la afirmación sobre ser un 'proceso emblemático' no tiene soporte textual. La cobertura es parcial porque muchos chunks son irrelevantes o solo mencionan imágenes sin texto sustancial. El balance de perspectivas es deficiente ya que los tres textos coinciden en el resultado final (condena), eliminando cualquier tensión real entre pro_gov y anti_gov."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 14107,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 369805,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 14058,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 169888,
+        "judge_ms": 34822,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "El artículo afirma que la implementación es la primera en América Latina, lo cual no se menciona ni en ningún chunk de evidencia disponible. Además, dos perspectivas (neutral y pro_gov) incluyen detalles sobre el cronograma de actividades en Marisol por el Sr. Silvio Traverso, información que solo aparece en un único chunk específico, rompiendo la cobertura equilibrada de las fuentes."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}

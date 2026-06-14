@@ -1,0 +1,314 @@
+{
+  "date": "2026-06-14T17:54:41.165886+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 5,
+  "elapsed_seconds": 385.4,
+  "retrieval_metrics_aggregate": {
+    "hit_rate_at_1": 0.0,
+    "hit_rate_at_5": 0.0,
+    "recall_at_10": 0.0,
+    "ndcg_at_10": 0.0,
+    "n_neighbor_returned": 5.0,
+    "ndcg_at_20": 0.0,
+    "semantic_overlap_in_cluster": {
+      "mean_overlap_tokens": 1.7,
+      "n_relevant_in_cluster": 10.6667,
+      "n_neighbors": 5.0,
+      "max_overlap_tokens": 3.3333
+    },
+    "mrr": 0.0,
+    "n_relevant_out_of_cluster": 0.1667,
+    "recall_at_5": 0.0,
+    "precision_at_10": 0.0,
+    "latency_ms_assemble": 9757.3333,
+    "precision_at_5": 0.0,
+    "n_relevant_in_cluster": 10.6667,
+    "n_irrelevant_in_cluster": 7.8333,
+    "recall_at_20": 0.0,
+    "ndcg_at_5": 0.0,
+    "precision_at_20": 0.0
+  },
+  "synthesis_metrics_aggregate": {
+    "unsupported_claims_count": 2.2,
+    "composite": 0.684,
+    "faithfulness": 4.0,
+    "source_coverage": 3.0,
+    "perspective_balance": 2.6
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 14,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 11476,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 3,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.2,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 128440,
+        "judge_ms": 127951,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "El artículo introduce nombres específicos (Tito, Gregorio Antonio Peralte) y detalles demográficos o profesionales que no aparecen en los chunks originales, lo que reduce la fidelidad. Además, menciona una asociación gremial específica sin respaldo textual en las fuentes proporcionadas. Aunque cubre los temas generales de seguridad ciudadana y conflictos laborales, la falta de cobertura exhaustiva sobre los nombres reales y detalles específicos baja el puntaje de cobertura de fuentes."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 11451,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 373915,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 20,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7426,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 8,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 12,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 8,
+          "mean_overlap_tokens": 1.0,
+          "max_overlap_tokens": 1
+        }
+      },
+      "synthesis": {
+        "latency_ms": 287752,
+        "judge_ms": 37257,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 5,
+          "unsupported_claims_count": 2,
+          "composite": 0.78,
+          "reasoning": "La mayoría de las afirmaciones sobre el respaldo de Milei a Adorni, sus declaraciones sobre honestidad y la continuidad en el cargo están respaldadas por múltiples chunks, aunque faltan citas directas para confirmar que cuestionó específicamente versiones periodísticas. La mención de la fecha límite del 31 de julio para la declaración jurada no aparece explícitamente en los textos proporcionados, lo que reduce ligeramente la cobertura de fuentes."
+        }
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 41,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 13489,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 13,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 13,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 88955,
+        "judge_ms": 92582,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 0,
+          "composite": 0.66,
+          "reasoning": "El artículo master es fiel a la evidencia disponible en los chunks, citando correctamente el Tribunal Regional Federal de la 3ª Región y los detalles del fallo. Sin embargo, la cobertura de fuentes es parcial ya que solo se extraen datos de artículos específicos sobre Thelma Fardin, ignorando otros reportes relevantes en el cluster. Las tres perspectivas son idénticas y carecen de cualquier matiz crítico o neutralidad real, lo que reduce significativamente el equilibrio."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7349,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 1,
+        "n_irrelevant_in_cluster": 0,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 4.0,
+          "max_overlap_tokens": 6
+        }
+      },
+      "synthesis": {
+        "latency_ms": 127553,
+        "judge_ms": 37995,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 2,
+          "composite": 0.66,
+          "reasoning": "El artículo menciona detalles específicos como el nombre del fiscal Agustina Olguín y la edad exacta de la víctima en Río Grande que no están respaldados explícitamente en los chunks proporcionados. Además, aunque se citan varios casos de condenas, faltan matices sobre la procedencia de las fuentes para algunos puntos menores."
+        }
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7353,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 170374,
+        "judge_ms": 46052,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 4,
+          "composite": 0.66,
+          "reasoning": "El artículo afirma con certeza absoluta que se elimina la necesidad de alias en todas las transferencias inmediatas, mientras que los chunks solo mencionan que Coelsa anunció pagos por aproximación para cuentas bancarias y virtuales sin especificar si aplica a todos los tipos de transacciones. Además, el texto hace declaraciones sobre ser el 'primer caso en América Latina' y detalla beneficios estratégicos para la economía nacional y al Estado argentino, información que no está presente ni implícita en los fragmentos proporcionados."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}
