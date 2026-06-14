@@ -2,6 +2,10 @@
 import Layout from '../layouts/Layout.astro';
 import SettingsView from '../components/settings/SettingsView';
 ---
-<Layout title="Configuración · Antena">
+<Layout
+  title="Configuración"
+  description="Personalizá Antena: tema, tamaño de fuente, modo de lectura, modo mate, calidad de imagen. 100% local, sin tracking."
+  canonical="https://antena.com.ar/settings"
+>
   <SettingsView client:load />
 </Layout>

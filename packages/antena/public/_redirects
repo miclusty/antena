@@ -1,0 +1,24 @@
+# Cloudflare Pages redirects.
+#
+# 1. www → non-www 301. Google penalizes duplicate content,
+#    so we canonicalize to https://antena.com.ar.
+# 2. Trailing-slash policy: Pages adds a trailing slash by
+#    default. We strip it for SEO consistency (the sitemap
+#    and canonical URLs use no trailing slash).
+# 3. /noticia/<id>/ → /noticia/<id> (same).
+# 4. /api/* and /functions/* are handled by the worker
+#    or Pages Functions; do NOT redirect those.
+
+# ── www → non-www ──────────────────────────────────────────
+https://www.antena.com.ar/* https://antena.com.ar/:splat 301!
+http://www.antena.com.ar/*  https://antena.com.ar/:splat 301!
+
+# ── Force HTTPS (defense-in-depth — Pages already does it,
+#    but explicit is better for edge cases) ────────────────
+http://antena.com.ar/* https://antena.com.ar/:splat 301!
+
+# ── Strip trailing slashes for HTML pages (SEO consistency) ─
+# RSS / sitemap / robots / llms are explicit exceptions
+# because Pages serves them as directory/index.html.
+/noticia/:id/ /noticia/:id 301
+/noticia/:id /noticia/:id 200

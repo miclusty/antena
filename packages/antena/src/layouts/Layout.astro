@@ -1,6 +1,18 @@
 ---
 import '../lib/design-tokens.css';
 import '../styles/animations.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+}
+
+const { title, description, canonical } = Astro.props as Props;
+const SITE = 'https://antena.com.ar';
+const pageTitle = title ? `${title} — Antena` : 'Antena — Sintonizá tu realidad';
+const pageDescription = description ?? 'Antena — Noticias sintetizadas de múltiples fuentes de cada localidad argentina. Mobile-first, sin tracking, 100% en español.';
+const pageCanonical = canonical ?? SITE;
 ---
 <!doctype html>
 <html lang="es">
@@ -8,37 +20,81 @@ import '../styles/animations.css';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" id="theme-color" content="#0F1117" />
-    <meta name="description" content="Antena — Noticias HiperLocales de Argentina. Noticias sintetizadas de multiples fuentes de cada localidad argentina." />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <link rel="canonical" href={pageCanonical} />
 
     <!-- Open Graph -->
     <meta property="og:title" content="Antena — Noticias HiperLocales de Argentina" />
-    <meta property="og:description" content="Noticias sintetizadas de multiples fuentes de cada localidad argentina." />
+    <meta property="og:description" content="Síntesis de noticias de múltiples fuentes de cada localidad argentina. Mobile-first, sin tracking, 100% en español." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://antena.com.ar" />
-    <meta property="og:image" content="/icons/icon.svg" />
+    <meta property="og:image" content="https://antena.com.ar/og-default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content="Antena" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Antena — Noticias HiperLocales" />
-    <meta name="twitter:description" content="Noticias hiperlocales de Argentina sintetizadas de multiples fuentes." />
-    <meta name="twitter:image" content="/icons/icon.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Antena — Noticias HiperLocales de Argentina" />
+    <meta name="twitter:description" content="Síntesis de noticias de múltiples fuentes de cada localidad argentina." />
+    <meta name="twitter:image" content="https://antena.com.ar/og-default.png" />
+    <meta name="twitter:site" content="@antena_ar" />
 
-    <!-- Structured data -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Antena",
-        "description": "Noticias hiperlocales de Argentina sintetizadas de multiples fuentes",
-        "applicationCategory": "NewsApplication",
-        "operatingSystem": "All",
-        "url": "https://antena.com.ar",
-        "inLanguage": "es-AR"
-      }
-    </script>
+    <!-- hreflang: single locale (es-AR), no alternates yet -->
+    <link rel="alternate" hreflang="es-AR" href="https://antena.com.ar" />
+    <link rel="alternate" hreflang="x-default" href="https://antena.com.ar" />
 
-    <title>Antena — Sintonizá tu realidad</title>
+    <!-- RSS / Atom discovery -->
+    <link rel="alternate" type="application/rss+xml" title="Antena — Feed RSS" href="/rss.xml" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap-index.xml" />
+
+    <!-- Structured data: WebSite (gives Google a sitelinks search box) -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      'name': 'Antena',
+      'alternateName': 'Antena — Noticias HiperLocales',
+      'url': 'https://antena.com.ar',
+      'description': 'Síntesis de noticias de múltiples fuentes de cada localidad argentina',
+      'inLanguage': 'es-AR',
+      'publisher': { '@id': 'https://antena.com.ar/#organization' },
+      'potentialAction': {
+        '@type': 'SearchAction',
+        'target': {
+          '@type': 'EntryPoint',
+          'urlTemplate': 'https://antena.com.ar/buscar?q={search_term_string}',
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    })} />
+
+    <!-- Structured data: Organization (Knowledge Graph signal) -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'NewsMediaOrganization',
+      '@id': 'https://antena.com.ar/#organization',
+      'name': 'Antena',
+      'url': 'https://antena.com.ar',
+      'logo': {
+        '@type': 'ImageObject',
+        'url': 'https://antena.com.ar/icons/icon.svg',
+        'width': 512,
+        'height': 512,
+      },
+      'description': 'Agregador de noticias argentino mobile-first. Mobile-first, sin tracking, 100% en español.',
+      'foundingDate': '2026',
+      'areaServed': {
+        '@type': 'Country',
+        'name': 'Argentina',
+      },
+      'inLanguage': 'es-AR',
+      'sameAs': [
+        'https://twitter.com/antena_ar',
+      ],
+    })} />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
 

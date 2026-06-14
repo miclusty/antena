@@ -1,0 +1,167 @@
+---
+// /autor/[name].astro — E-E-A-T signal. Lists all articles
+// attributed to a given journalist, with their bio (when
+// available) and a Person JSON-LD schema. This gives
+// Google a real author identity for NewsArticle authors
+// and helps it cite us in Knowledge Panels.
+//
+// The page is statically rendered for the most-recent
+// authors we know about (top N unique author names in the
+// last 100 articles). Newer articles by the same author
+// fall back to a 404 + client-side router.
+
+import Layout from '../../layouts/Layout.astro';
+export const prerender = true;
+
+interface SsrArticle {
+  id: string;
+  title: string;
+  summary: string;
+  image_url: string | null;
+  source_name: string | null;
+  author: string | null;
+  category: string | null;
+  location_name: string | null;
+  published_at: string | null;
+}
+
+const SITE = 'https://antena.com.ar';
+
+export async function getStaticPaths() {
+  function slug(name: string): string {
+    return name
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  const fromEnv = import.meta.env.PUBLIC_API_BASE;
+  const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+    ? 'https://akira-api.miclusty.workers.dev'
+    : fromEnv;
+  let all: SsrArticle[] = [];
+  try {
+    const res = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (res.ok) {
+      const data = await res.json() as { news: SsrArticle[] };
+      all = data.news ?? [];
+    }
+  } catch {}
+  const byAuthor = new Map<string, { name: string; count: number; articles: SsrArticle[] }>();
+  for (const a of all) {
+    const n = (a.author || '').trim();
+    if (!n) continue;
+    const entry = byAuthor.get(n) ?? { name: n, count: 0, articles: [] };
+    entry.count++;
+    entry.articles.push(a);
+    byAuthor.set(n, entry);
+  }
+  const top = Array.from(byAuthor.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+  return top.map((entry) => ({ params: { name: slug(entry.name) }, props: { entry } }));
+}
+
+const { name } = Astro.params;
+const entry = (Astro.props as { entry: { name: string; count: number; articles: SsrArticle[] } }).entry;
+if (!entry) {
+  return Astro.redirect('/');
+}
+const authorName = entry.name;
+const articles = entry.articles;
+const firstArticle = articles[0];
+const slug = (s: string) => s
+  .toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+const canonical = `${SITE}/autor/${slug(authorName)}`;
+---
+<Layout
+  title={`${authorName} · Periodista`}
+  description={`Notas de ${authorName} en Antena. Cobertura de ${articles.length} ${articles.length === 1 ? 'noticia' : 'noticias'} en Argentina.`}
+  canonical={canonical}
+>
+  <Fragment slot="head">
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={`${authorName} · Antena`} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content="https://antena.com.ar/og-default.png" />
+
+    <!-- Person JSON-LD for E-E-A-T + Knowledge Graph -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      'name': authorName,
+      'url': canonical,
+      'jobTitle': 'Periodista',
+      'worksFor': {
+        '@type': 'NewsMediaOrganization',
+        '@id': 'https://antena.com.ar/#organization',
+        'name': 'Antena',
+      },
+      'knowsAbout': Array.from(new Set(articles.map((a) => a.category).filter(Boolean))),
+      'workLocation': {
+        '@type': 'Country',
+        'name': 'Argentina',
+      },
+    })} />
+  </Fragment>
+
+  <main id="main-content" class="max-w-[680px] mx-auto px-4 py-8">
+    <a href="/" class="text-sm" style={{ color: 'var(--accent)' }}>← Volver al feed</a>
+    <header class="mt-6 flex items-center gap-4">
+      <div
+        class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold shrink-0"
+        style={{ background: 'var(--accent)', color: '#FFFFFF' }}
+        aria-hidden="true"
+      >
+        {authorName[0]?.toUpperCase() ?? '?'}
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{authorName}</h1>
+        <p class="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+          Periodista · {articles.length} {articles.length === 1 ? 'noticia' : 'noticias'} en Antena
+          {firstArticle?.source_name && <> · {firstArticle.source_name}</>}
+        </p>
+      </div>
+    </header>
+
+    <h2 class="text-xs font-bold uppercase tracking-widest mt-8 mb-3" style={{ color: 'var(--text-tertiary)' }}>
+      Últimas notas
+    </h2>
+    <ul class="flex flex-col gap-3">
+      {articles.map((a) => (
+        <li>
+          <a
+            href={`/noticia/${a.id}`}
+            class="block rounded-xl border p-4 transition-colors hover:bg-bg-hover"
+            style={{ 'border-color': 'var(--border-base)' }}
+          >
+            <p class="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-tertiary)' }}>
+              {a.category || 'General'}
+              {a.location_name && <> · {a.location_name}</>}
+            </p>
+            <h3 class="text-base font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>
+              {a.title}
+            </h3>
+            <p class="text-sm mt-1 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+              {a.summary.replace(/<[^>]+>/g, '').slice(0, 200)}
+            </p>
+            {a.published_at && (
+              <time
+                datetime={a.published_at}
+                class="text-[10px] mt-2 block"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {new Date(a.published_at).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </time>
+            )}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Layout>

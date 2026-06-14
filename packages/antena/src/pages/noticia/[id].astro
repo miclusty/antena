@@ -108,9 +108,11 @@ const publisherLogo = `${SITE}/icons/icon.svg`;
       'author': [{
         '@type': 'Person',
         'name': author,
+        'url': `${SITE}/autor/${encodeURIComponent(author)}`,
       }],
       'publisher': {
         '@type': 'Organization',
+        '@id': publisherLogo,
         'name': publisherName,
         'logo': {
           '@type': 'ImageObject',
@@ -124,7 +126,25 @@ const publisherLogo = `${SITE}/icons/icon.svg`;
       'articleSection': article.category || 'General',
       'inLanguage': 'es-AR',
       'isAccessibleForFree': true,
+      // Speakable: tells Google Assistant / Alexa which
+      // sections to read aloud for voice search results.
+      'speakable': {
+        '@type': 'SpeakableSpecification',
+        'xpath': ['/html/head/title', '/html/body//article/h1', '/html/body//article/p[1]'],
+      },
       ...(article.source_url ? { 'url': article.source_url } : {}),
+    })} />
+
+    <!-- BreadcrumbList: rich snippet breadcrumb in SERPs -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        { '@type': 'ListItem', 'position': 1, 'name': 'Inicio', 'item': SITE },
+        ...(article.category ? [{ '@type': 'ListItem', 'position': 2, 'name': article.category, 'item': `${SITE}/?cat=${encodeURIComponent(article.category)}` }] : []),
+        ...(article.location_name ? [{ '@type': 'ListItem', 'position': 3, 'name': article.location_name, 'item': `${SITE}/?loc=${encodeURIComponent(article.location_name)}` }] : []),
+        { '@type': 'ListItem', 'position': 99, 'name': article.title, 'item': url },
+      ].map((item, i, arr) => ({ ...item, position: arr.indexOf(item) + 1 })),
     })} />
   </Fragment>
 

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F1117"/>
+      <stop offset="100%" stop-color="#1A1D2B"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FF4D5A"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="20" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.06" stroke="#FFFFFF" stroke-width="1">
+    <line x1="0" y1="157" x2="1200" y2="157"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="473" x2="1200" y2="473"/>
+    <line x1="300" y1="0" x2="300" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="900" y1="0" x2="900" y2="630"/>
+  </g>
+
+  <!-- Glow blob -->
+  <circle cx="200" cy="200" r="280" fill="#FF4D5A" opacity="0.18" filter="url(#glow)"/>
+  <circle cx="1000" cy="450" r="220" fill="#3B82F6" opacity="0.12" filter="url(#glow)"/>
+
+  <!-- Brand mark -->
+  <g transform="translate(80, 80)">
+    <!-- Antenna icon (concentric arcs) -->
+    <g transform="translate(0, 0)" stroke="url(#accent)" stroke-width="8" fill="none" stroke-linecap="round">
+      <path d="M 30 70 A 25 25 0 0 1 80 70"/>
+      <path d="M 18 80 A 38 38 0 0 1 92 80"/>
+      <path d="M 6 90 A 51 51 0 0 1 104 90"/>
+    </g>
+    <circle cx="55" cy="70" r="8" fill="#FF4D5A"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="80" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="160" font-weight="800" fill="#FFFFFF" letter-spacing="-6">Antena</text>
+
+  <!-- Tagline -->
+  <text x="80" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="500" fill="#A0A3B1">Sintonizá tu realidad.</text>
+
+  <!-- Description -->
+  <text x="80" y="540" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="400" fill="#FFFFFF" opacity="0.9">Noticias hiperlocales de Argentina</text>
+  <text x="80" y="578" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="400" fill="#FFFFFF" opacity="0.7">Síntesis de múltiples fuentes · Sin tracking</text>
+
+  <!-- URL pill -->
+  <g transform="translate(80, 595)">
+    <rect x="0" y="-22" width="180" height="32" rx="16" fill="#FFFFFF" opacity="0.08"/>
+    <text x="14" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="500" fill="#FFFFFF">antena.com.ar</text>
+  </g>
+</svg>
