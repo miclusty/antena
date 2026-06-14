@@ -55,7 +55,7 @@ export default function TrendingSection(props: TrendingSectionProps) {
     const hours = WINDOWS.find((x) => x.id === w)?.hours ?? 24;
     const res = await fetchTrending(10, hours);
     if (cancelled) return;
-    setItems(res.news.map((n) => ({ id: n.id, title: n.title, category: n.category ?? 'General' })));
+    setItems(res?.news.map((n) => ({ id: n.id, title: n.title, category: n.category ?? 'General' })) ?? []);
     setLoading(false);
   };
 

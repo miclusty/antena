@@ -154,8 +154,8 @@ export default function ArticleDetail(props: ArticleDetailProps) {
     () => n().id,
     async (newsId) => {
       if (!newsId) return [];
-      try { return (await fetchNewsByCluster(newsId)).news.map(mapNewsCard); }
-      catch { return []; }
+      const res = await fetchNewsByCluster(newsId);
+      return res ? res.news.map(mapNewsCard) : [];
     },
     { initialValue: [] as NewsItem[] }
   );

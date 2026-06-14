@@ -11,6 +11,22 @@ const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: 
 // on the dev machine, not in production. Caller code must check for null.
 const AKIRA_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_AKIRA_BASE as string) || 'http://localhost:5000';
 
+// safeFetch: wrap every API call in this so a network
+// error becomes `null` instead of an unhandled promise
+// rejection bubbling out to the console. The browser
+// logs unhandled rejections aggressively and they're
+// a Top-3 cause of "Why is my console full of red?"
+// support tickets for news sites.
+async function safeFetch(url: string, init?: RequestInit): Promise<Response | null> {
+  try {
+    const res = await fetch(url, init);
+    if (!res.ok) return null;
+    return res;
+  } catch {
+    return null;
+  }
+}
+
 export interface ApiNewsCard {
   id: string;
   location_id: number;
@@ -159,69 +175,63 @@ export async function fetchFeed(options?: {
     }
   }
 
-  const res = await fetch(`${API_BASE}/api/news/feed?${params}`);
-  if (!res.ok) throw new Error(`Failed to fetch feed: ${res.status}`);
+  const res = await safeFetch(`${API_BASE}/api/news/feed?${params}`);
+  if (!res) return { news: [], total: 0, page: 0, per_page: 0, location: null, category: null, served_at: new Date().toISOString() };
   return res.json();
 }
 
-export async function fetchNewsById(id: string): Promise<ApiNewsCard> {
-  const res = await fetch(`${API_BASE}/api/news/${id}`);
-  if (!res.ok) throw new Error(`News not found: ${id}`);
+export async function fetchNewsById(id: string): Promise<ApiNewsCard | null> {
+  const res = await safeFetch(`${API_BASE}/api/news/${id}`);
+  if (!res) return null;
   const data = await res.json();
-  if (data.error) throw new Error(data.error);
+  if (data.error) return null;
   return data;
 }
 
 export async function fetchNewsByIds(ids: string[]): Promise<ApiNewsCard[]> {
   const results = await Promise.allSettled(
-    ids.map(id => fetch(`${API_BASE}/api/news/${id}`).then(r => r.json()))
+    ids.map(id => safeFetch(`${API_BASE}/api/news/${id}`).then(r => r ? r.json() : null))
   );
   return results
     .filter((r): r is PromiseFulfilledResult<ApiNewsCard> => r.status === 'fulfilled' && !r.value.error)
     .map(r => r.value);
 }
 
-export async function fetchNewsByCluster(id: string): Promise<{ cluster_id: string; news: ApiNewsCard[] }> {
-  const res = await fetch(`${API_BASE}/api/news/${id}/cluster`);
-  if (!res.ok) throw new Error(`Cluster not found: ${id}`);
+export async function fetchNewsByCluster(id: string): Promise<{ cluster_id: string; news: ApiNewsCard[] } | null> {
+  const res = await safeFetch(`${API_BASE}/api/news/${id}/cluster`);
+  if (!res) return null;
   return res.json();
 }
 
 export async function fetchLocations(): Promise<ApiLocation[]> {
-  const res = await fetch(`${API_BASE}/api/locations/tree`);
-  if (!res.ok) throw new Error('Failed to fetch locations');
+  const res = await safeFetch(`${API_BASE}/api/locations/tree`);
+  if (!res) return [];
   return res.json();
 }
 
 export async function fetchCategories(): Promise<ApiCategory[]> {
-  const res = await fetch(`${API_BASE}/api/categories`);
-  if (!res.ok) throw new Error('Failed to fetch categories');
+  const res = await safeFetch(`${API_BASE}/api/categories`);
+  if (!res) return [];
   return res.json();
 }
 
 export async function fetchMasterArticle(clusterId: string): Promise<MasterArticle | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/synthesis/master/${clusterId}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!data.title) return null;
-    return data;
-  } catch {
-    return null;
-  }
+  const res = await safeFetch(`${API_BASE}/api/synthesis/master/${clusterId}`);
+  if (!res) return null;
+  const data = await res.json();
+  if (!data.title) return null;
+  return data;
 }
 
 export async function fetchStats(): Promise<StatsResponse> {
-  try {
-    const res = await fetch(`${API_BASE}/api/stats/health`);
-    if (!res.ok) throw new Error('Failed to fetch stats');
-    return res.json();
-  } catch {
+  const res = await safeFetch(`${API_BASE}/api/stats/health`);
+  if (!res) {
     return {
       status: 'ok',
       stats: { total_news: 0, active_sources: 0, total_locations: 0, news_last_hour: 0, news_today: 0, news_week: 0, total_clusters: 0 },
     };
   }
+  return res.json();
 }
 
 export interface BreakingResponse {
@@ -287,53 +297,46 @@ export async function fetchSearch(q: string, limit = 20, filters?: {
   time?: "hour" | "today" | "week" | "all";
 }): Promise<SearchResponse> {
   if (!q || q.length < 2) return { q, results: [], total: 0 };
-  try {
-    const params = new URLSearchParams();
-    params.set("q", q);
-    params.set("limit", String(limit));
-    if (filters?.category) params.set("category", filters.category);
-    if (filters?.source_id) params.set("source_id", String(filters.source_id));
-    if (filters?.time && filters.time !== "all") params.set("time", filters.time);
-    const res = await fetch(`${API_BASE}/api/search?${params}`);
-    if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-    return res.json();
-  } catch {
-    return { q, results: [], total: 0 };
-  }
-}
-
-export async function fetchFeaturedStory(): Promise<FeaturedStoryResponse> {
-  try {
-    const res = await fetch(`${API_BASE}/api/news/featured`);
-    if (!res.ok) throw new Error(`Failed to fetch featured: ${res.status}`);
-    return res.json();
-  } catch {
-    return { featured: null };
-  }
-}
-
-export async function fetchBreaking(limit = 20): Promise<BreakingResponse> {
-  const res = await fetch(`${API_BASE}/api/news/breaking?limit=${limit}`);
-  if (!res.ok) throw new Error(`Failed to fetch breaking: ${res.status}`);
+  const params = new URLSearchParams();
+  params.set("q", q);
+  params.set("limit", String(limit));
+  if (filters?.category) params.set("category", filters.category);
+  if (filters?.source_id) params.set("source_id", String(filters.source_id));
+  if (filters?.time && filters.time !== "all") params.set("time", filters.time);
+  const res = await safeFetch(`${API_BASE}/api/search?${params}`);
+  if (!res) return { q, results: [], total: 0 };
   return res.json();
 }
 
-export async function fetchTrending(limit = 10, hours = 24): Promise<TrendingResponse> {
-  const res = await fetch(`${API_BASE}/api/news/trending?limit=${limit}&hours=${hours}`);
-  if (!res.ok) throw new Error(`Failed to fetch trending: ${res.status}`);
+export async function fetchFeaturedStory(): Promise<FeaturedStoryResponse> {
+  const res = await safeFetch(`${API_BASE}/api/news/featured`);
+  if (!res) return { featured: null };
+  return res.json();
+}
+
+export async function fetchBreaking(limit = 20): Promise<BreakingResponse | null> {
+  const res = await safeFetch(`${API_BASE}/api/news/breaking?limit=${limit}`);
+  if (!res) return null;
+  return res.json();
+}
+
+export async function fetchTrending(limit = 10, hours = 24): Promise<TrendingResponse | null> {
+  const res = await safeFetch(`${API_BASE}/api/news/trending?limit=${limit}&hours=${hours}`);
+  if (!res) return null;
   return res.json();
 }
 
 export async function fetchCities(): Promise<ApiCity[]> {
-  const res = await fetch(`${API_BASE}/api/locations/cities`);
-  if (!res.ok) throw new Error('Failed to fetch cities');
+  const res = await safeFetch(`${API_BASE}/api/locations/cities`);
+  if (!res) return [];
   const data = await res.json();
   return data.cities ?? [];
 }
 
-export async function fetchBlindspot(limit = 10) {
-  const res = await fetch(`${API_BASE}/api/news/blindspot?limit=${limit}`);
-  return (await res.json()) as { items: any[]; total: number };
+export async function fetchBlindspot(limit = 10): Promise<{ items: unknown[]; total: number } | null> {
+  const res = await safeFetch(`${API_BASE}/api/news/blindspot?limit=${limit}`);
+  if (!res) return null;
+  return res.json();
 }
 
 // ─── Source follows ────────────────────────────────────────

@@ -281,10 +281,10 @@ export default function App() {
     setSelectedId(articleId);
     setCurrentView('article');
     setSelectedNews(null);
-    try {
-      const card = await fetchNewsById(articleId);
+    const card = await fetchNewsById(articleId);
+    if (card) {
       setSelectedNews(mapNewsCard(card));
-    } catch {
+    } else {
       setSelectedNews(null);
       toast('No se pudo cargar la noticia', 'error');
       handleBack();
@@ -397,7 +397,7 @@ export default function App() {
     const refreshBlindspot = () => {
       setBlindspotLoading(true);
       fetchBlindspot(10)
-        .then((res) => setBlindspotItems(res.items.map((it: any) => ({
+        .then((res) => res && setBlindspotItems(res.items.map((it: any) => ({
           id: it.id,
           title: it.title,
           summary: it.summary,
@@ -896,7 +896,7 @@ export default function App() {
             else if (tab === 'live') {
               handleViewChange('breaking');
               // refresh breaking
-              fetchBreaking(50).then(r => setBreakingItems(r.news)).catch(() => {});
+              fetchBreaking(50).then(r => r && setBreakingItems(r.news)).catch(() => {});
             }
             else if (tab === 'search') {
               if (typeof window !== 'undefined') {
