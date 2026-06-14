@@ -250,10 +250,20 @@ export interface FeaturedStoryResponse {
   message?: string;
 }
 
-export async function fetchSearch(q: string, limit = 20): Promise<SearchResponse> {
+export async function fetchSearch(q: string, limit = 20, filters?: {
+  category?: string;
+  source_id?: number;
+  time?: "hour" | "today" | "week" | "all";
+}): Promise<SearchResponse> {
   if (!q || q.length < 2) return { q, results: [], total: 0 };
   try {
-    const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+    const params = new URLSearchParams();
+    params.set("q", q);
+    params.set("limit", String(limit));
+    if (filters?.category) params.set("category", filters.category);
+    if (filters?.source_id) params.set("source_id", String(filters.source_id));
+    if (filters?.time && filters.time !== "all") params.set("time", filters.time);
+    const res = await fetch(`${API_BASE}/api/search?${params}`);
     if (!res.ok) throw new Error(`Search failed: ${res.status}`);
     return res.json();
   } catch {

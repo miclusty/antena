@@ -53,6 +53,12 @@ export const clusterIdSchema = z.object({
 export const searchQuerySchema = z.object({
   q: z.string().min(1).max(200),
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  /** Optional category filter (matches `news_cards.category`). */
+  category: z.string().min(1).max(50).optional(),
+  /** Optional source id filter. */
+  source_id: z.coerce.number().int().positive().optional(),
+  /** Optional time window (matches the feed's `time` param). */
+  time: z.enum(["hour", "today", "week", "all"]).optional(),
 });
 
 export const imageParamsSchema = z.object({
