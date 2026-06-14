@@ -49,6 +49,11 @@ export interface ApiNewsCard {
   // Byline (S3.7). Empty string when the source didn't
   // expose an author. ANTENA hides the row when empty.
   author?: string;
+  // Raw HTML body (S3.3). Used by the TOC to compute
+  // headings AND to render the body with anchor IDs. The
+  // mapper strips a sanitized version for the plain-text
+  // summary and keeps the original here for HTML rendering.
+  body_html?: string;
 }
 
 export interface MasterArticle {

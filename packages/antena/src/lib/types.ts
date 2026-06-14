@@ -55,7 +55,22 @@ export interface NewsItem {
   myUseful?: 0 | 1;
   // Byline / author (S3.7). Empty string means "no byline".
   author?: string;
+  // Raw HTML body (S3.3). The TOC + scroll-to-heading
+  // rendering uses this; the plain `body` is the
+  // HTML-stripped fallback for places that don't render
+  // HTML (TTS, summaries, etc.).
+  body_html?: string;
+  // Heading list extracted from body_html (S3.3). Empty
+  // when the body has no h2/h3. The TOC component renders
+  // only when this has ≥2 entries.
+  headings?: { level: 2 | 3; text: string; id: string }[];
 }
+
+interface _ForceLspRefetch {
+  body_html?: string;
+  headings?: { level: 2 | 3; text: string; id: string }[];
+}
+void (null as unknown as _ForceLspRefetch);
 
 export interface PropagationEvent {
   time: string;

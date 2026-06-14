@@ -6,6 +6,7 @@ import type { ApiNewsCard, ApiCategory, ApiLocation } from './api';
 import type { NewsItem, Category, Location, PropagationEvent } from './types';
 import { getBiasInfo, getBiasGradientColor, type VoiceBreakdown, VOICE_COLORS, VOICE_LABELS } from './bias';
 import { SOURCE_NAMES } from './config';
+import { extractHeadings } from './headings';
 
 // ═══════════════════════════════════════════
 // Strip HTML tags from text
@@ -190,6 +191,10 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     title: card.title,
     summary: stripHtml(card.summary),
     body: stripHtml(card.body || card.summary),
+    // Raw HTML body (S3.3) for the TOC + anchored rendering.
+    // Falls back to the summary so the TOC at least has
+    // something to scan when the body is missing.
+    body_html: card.body ?? card.summary ?? "",
     category,
     source: sourceName,
     sourceId: card.source_id ?? null,

@@ -15,6 +15,41 @@
       "when": 1781550000000,
       "tag": "0001_source_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781600000000,
+      "tag": "0002_news_engagement",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781650000000,
+      "tag": "0003_rag_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781650001000,
+      "tag": "0003b_d1_clusters",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781700000000,
+      "tag": "0004_article_feedback",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781750000000,
+      "tag": "0005_news_author",
+      "breakpoints": true
     }
   ]
 }

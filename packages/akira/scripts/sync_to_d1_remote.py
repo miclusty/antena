@@ -201,6 +201,78 @@ def read_master_articles(akira: sqlite3.Connection) -> list[str]:
     )
 
 
+def read_entities(akira: sqlite3.Connection) -> list[str]:
+    """Sync the entity knowledge base (LMWIKI part 1: entities).
+
+    D1's entities table uses the same shape as the local SQLite
+    one, so we can stream the rows directly. The mention_count
+    column is denormalized (sum of entity_mentions rows) — we
+    recompute it on the local side before sync.
+    """
+    rows = akira.execute(
+        """SELECT id, name, type, aliases, first_seen, last_seen,
+                  mention_count, created_at, updated_at
+           FROM entities
+           ORDER BY id"""
+    ).fetchall()
+    return generate_inserts(
+        "entities",
+        ["id", "name", "type", "aliases", "first_seen", "last_seen",
+         "mention_count", "created_at", "updated_at"],
+        rows,
+    )
+
+
+def read_entity_mentions(akira: sqlite3.Connection) -> list[str]:
+    """Sync which cards mention which entities. The (card_id,
+    entity_id) UNIQUE index on D1 makes this idempotent."""
+    rows = akira.execute(
+        """SELECT id, card_id, entity_id, confidence, created_at
+           FROM entity_mentions
+           ORDER BY id"""
+    ).fetchall()
+    return generate_inserts(
+        "entity_mentions",
+        ["id", "card_id", "entity_id", "confidence", "created_at"],
+        rows,
+    )
+
+
+def read_entity_co_occurrences(akira: sqlite3.Connection) -> list[str]:
+    """Sync the co-occurrence graph. (entity_a_id, entity_b_id)
+    is the PRIMARY KEY on D1 so duplicate inserts are skipped."""
+    rows = akira.execute(
+        """SELECT entity_a_id, entity_b_id, card_count, last_seen
+           FROM entity_co_occurrences
+           ORDER BY entity_a_id, entity_b_id"""
+    ).fetchall()
+    return generate_inserts(
+        "entity_co_occurrences",
+        ["entity_a_id", "entity_b_id", "card_count", "last_seen"],
+        rows,
+    )
+
+
+def read_rag_queries(akira: sqlite3.Connection, limit: int = 5000) -> list[str]:
+    """Sync the RAG audit log. Bounded by --limit to keep D1
+    inserts small (the rag_queries table can grow fast)."""
+    rows = akira.execute(
+        """SELECT id, cluster_id, model, prompt_tokens, completion_tokens,
+                  neighbors_used, entities_used, perspectives, latency_ms, created_at
+           FROM rag_queries
+           ORDER BY id DESC
+           LIMIT ?""",
+        (limit,),
+    ).fetchall()
+    return generate_inserts(
+        "rag_queries",
+        ["id", "cluster_id", "model", "prompt_tokens", "completion_tokens",
+         "neighbors_used", "entities_used", "perspectives", "latency_ms",
+         "created_at"],
+        rows,
+    )
+
+
 def execute_d1(stmts: list[str], config: str, batch_size: int = 100) -> tuple[int, int]:
     """Pipe batches of statements to wrangler d1 execute --remote.
 
@@ -276,7 +348,9 @@ def main() -> int:
     akira = sqlite3.connect(str(AKIRA_DB))
 
     tables = (args.tables.split(",") if args.tables != "all"
-              else ["categories", "locations", "sources", "news_cards", "master_articles"])
+              else ["categories", "locations", "sources", "news_cards",
+                    "master_articles", "entities", "entity_mentions",
+                    "entity_co_occurrences", "rag_queries"])
 
     if "categories" in tables:
         print("\n[sync] categories...")
@@ -313,6 +387,30 @@ def main() -> int:
     if "master_articles" in tables:
         print("\n[sync] master_articles...")
         stmts = read_master_articles(akira)
+        ex, fail = execute_d1(stmts, args.config, args.batch_size)
+        print(f"  → {ex} OK, {fail} failed")
+
+    if "entities" in tables:
+        print("\n[sync] entities...")
+        stmts = read_entities(akira)
+        ex, fail = execute_d1(stmts, args.config, args.batch_size)
+        print(f"  → {ex} OK, {fail} failed")
+
+    if "entity_mentions" in tables:
+        print("\n[sync] entity_mentions...")
+        stmts = read_entity_mentions(akira)
+        ex, fail = execute_d1(stmts, args.config, args.batch_size)
+        print(f"  → {ex} OK, {fail} failed")
+
+    if "entity_co_occurrences" in tables:
+        print("\n[sync] entity_co_occurrences...")
+        stmts = read_entity_co_occurrences(akira)
+        ex, fail = execute_d1(stmts, args.config, args.batch_size)
+        print(f"  → {ex} OK, {fail} failed")
+
+    if "rag_queries" in tables:
+        print("\n[sync] rag_queries...")
+        stmts = read_rag_queries(akira, limit=args.limit)
         ex, fail = execute_d1(stmts, args.config, args.batch_size)
         print(f"  → {ex} OK, {fail} failed")
 

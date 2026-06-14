@@ -17,6 +17,8 @@ import { toast } from '../Toast';
 import { useBookmarks } from '../../lib/bookmarks';
 import ReportSheet from './ReportSheet';
 import { speak as ttsSpeak, stop as ttsStop, isSupported as ttsSupported, isSpeaking as ttsIsSpeaking } from '../../lib/speech';
+import TableOfContents from './TableOfContents';
+import ImageLightbox from './ImageLightbox';
 
 interface ArticleDetailProps {
   news: NewsItem;
@@ -44,6 +46,9 @@ export default function ArticleDetail(props: ArticleDetailProps) {
   // toggle; the actual synth call lives in the lib/speech wrapper.
   const [isSpeaking, setIsSpeaking] = createSignal(false);
   const canSpeak = ttsSupported();
+
+  // S3.11 — Image lightbox state.
+  const [lightboxOpen, setLightboxOpen] = createSignal(false);
 
   const toggleListen = () => {
     if (!canSpeak) {
@@ -383,6 +388,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                   alt=""
                   class="w-full h-64 md:h-80 object-cover cursor-zoom-in"
                   loading="lazy"
+                  onClick={() => setLightboxOpen(true)}
                   onError={(e) => {
                     const parent = (e.target as HTMLImageElement).parentElement;
                     if (parent) parent.style.display = 'none';
@@ -395,8 +401,15 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
         {/* Article Body */}
         <section class="mb-6">
+          {/* S3.3 — Table of contents. Renders above the body
+              when the article has ≥2 h2/h3 headings. */}
+          <Show when={(n().headings ?? []).length >= 2}>
+            <div class="mb-4">
+              <TableOfContents items={n().headings ?? []} />
+            </div>
+          </Show>
           <div
-            class="text-[17px] leading-[1.65]"
+            class="text-[17px] leading-[1.65] whitespace-pre-line"
             style={{ color: 'var(--text-primary)' }}
           >
             <p>{displaySummary()}</p>
@@ -620,6 +633,13 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         open={reportOpen()}
         onClose={() => setReportOpen(false)}
         onSubmit={submitReport}
+      />
+
+      <ImageLightbox
+        open={lightboxOpen()}
+        src={n().imageUrl ?? ""}
+        alt={n().title}
+        onClose={() => setLightboxOpen(false)}
       />
 
       <ArticleBottomBar
