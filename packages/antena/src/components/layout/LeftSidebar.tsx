@@ -5,6 +5,7 @@ import LocationSelector from '../common/LocationSelector';
 import SourceLogo from '../common/SourceLogo';
 import { useHaptic } from '../../lib/haptic';
 import { updateURL } from '../../lib/urlState';
+import { scoreToBiasVar } from '../../lib/bias';
 import MaterialIcon from '../common/MaterialIcon';
 
 interface LeftSidebarProps {
@@ -76,10 +77,7 @@ function countBySource(news: NewsItem[]): { name: string; count: number; bias: n
 }
 
 function biasColor(score: number | null): string {
-  if (score === null) return 'var(--text-tertiary)';
-  if (score > 0.1) return 'var(--bias-officialist)';
-  if (score < -0.1) return 'var(--bias-opposition)';
-  return 'var(--bias-neutral)';
+  return scoreToBiasVar(score);
 }
 
 function SectionLabel(p: { children: any }) {

@@ -1,25 +1,8 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createEffect } from 'solid-js';
+import { useLocalStorage } from './use-local-storage';
 
 export function useBookmarks() {
-  const STORAGE_KEY = 'antena-bookmarks';
-
-  const loadBookmarks = (): string[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  };
-
-  const [bookmarks, setBookmarks] = createSignal<string[]>(loadBookmarks());
-
-  createEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks()));
-    }
-  });
+  const [bookmarks, setBookmarks] = useLocalStorage<string[]>('antena-bookmarks', []);
 
   const isBookmarked = (id: string) => bookmarks().includes(id);
 

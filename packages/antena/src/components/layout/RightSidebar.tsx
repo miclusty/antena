@@ -2,6 +2,7 @@
 import { For, Show, createMemo } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import MaterialIcon from '../common/MaterialIcon';
+import { scoreToBiasVar } from '../../lib/bias';
 
 interface RightSidebarProps {
   news: NewsItem[];
@@ -134,10 +135,7 @@ function topSourceBias(news: NewsItem[]): { name: string; bias: number | null; c
 }
 
 function biasColor(score: number | null): string {
-  if (score === null) return 'var(--text-tertiary)';
-  if (score > 0.1) return 'var(--bias-officialist)';
-  if (score < -0.1) return 'var(--bias-opposition)';
-  return 'var(--bias-neutral)';
+  return scoreToBiasVar(score);
 }
 
 export default function RightSidebar(props: RightSidebarProps) {

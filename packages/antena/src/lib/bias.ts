@@ -39,6 +39,26 @@ export const VOICE_LABELS = {
   opposition: 'Opositor',
 } as const;
 
+// Hex color used as the default bias swatch in feed
+// cards / list items when the article has no precomputed
+// biasColor (older rows, or sources without bias scoring).
+// Centralized so the gray stays consistent everywhere.
+export const FALLBACK_BIAS_HEX = '#8A8D97';
+
+/**
+ * Map a bias_score (-1..+1) to a CSS-variable bias
+ * color used in source lists (LeftSidebar, RightSidebar).
+ * Returns a `var(--bias-*)` string so it stays in sync
+ * with the design tokens. Null / out-of-range scores
+ * fall back to the tertiary text color.
+ */
+export function scoreToBiasVar(score: number | null | undefined): string {
+  if (score === null || score === undefined) return 'var(--text-tertiary)';
+  if (score > 0.1) return 'var(--bias-officialist)';
+  if (score < -0.1) return 'var(--bias-opposition)';
+  return 'var(--bias-neutral)';
+}
+
 type BiasCategory = keyof typeof BIAS_LABELS;
 
 interface BiasInfo {

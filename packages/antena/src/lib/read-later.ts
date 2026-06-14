@@ -1,6 +1,6 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createEffect } from 'solid-js';
 import type { NewsItem } from './types';
+import { useLocalStorage } from './use-local-storage';
 
 const STORAGE_KEY = 'antena-read-later';
 
@@ -9,25 +9,7 @@ let _instance: ReturnType<typeof createQueue> | null = null;
 export function _resetReadLaterForTest() { _instance = null; }
 
 function createQueue() {
-  const load = (): NewsItem[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const [queue, setQueue] = createSignal<NewsItem[]>(load());
-
-  createEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(queue()));
-    }
-  });
+  const [queue, setQueue] = useLocalStorage<NewsItem[]>(STORAGE_KEY, []);
 
   // Add to the end. If the id is already in the queue,
   // move it to the end (most recently queued) instead of

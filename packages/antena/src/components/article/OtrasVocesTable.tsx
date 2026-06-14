@@ -2,6 +2,7 @@
 import { For, Show } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import { useHaptic } from '../../lib/haptic';
+import { FALLBACK_BIAS_HEX } from '../../lib/bias';
 import MaterialIcon from '../common/MaterialIcon';
 
 interface OtrasVocesTableProps {
@@ -41,7 +42,7 @@ export default function OtrasVocesTable(props: OtrasVocesTableProps) {
       <For each={props.sources}>
         {(article) => {
           const isCurrent = article.id === props.currentId;
-          const biasColor = article.biasColor || '#8A8D97';
+          const biasColor = article.biasColor || FALLBACK_BIAS_HEX;
           return (
             <article
               role="listitem"
