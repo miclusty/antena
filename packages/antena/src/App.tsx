@@ -309,6 +309,18 @@ export default function App() {
   });
 
   onMount(async () => {
+    // Apply user preferences to the root <html> before any UI
+    // renders — avoids a flash of the default size / data-saver
+    // images. The settings page updates these too, so a write
+    // there re-applies on the next render.
+    document.documentElement.style.setProperty('--font-scale', String(readFontScale()));
+    if (readDataSaver()) document.documentElement.classList.add('data-saver');
+
+    // First-run onboarding. The check is a `setSignal` (not an
+    // inline value) so we re-evaluate after the deferred read
+    // — the result is stable for the lifetime of the app.
+    if (!isOnboarded()) setOnboardingVisible(true);
+
     const urlState = parseURLState();
     if (urlState.category) setActiveCategory(urlState.category);
     if (urlState.locationId) setActiveLocation(urlState.locationId);

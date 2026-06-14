@@ -256,7 +256,10 @@ export default function NewsCard(props: NewsCardProps) {
         {/* ── Content area (flex row if image) ── */}
         <div class="flex gap-4" classList={{'flex-row-reverse': showThumb()}}>
           <Show when={showThumb()}>
-            <div class="shrink-0 w-[130px] h-[85px] rounded-xl overflow-hidden bg-bg-hover">
+            <div
+              class="shrink-0 w-[130px] h-[85px] rounded-xl overflow-hidden bg-bg-hover"
+              data-hide-on-data-saver="true"
+            >
               <img src={props.news.imageUrl} alt="" class="w-full h-full object-cover" loading="lazy" />
             </div>
           </Show>
