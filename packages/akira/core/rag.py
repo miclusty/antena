@@ -137,18 +137,46 @@ class RAGContext:
         bias_text = self._format_bias()
         entity_text = self._format_entities()
 
+        # Detect non-political clusters so we can adjust the
+        # narrative framing. We ALWAYS emit the same 3 JSON keys
+        # ('neutral', 'pro_gov', 'anti_gov') — that's a fixed
+        # contract with the database schema in master_articles.
+        # What changes is the *label* the LLM writes in the
+        # 'resumen' header: for political clusters, pro_gov/
+        # anti_gov map to "encuadre oficialista" vs "encuadre
+        # opositor"; for non-political clusters they map to
+        # "enfoque de fuentes oficiales" vs "enfoque crítico"
+        # (same shape, no propaganda, just different framing
+        # language that won't push the LLM to invent politics).
+        bias = self.bias_distribution
+        is_political = (bias.get("pro", 0) + bias.get("anti", 0)) > 0
+        if is_political:
+            framing = (
+                "'pro_gov' (encuadre oficialista, perspectiva del gobierno) "
+                "y 'anti_gov' (encuadre opositor, perspectiva crítica al gobierno)"
+            )
+        else:
+            framing = (
+                "'pro_gov' (enfoque desde fuentes oficiales/autoridades, "
+                "presentando la posición institucional) y 'anti_gov' "
+                "(enfoque crítico, escéptico de las versiones oficiales, "
+                "centrado en los afectados o versiones alternativas)"
+            )
+
         system = (
-            "Sos un asistente editorial que escribe artículos neutrales "
-            "y balanceados sobre noticias argentinas. Respondé ÚNICAMENTE "
-            "con JSON válido, sin texto antes ni después. El JSON debe tener "
-            "exactamente las 3 claves: 'neutral', 'pro_gov', 'anti_gov'. "
+            "Sos un asistente editorial que escribe artículos balanceados "
+            "sobre noticias argentinas. Respondé ÚNICAMENTE con JSON válido, "
+            "sin texto antes ni después. El JSON tiene exactamente 3 claves: "
+            f"'neutral', 'pro_gov', 'anti_gov'. Las dos últimas son: {framing}. "
             "Cada una con 'titulo' (string) y 'resumen' (string, 200-400 palabras). "
             "El neutral debe ser estrictamente balanceado, sin adjetivos "
-            "valorativos. El pro_gov debe reflejar el encuadre de medios "
-            "oficialistas. El anti_gov debe reflejar el encuadre de medios "
-            "opositores. Ambos sesgados deben ser reconocibles como tales, "
-            "no propaganda. Usá solo la información del CONTEXTO, sin inventar "
-            "hechos."
+            "valorativos. Las otras dos deben reflejar encuadres claramente "
+            "distintos y reconocibles como tales — no propaganda. CRÍTICO: "
+            "usá SOLO la información del CONTEXTO. NO inventes hechos, "
+            "personas, lugares ni organizaciones que no aparezcan explícitamente "
+            "en el CONTEXTO o en ENTIDADES. Si el contexto no menciona algo, "
+            "NO lo menciones. Es preferible un resumen más corto pero exacto "
+            "a uno largo con alucinaciones."
         )
 
         user = (
@@ -559,7 +587,14 @@ class RAGEngine:
 
     def _parse_perspectives(self, raw: str) -> Optional[Dict]:
         """Tolerantly parse the LLM's JSON. Strip ```json fences, find
-        the outermost {...}, and validate the 3 required keys."""
+        the outermost {...}, and validate the 3 required keys.
+
+        We ALWAYS require neutral/pro_gov/anti_gov as the 3 keys
+        (even for non-political clusters — the system prompt's
+        'oficial'/'critico' labels are just narrative hints to
+        the LLM; the JSON shape stays the same so the downstream
+        schema in master_articles doesn't need branching).
+        """
         text = raw.strip()
         text = re.sub(r"^```(?:json)?\s*", "", text)
         text = re.sub(r"\s*```$", "", text)

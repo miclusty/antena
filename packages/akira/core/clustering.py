@@ -87,7 +87,16 @@ STOPWORDS = {
 
 
 def normalize_text(text: str) -> str:
-    """Lowercase, strip accents and punctuation, collapse whitespace."""
+    """Lowercase, strip accents and punctuation, collapse whitespace.
+
+    Note on the regex: `re.sub(r"[^\w\s]", "", text)` keeps
+    word chars + whitespace and strips punctuation. The old
+    version had a typo where the replacement was a literal
+    space string (" ") instead of the variable `text` — that
+    wiped out ALL the input and returned a single space,
+    making every text normalize to "" and breaking the entire
+    clustering signal chain.
+    """
     if not text:
         return ""
     text = text.lower()
@@ -99,7 +108,7 @@ def normalize_text(text: str) -> str:
         .replace("ú", "u")
     )
     text = text.replace("ü", "u").replace("ñ", "n")
-    text = re.sub(r"[^\w\s]", "", " ")
+    text = re.sub(r"[^\w\s]", "", text)  # punctuation → empty
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -166,16 +175,51 @@ def ngram_containment(small: Set[Tuple[str, ...]], large: Set[Tuple[str, ...]]) 
 
 
 def url_domain_match(url1: str, url2: str) -> bool:
-    """Same domain → often the same article syndicated. Soft signal."""
+    """Same domain AND same article path → syndicated reprint.
+
+    The old version returned True on any same-domain match, and
+    merge_score then boosted the similarity to 0.6. That caused
+    bad clusters: a newspaper like eldiarioar.com publishes ~50
+    stories per day, and we were grouping all of them into one
+    giant cluster ("eldiarioar") instead of by event.
+
+    The new version requires BOTH the domain to match AND the
+    URL paths to share a meaningful token (e.g. /2026/06/maradona
+    -juicio appearing in both paths). That's the signal of "same
+    article syndicated" vs "two different stories on the same
+    domain".
+    """
     if not url1 or not url2:
         return False
     try:
-        d1 = urlparse(url1).netloc.lower()
-        d2 = urlparse(url2).netloc.lower()
-        # Strip leading www. for comparison
-        d1 = d1.removeprefix("www.")
-        d2 = d2.removeprefix("www.")
-        return d1 == d2 and d1 != ""
+        p1 = urlparse(url1)
+        p2 = urlparse(url2)
+        d1 = p1.netloc.lower().removeprefix("www.")
+        d2 = p2.netloc.lower().removeprefix("www.")
+        if not d1 or d1 != d2:
+            return False
+        # Path-token overlap: require at least 2 shared meaningful
+        # tokens, OR one path is a prefix of the other (e.g. with
+        # /amp/ or trailing slug).
+        path_tokens_1 = set(re.findall(r"[a-z0-9]+", p1.path.lower()))
+        path_tokens_2 = set(re.findall(r"[a-z0-9]+", p2.path.lower()))
+        noise = {"", "www", "html", "php", "asp", "amp", "index",
+                 "category", "tag", "archives", "es", "ar",
+                 # Date tokens — most URLs include /2026/06/14/... and
+                 # that shouldn't count as "shared content".
+                 "2024", "2025", "2026", "2027", "01", "02", "03",
+                 "04", "05", "06", "07", "08", "09", "10", "11", "12"}
+        path_tokens_1 -= noise
+        path_tokens_2 -= noise
+        if len(path_tokens_1 & path_tokens_2) >= 2:
+            return True
+        path1_str = p1.path.rstrip("/")
+        path2_str = p2.path.rstrip("/")
+        if path1_str and path2_str and (
+            path1_str.startswith(path2_str) or path2_str.startswith(path1_str)
+        ):
+            return True
+        return False
     except Exception:
         return False
 
@@ -208,9 +252,19 @@ def merge_score(
     if ent_sim > ENTITY_OVERLAP_THRESHOLD:
         score = max(score, ent_sim * 0.95)  # slightly discounted
 
-    # 4. Same URL domain → trust the URL over text.
-    if url_domain_match(a_url, b_url):
-        score = max(score, 0.6)
+    # 4. URL match (syndicated reprint detection).
+    # The old boost was 0.6 which fired on any same-domain
+    # match — that grouped all stories from one newspaper into
+    # the same cluster, which is the opposite of what we want.
+    # Now url_domain_match() requires the URL path to also
+    # share meaningful tokens (so it's actually the same
+    # article), and the boost is lowered to 0.4 to keep it as
+    # a "soft" signal that combines with the Jaccard/entity
+    # scores above. We also require at least one shared
+    # entity to be present — pure URL match with no shared
+    # entities is suspicious.
+    if url_domain_match(a_url, b_url) and (a_ents & b_ents):
+        score = max(score, 0.4)
 
     return score
 
