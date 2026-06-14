@@ -73,7 +73,7 @@ class JinaExtractor(BaseExtractor):
             ExtractedItem(
                 title=title,
                 url=url,
-                summary=content[:500],
+                summary=content[:1200],
                 source=url,
                 text=content[:3000],
             )

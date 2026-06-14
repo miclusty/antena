@@ -68,7 +68,7 @@ class VideoExtractor(BaseExtractor):
         item = ExtractedItem(
             title=data.get("title", ""),
             url=url,
-            summary=data.get("description", "")[:500] or data.get("title", ""),
+            summary=data.get("description", "")[:1200] or data.get("title", ""),
             published_at=data.get("upload_date"),
             image_url=data.get("thumbnail_url"),
             source=data.get("author_name", "") or self._detect_source(url),

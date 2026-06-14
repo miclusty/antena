@@ -106,7 +106,9 @@ export async function getNewsFeed(
   params.push(limit, offset);
 
   const results = await db.prepare(query).bind(...params).all<NewsCard>();
-  return { news: results.results ?? [], total };
+  // Sanitize HTML in the summary and title for the
+  // feed response (see sanitizeCard for the rules).
+  return { news: (results.results ?? []).map(sanitizeCard), total };
 }
 
 export async function getNewsById(db: D1Database, id: string): Promise<NewsCard | null> {
@@ -117,7 +119,7 @@ export async function getNewsById(db: D1Database, id: string): Promise<NewsCard 
     LEFT JOIN locations l ON l.id = nc.location_id
     WHERE nc.id = ?
   `).bind(id).first<NewsCard>();
-  return result ?? null;
+  return result ? sanitizeCard(result) : null;
 }
 
 function stripHtml(html: string | null | undefined): string {
@@ -131,6 +133,33 @@ function stripHtml(html: string | null | undefined): string {
   if (postIdx !== -1) text = text.slice(0, postIdx);
   text = text.replace(/\s+/g, " ").trim();
   return text;
+}
+
+// Sanitize a raw D1 NewsCard row for client delivery.
+// Strips HTML from title/summary/body and exposes
+// `summary_html` for the article detail page. Falls
+// back to the first ~1.2 KB of body when the summary
+// is unusually short (cards ingested before the
+// extractor limit was raised to 1200 chars).
+export function sanitizeCard<T extends NewsCard>(n: T): T {
+  const strippedSummary = stripHtml(n.summary);
+  const strippedBody = stripHtml(n.body ?? null);
+  // The body always has the real lede. We use it as
+  // the summary when the existing summary is short
+  // (< 280 chars of plain text) AND the body has
+  // meaningfully more content. This rescues older
+  // cards that were truncated to 500 chars upstream
+  // (the extractor now produces 1200 chars but older
+  // rows still have 500).
+  const useBody = strippedBody.length > 280
+    && (strippedSummary.length < 280 || strippedBody.length > strippedSummary.length * 1.2);
+  return {
+    ...n,
+    title: stripHtml(n.title) || n.title,
+    summary: useBody ? strippedBody.slice(0, 1200) : strippedSummary,
+    summary_html: n.summary,
+    body: strippedBody,
+  };
 }
 
 /**
@@ -192,12 +221,7 @@ export async function getFeaturedStory(
   const sourceCount = raw[0].source_count;
   const cardCount = raw[0].card_count;
 
-  const cards = raw.map((n) => ({
-    ...n,
-    title: stripHtml(n.title) || n.title,
-    summary: stripHtml(n.summary),
-    body: stripHtml(n.body ?? null),
-  }));
+  const cards = raw.map(sanitizeCard);
 
   if (cards.length === 0) return null;
 
@@ -258,7 +282,7 @@ export async function getBlindspot(
   params.push(limit);
 
   const results = await db.prepare(sql).bind(...params).all<NewsCard>();
-  return results.results ?? [];
+  return (results.results ?? []).map(sanitizeCard);
 }
 
 export async function getNewsByCluster(db: D1Database, cluster_id: string): Promise<NewsCard[]> {
@@ -270,7 +294,7 @@ export async function getNewsByCluster(db: D1Database, cluster_id: string): Prom
     WHERE nc.cluster_id = ?
     ORDER BY nc.created_at DESC
   `).bind(cluster_id).all<NewsCard>();
-  return results.results ?? [];
+  return (results.results ?? []).map(sanitizeCard);
 }
 
 export async function getLocationById(db: D1Database, id: number): Promise<Location | null> {

@@ -154,7 +154,7 @@ class RSSExtractor(BaseExtractor):
                     ExtractedItem(
                         title=entry.get("title", ""),
                         url=entry_url,
-                        summary=entry.get("summary", "")[:500],
+                        summary=entry.get("summary", "")[:1200],
                         published_at=entry.get("published", ""),
                         image_url=image_url,
                         source=url,

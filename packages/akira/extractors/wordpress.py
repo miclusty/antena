@@ -130,7 +130,7 @@ class WordPressExtractor(BaseExtractor):
                     ExtractedItem(
                         title=post.get("title", {}).get("rendered", ""),
                         url=post_url,
-                        summary=post.get("excerpt", {}).get("rendered", "")[:500],
+                        summary=post.get("excerpt", {}).get("rendered", "")[:1200],
                         published_at=post.get("date", ""),
                         image_url=image_url,
                         source=url,

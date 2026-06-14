@@ -66,7 +66,7 @@ class GooseExtractor(BaseExtractor):
                 ExtractedItem(
                     title=article.title or "",
                     url=url,
-                    summary=(article.meta_description or "")[:500],
+                    summary=(article.meta_description or "")[:1200],
                     published_at=article.publish_date.isoformat()
                     if article.publish_date
                     else None,

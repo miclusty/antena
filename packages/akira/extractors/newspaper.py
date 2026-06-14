@@ -59,7 +59,7 @@ class NewspaperExtractor(BaseExtractor):
                 ExtractedItem(
                     title=article.title or "",
                     url=url,
-                    summary=(article.summary or "")[:500],
+                    summary=(article.summary or "")[:1200],
                     published_at=article.publish_date.isoformat()
                     if article.publish_date
                     else None,

@@ -15,6 +15,7 @@ export interface NewsCard {
   location_id: number | null;
   title: string;
   summary: string;
+  summary_html?: string;
   body?: string | null;
   image_url: string | null;
   bias_score: number | null;
