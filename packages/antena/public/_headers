@@ -1,0 +1,28 @@
+# Cloudflare Pages headers
+# Serve generated XML files with the correct MIME type
+# so crawlers, feed readers, and tools recognize them.
+
+/rss.xml
+  Content-Type: application/rss+xml; charset=utf-8
+
+/sitemap-index.xml
+  Content-Type: application/xml; charset=utf-8
+
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
+
+# Cache static assets aggressively
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/noticia/*
+  Cache-Control: public, max-age=3600, s-maxage=86400
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
