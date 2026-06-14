@@ -4,6 +4,10 @@
    ═══════════════════════════════════════════ */
 
 :root {
+  /* ── User-controlled font scale (0.875..1.25, default 1) ── */
+  /* Set on <html> by the settings page + on mount in App.tsx. */
+  --font-scale: 1;
+
   /* ── Backgrounds ── */
   --bg-base:      #F7F5F2;
   --bg-elevated:  #FFFFFF;
@@ -141,4 +145,33 @@
   --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.5);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+/* ── User preferences applied globally ─────────────────────── */
+
+/* Font scale: applied to the root font-size. The whole UI
+   (text-base, sm, lg, etc.) is in `rem` so this scales
+   everything proportionally. */
+html {
+  font-size: calc(16px * var(--font-scale));
+}
+
+/* Data-saver: hide card/feed images entirely. Layout is
+   preserved because the image containers have fixed aspect
+   ratios. Article detail images still load (the user is
+   actively reading). */
+html.data-saver [data-hide-on-data-saver="true"] {
+  display: none !important;
+}
+
+/* Reduced motion: respect user OS preference. Kills our
+   animate-pulse, animate-spin, and active:scale-90 globally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
