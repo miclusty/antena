@@ -215,6 +215,58 @@ export default function ArticleDetail(props: ArticleDetailProps) {
     return Math.max(1, Math.ceil(words / 200));
   };
   const remainingMinutes = () => remainingReadingMinutes(totalMinutes(), scrollPct());
+
+  // S3.4 — Swipe between articles in the same cluster. The
+  // cluster data is already loaded (clusterData[0] above);
+  // we just need the current index and helpers to step
+  // forward / back. Navigation is gated on the cluster
+  // having ≥2 items so single-article clusters don't
+  // expose a dead "next" button.
+  const clusterIds = createMemo<NewsItem[]>(() =>
+    clusterData().filter((a) => a.id !== n().id),
+  );
+  const [clusterIndex, setClusterIndex] = createSignal(0);
+  const goNext = () => {
+    const items = clusterIds();
+    if (items.length === 0) return;
+    const next = (clusterIndex() + 1) % items.length;
+    setClusterIndex(next);
+    haptic.vibrate("selection");
+    props.onArticleSelect?.(items[next]);
+  };
+  const goPrev = () => {
+    const items = clusterIds();
+    if (items.length === 0) return;
+    const prev = (clusterIndex() - 1 + items.length) % items.length;
+    setClusterIndex(prev);
+    haptic.vibrate("selection");
+    props.onArticleSelect?.(items[prev]);
+  };
+  // Touch swipe detection (S3.4). Threshold tuned for a
+  // 60px horizontal swipe with a 30px initial lock so a
+  // user-initiated scroll-up doesn't fire a back-swipe.
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchActive = false;
+  const onTouchStart = (e: TouchEvent) => {
+    const t = e.touches[0];
+    if (!t) return;
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchActive = true;
+  };
+  const onTouchEnd = (e: TouchEvent) => {
+    if (!touchActive) return;
+    touchActive = false;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) void goNext();
+    else void goPrev();
+  };
+
   onMount(() => {
     if (typeof window === "undefined") return;
     const onScroll = () => {
@@ -232,7 +284,11 @@ export default function ArticleDetail(props: ArticleDetailProps) {
   const signalColor = () => n().signalLevel >= 7 ? 'var(--accent)' : n().signalLevel >= 4 ? 'var(--warning)' : 'var(--text-tertiary)';
 
   return (
-    <div style={{ background: 'var(--bg-base)' }}>
+    <div
+      style={{ background: 'var(--bg-base)' }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <ReadingProgress />
 
       {/* Top bar */}
@@ -692,6 +748,23 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         isSpeaking={isSpeaking()}
         articleUrl={typeof window !== 'undefined' ? window.location.href : ''}
       />
+
+      <Show when={clusterIds().length > 0}>
+        <div
+          class="flex items-center justify-center gap-2 py-4 text-[10px] uppercase tracking-wider select-none"
+          style={{ color: 'var(--text-tertiary)' }}
+          aria-label="Deslizá para navegar entre artículos relacionados"
+        >
+          <span
+            class="material-symbols-rounded text-base leading-none"
+            style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
+            aria-hidden="true"
+          >
+            swipe
+          </span>
+          <span>Deslizá para ver {clusterIds().length === 1 ? '1 cobertura más' : `${clusterIds().length} coberturas más`}</span>
+        </div>
+      </Show>
     </div>
   );
 }
