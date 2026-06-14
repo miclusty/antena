@@ -26,9 +26,10 @@ export interface MobileDrawerProps {
   onClose: () => void;
   stats: DrawerStats | null;
   savedCount: number;
+  readLaterCount: number;
   unreadCount: number;
   activeFeedTab: string;
-  onNavigate: (view: 'feed' | 'bookmarks') => void;
+  onNavigate: (view: 'feed' | 'bookmarks' | 'readLater') => void;
   onSelectTab: (tab: string) => void;
   onSelectCategory: (cat: string) => void;
   categories: DrawerCategory[];
@@ -125,6 +126,10 @@ export default function MobileDrawer(props: MobileDrawerProps) {
 
   const handleNavigateBookmarks = () => {
     props.onNavigate('bookmarks');
+    props.onClose();
+  };
+  const handleNavigateReadLater = () => {
+    props.onNavigate('readLater');
     props.onClose();
   };
 
@@ -284,6 +289,23 @@ export default function MobileDrawer(props: MobileDrawerProps) {
                 style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
               >
                 {props.savedCount}
+              </span>
+            </Show>
+          </button>
+          <button
+            type="button"
+            onClick={handleNavigateReadLater}
+            class="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-bg-hover"
+            style={{ color: 'var(--text-primary)', 'font-weight': '500' }}
+          >
+            <MaterialIcon name="schedule" size="lg" class="text-[20px] " style={{ color: 'var(--text-secondary)' }} />
+            Leer después
+            <Show when={props.readLaterCount > 0}>
+              <span
+                class="ml-auto text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
+                style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+              >
+                {props.readLaterCount}
               </span>
             </Show>
           </button>

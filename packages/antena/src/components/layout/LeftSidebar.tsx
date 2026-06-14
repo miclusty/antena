@@ -21,6 +21,8 @@ interface LeftSidebarProps {
   feedTab: string;
   onFeedTabChange: (tab: string) => void;
   onOpenBookmarks: () => void;
+  onOpenReadLater: () => void;
+  readLaterCount: number;
 }
 
 const CAT_COLORS: Record<string, string> = {
@@ -216,6 +218,12 @@ export default function LeftSidebar(props: LeftSidebarProps) {
               label="Guardados"
               count={props.savedCount}
               onClick={() => { haptic.vibrate('tap'); props.onOpenBookmarks(); }}
+            />
+            <SideRow
+              icon="schedule"
+              label="Leer después"
+              count={props.readLaterCount}
+              onClick={() => { haptic.vibrate('tap'); props.onOpenReadLater(); }}
             />
             <SideRow
               icon="history"

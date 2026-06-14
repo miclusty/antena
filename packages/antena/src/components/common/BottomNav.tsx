@@ -26,6 +26,7 @@ interface BottomNavProps {
   onTabChange: (tab: TabId) => void;
   unreadCount?: number;
   savedCount?: number;
+  readLaterCount?: number;
 }
 
 export default function BottomNav(props: BottomNavProps) {

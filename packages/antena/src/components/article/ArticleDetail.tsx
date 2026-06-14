@@ -15,6 +15,7 @@ import ArticleBottomBar from './ArticleBottomBar';
 import OtrasVocesCta from './OtrasVocesCta';
 import { toast } from '../Toast';
 import { useBookmarks } from '../../lib/bookmarks';
+import { useReadLater } from '../../lib/read-later';
 import ReportSheet from './ReportSheet';
 import { speak as ttsSpeak, stop as ttsStop, isSupported as ttsSupported, isSpeaking as ttsIsSpeaking } from '../../lib/speech';
 import TableOfContents from './TableOfContents';
@@ -32,6 +33,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
   const haptic = useHaptic();
   const [readingModeOpen, setReadingModeOpen] = createSignal(false);
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const { isQueued: isReadLaterQueued, enqueue: enqueueReadLater, remove: removeReadLater } = useReadLater();
   const n = () => props.news;
 
   // S3.5 — "Was this useful?" feedback. Local signal of the
@@ -688,6 +690,11 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         onBookmark={() => toggleBookmark(n().id)}
         onShare={handleShare}
         onReadingMode={() => setReadingModeOpen(true)}
+        isReadLater={isReadLaterQueued(n().id)}
+        onReadLater={() => {
+          if (isReadLaterQueued(n().id)) removeReadLater(n().id);
+          else enqueueReadLater(n());
+        }}
         onListen={toggleListen}
         isSpeaking={isSpeaking()}
         articleUrl={typeof window !== 'undefined' ? window.location.href : ''}

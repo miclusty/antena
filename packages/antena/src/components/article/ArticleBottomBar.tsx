@@ -14,6 +14,8 @@ interface ArticleBottomBarProps {
   onListen?: () => void;
   isSpeaking?: boolean;
   articleUrl?: string;
+  isReadLater?: boolean;
+  onReadLater?: () => void;
 }
 
 export default function ArticleBottomBar(props: ArticleBottomBarProps) {
@@ -85,6 +87,16 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
             aria-label={props.isBookmarked ? 'Quitar de guardados' : 'Guardar'}
           >
             <MaterialIcon name="bookmark" size="xl" class="text-xl " style={{ color: props.isBookmarked ? 'var(--accent)' : 'var(--text-tertiary)', 'font-variation-settings': props.isBookmarked ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20", }} aria-hidden="true" />
+          </button>
+
+          <button
+            onClick={() => { haptic.vibrate('tap'); props.onReadLater?.(); }}
+            class="p-2 rounded-full hover:bg-bg-hover transition-colors"
+            title={props.isReadLater ? 'Quitar de "Leer después"' : 'Leer después'}
+            aria-label={props.isReadLater ? 'Quitar de "Leer después"' : 'Leer después'}
+            aria-pressed={!!props.isReadLater}
+          >
+            <MaterialIcon name="schedule" size="xl" class="text-xl " style={{ color: props.isReadLater ? 'var(--accent)' : 'var(--text-tertiary)', 'font-variation-settings': props.isReadLater ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20", }} aria-hidden="true" />
           </button>
 
           <button

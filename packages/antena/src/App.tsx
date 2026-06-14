@@ -10,6 +10,7 @@ import RightSidebar from './components/layout/RightSidebar';
 import ArticleDetail from './components/article/ArticleDetail';
 import LocationSelector from './components/common/LocationSelector';
 import BookmarksView from './components/bookmarks/BookmarksView';
+import ReadLaterView from './components/readlater/ReadLaterView';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import EmptyState from './components/common/EmptyState';
 import ConnectionStatus from './components/ConnectionStatus';
@@ -21,6 +22,7 @@ import { cacheNews, getCachedNews, markAsRead } from './lib/db';
 import { useInfiniteScroll } from './lib/hooks';
 import { saveScrollPos, restoreScrollPos } from './lib/scroll';
 import { useBookmarks } from './lib/bookmarks';
+import { useReadLater } from './lib/read-later';
 import { useFollows } from './lib/follows';
 import FeaturedStory from './components/feed/FeaturedStory';
 import TrendingSection from './components/feed/TrendingSection';
@@ -56,7 +58,7 @@ const CAT_COLORS: Record<string, string> = {
   'Clima':'#0EA5E9','Espectáculos':'#EC4899',
 };
 
-type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking';
+type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking' | 'readLater';
 
 export default function App() {
   const [activeCategory, setActiveCategory] = createSignal('Todas');
@@ -124,6 +126,7 @@ export default function App() {
   const haptic = useHaptic();
 
   const { bookmarks, isBookmarked, toggleBookmark } = useBookmarks();
+  const { queue: readLaterQueue } = useReadLater();
   const follows = useFollows();
 
   const shareNews = async (news: NewsItem) => {
@@ -430,6 +433,8 @@ export default function App() {
       stats={stats()}
       news={mappedNews()}
       savedCount={bookmarks().length}
+      readLaterCount={readLaterQueue().length}
+      onOpenReadLater={() => handleViewChange('readLater')}
       bookmarks={bookmarks()}
       followsCount={follows.followedIds().size}
       feedTab={activeFeedTab()}
@@ -849,6 +854,10 @@ export default function App() {
               <BookmarksView onBack={() => handleViewChange('feed')} onNewsClick={handleNewsClick} />
             </Show>
 
+            <Show when={currentView() === 'readLater'}>
+              <ReadLaterView onBack={() => handleViewChange('feed')} onNewsClick={handleNewsClick} />
+            </Show>
+
           </main>
 
           {rightSidebar}
@@ -884,7 +893,8 @@ export default function App() {
               return Math.max(0, allNews().filter(n => !read.includes(n.id)).length);
             } catch { return 0; }
           })()}
-          savedCount={bookmarks().length}
+      savedCount={bookmarks().length}
+      readLaterCount={readLaterQueue().length}
         />
       </Show>
 
@@ -921,6 +931,7 @@ export default function App() {
           news_today: stats().news_today ?? 0,
         }}
         savedCount={bookmarks().length}
+        readLaterCount={readLaterQueue().length}
         unreadCount={0}
         activeFeedTab={activeFeedTab()}
         onNavigate={(view) => { setDrawerOpen(false); handleViewChange(view); }}
