@@ -27,6 +27,7 @@ import { useFollows } from './lib/follows';
 import FeaturedStory from './components/feed/FeaturedStory';
 import TrendingSection from './components/feed/TrendingSection';
 import BlindspotSection from './components/feed/BlindspotSection';
+import MapSection from './components/MapSection';
 import CitySelector from './components/common/CitySelector';
 import BreakingView from './components/feed/BreakingView';
 import MobileDrawer from './components/menu/MobileDrawer';
@@ -657,11 +658,19 @@ export default function App() {
                       />
                     </Show>
 
-                    {/* Blindspot: news from sources the user does NOT follow */}
+                     {/* Blindspot: news from sources the user does NOT follow */}
                     <BlindspotSection
                       items={blindspotItems()}
                       loading={blindspotLoading()}
                       onItemClick={(item) => handleNewsClick(item)}
+                    />
+
+                    {/* Map: where the news is happening in the last 24h */}
+                    <MapSection
+                      onPointClick={(id) => {
+                        const full = mappedNews().find(n => n.id === id);
+                        if (full) handleNewsClick(full);
+                      }}
                     />
 
                     {/* Feed toolbar: density toggle + Mate mode */}

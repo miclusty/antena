@@ -24,7 +24,7 @@ export async function getNewsFeed(
   const limit = options.limit ?? 20;
   const offset = options.offset ?? 0;
   let query = `
-    SELECT nc.*, s.name as source_name, l.name as location_name, l.province as location_province
+    SELECT nc.*, s.name as source_name, l.name as location_name, l.province as location_province, l.lat as location_lat, l.lng as location_lng
     FROM news_cards nc
     LEFT JOIN sources s ON s.id = nc.source_id
     LEFT JOIN locations l ON l.id = nc.location_id

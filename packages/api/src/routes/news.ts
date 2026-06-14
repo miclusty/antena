@@ -182,6 +182,28 @@ newsRoutes.get("/blindspot", async (c) => {
   })(c.req.raw);
 });
 
+newsRoutes.get("/map", async (c) => {
+  const limit = Math.min(Number(c.req.query("limit") ?? 500), 1000);
+  return withCache(async () => {
+    const rows = await c.env.DB.prepare(`
+      SELECT nc.id, nc.title, nc.category, nc.published_at,
+             l.id as location_id, l.name as location_name, l.lat, l.lng
+      FROM news_cards nc
+      INNER JOIN locations l ON l.id = nc.location_id
+      WHERE l.lat IS NOT NULL AND l.lng IS NOT NULL
+        AND nc.published_at >= datetime('now', '-1 day')
+      ORDER BY nc.published_at DESC
+      LIMIT ?
+    `).bind(limit).all<{
+      id: string; title: string; category: string | null;
+      published_at: string | null;
+      location_id: number; location_name: string;
+      lat: number; lng: number;
+    }>();
+    return c.json({ items: rows.results });
+  }, { ttl: 300, swr: 0 })(c.req.raw);
+});
+
 newsRoutes.get("/:id", async (c) => {
   const parsed = articleIdSchema.safeParse(c.req.param());
   if (!parsed.success) {

@@ -264,6 +264,23 @@ export interface FeaturedStoryResponse {
   message?: string;
 }
 
+export async function fetchMap(limit = 500): Promise<{
+  items: Array<{
+    id: string; title: string; category: string | null;
+    published_at: string | null;
+    location_id: number; location_name: string;
+    lat: number; lng: number;
+  }>;
+} | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/news/map?limit=${limit}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchSearch(q: string, limit = 20, filters?: {
   category?: string;
   source_id?: number;

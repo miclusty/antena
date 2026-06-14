@@ -32,6 +32,8 @@ export interface NewsCard {
   // Joined fields
   location_name?: string | null;
   location_province?: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
 }
 
 export interface Source {
