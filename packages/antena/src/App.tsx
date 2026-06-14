@@ -24,13 +24,27 @@ import { useBookmarks } from './lib/bookmarks';
 import { useFollows } from './lib/follows';
 import FeaturedStory from './components/feed/FeaturedStory';
 import TrendingSection from './components/feed/TrendingSection';
+import BlindspotSection from './components/feed/BlindspotSection';
 import CitySelector from './components/common/CitySelector';
 import BreakingView from './components/feed/BreakingView';
 import MobileDrawer from './components/menu/MobileDrawer';
 import SourceLogo from './components/common/SourceLogo';
-import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, fetchTrending, fetchCities, fetchFeaturedStory, type FeedResponse, type ApiNewsCard } from './lib/api';
+import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, fetchTrending, fetchCities, fetchFeaturedStory, fetchBlindspot, fetchVote, fetchRepost, type FeedResponse, type ApiNewsCard } from './lib/api';
 import { mapNewsCard } from './lib/mappers';
 import { parseURLState, updateURL, clearURL } from './lib/urlState';
+import { resolveCustomTabSelection } from './lib/feed-controls';
+import { readDensity, writeDensity, type Density } from './lib/preferences';
+import DensityToggle from './components/common/DensityToggle';
+import ModoMate from './components/common/ModoMate';
+import TimeFilters, { type TimeFilter } from './components/common/TimeFilters';
+import QualityFilters, { type QualityFilter } from './components/common/QualityFilters';
+import {
+  buildFeedFilterParams,
+  DEFAULT_FILTERS,
+  hasActiveFilters,
+  type BiasFilter,
+  type FeedFilterState,
+} from './lib/feed-filters';
 import { CATEGORIES, type Category } from './lib/types';
 
 const CAT_COLORS: Record<string, string> = {
@@ -91,6 +105,17 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = createSignal(false);
   const [trendingItems, setTrendingItems] = createSignal<ApiNewsCard[]>([]);
   const [breakingItems, setBreakingItems] = createSignal<ApiNewsCard[]>([]);
+  const [blindspotItems, setBlindspotItems] = createSignal<Array<{ id: string; title: string; summary: string; source: string; sourceUrl?: string; sourceId?: number | null; category?: string; biasColor?: string }>>([]);
+  const [blindspotLoading, setBlindspotLoading] = createSignal(false);
+  const [density, setDensity] = createSignal<Density>(readDensity());
+  const [mateMode, setMateMode] = createSignal(false);
+  const [filterState, setFilterState] = createSignal<FeedFilterState>({ ...DEFAULT_FILTERS });
+  const [showFilters, setShowFilters] = createSignal(false);
+
+  const updateTime = (t: TimeFilter) => { setFilterState(s => ({ ...s, time: t })); resetFeed(); };
+  const updateQuality = (q: QualityFilter) => { setFilterState(s => ({ ...s, quality: q })); resetFeed(); };
+  const updateBias = (b: BiasFilter) => { setFilterState(s => ({ ...s, bias: b })); resetFeed(); };
+  const clearFilters = () => { setFilterState({ ...DEFAULT_FILTERS }); resetFeed(); };
 
   const haptic = useHaptic();
 
@@ -126,7 +151,7 @@ export default function App() {
   };
 
   const [feed, { refetch }] = createResource(
-    () => `${activeCategory()}:${searchQuery()}:${activeLocation() ?? 'all'}:${activeFeedTab()}:${follows.followedIds().size}`,
+    () => `${activeCategory()}:${searchQuery()}:${activeLocation() ?? 'all'}:${activeFeedTab()}:${follows.followedIds().size}:${JSON.stringify(filterState())}`,
     async (): Promise<FeedResponse> => {
       try {
         const catParam = activeCategory() === 'Todas' ? undefined : activeCategory();
@@ -135,12 +160,14 @@ export default function App() {
           location_id: activeLocation() ? parseInt(activeLocation()!) : undefined,
           limit: 20,
           offset: 0,
-          // When the Siguiendo tab is active, ask the server to
-          // filter the feed to the user's followed sources
-          // (instead of fetching everything and filtering
-          // client-side, which would miss news the user is
-          // following but didn't make it into the first 20).
+          // "Siguiendo" is strict: only news from followed sources.
+          // "Para vos" (foryou) is permissive: quality-ranked mix that
+          // may include non-followed sources. The two are mutually
+          // exclusive — the API treats foryou=true as a different sort,
+          // not an extra filter.
           following: activeFeedTab() === "following",
+          foryou: activeFeedTab() === "foryou",
+          ...buildFeedFilterParams(filterState()),
         });
         return result as FeedResponse;
       } catch (e) {
@@ -170,6 +197,11 @@ export default function App() {
     setOffset(prev => prev + 20);
     setHasMore(data.news.length >= 20);
     setIsLoadingMore(false);
+  };
+
+  const updateDensity = (d: Density) => {
+    setDensity(d);
+    writeDensity(d);
   };
 
   const { setObserverTarget } = useInfiniteScroll({ onLoadMore: loadMore, hasMore, isLoading: () => feed.loading });
@@ -331,6 +363,34 @@ export default function App() {
     } catch (e) { toast('Error al cargar categorias', 'warning'); }
 
     fetchCities().then(setCities).catch(() => setCities([]));
+
+    // Blindspot is per-device, so it can't share the feed
+    // resource. Fetch it once on mount and again whenever the
+    // user changes their follows (which is signalled by the
+    // followedIds size going up or down).
+    const refreshBlindspot = () => {
+      setBlindspotLoading(true);
+      fetchBlindspot(10)
+        .then((res) => setBlindspotItems(res.items.map((it: any) => ({
+          id: it.id,
+          title: it.title,
+          summary: it.summary,
+          source: it.source_name ?? it.source ?? 'Fuente',
+          sourceUrl: it.source_url ?? undefined,
+          sourceId: it.source_id ?? null,
+          category: it.category ?? undefined,
+          biasColor: it.biasColor ?? undefined,
+        }))))
+        .catch(() => setBlindspotItems([]))
+        .finally(() => setBlindspotLoading(false));
+    };
+    refreshBlindspot();
+    createEffect(() => {
+      // Re-fetch whenever the followed set changes — but
+      // ignore the initial run (it was just triggered above).
+      follows.followedIds();
+      refreshBlindspot();
+    });
   });
 
   // ── Shared sidebar component ─────────────────────────────────────────────────
@@ -398,13 +458,20 @@ export default function App() {
             onTabChange={(tabId) => {
               haptic.vibrate('tap');
               setActiveFeedTab(tabId);
-              // Custom category tabs (e.g. "cat:politica") also set
-              // the activeCategory so the feed filters by it.
-              if (tabId.startsWith("cat:")) {
-                const slug = tabId.slice(4);
-                const cat = CATEGORIES.find((c) => c.slug === slug);
-                if (cat) setActiveCategory(cat.name);
-              }
+              // Custom category tabs (e.g. "cat:politica") filter
+              // the feed by that category. Built-in tabs (home,
+              // following, explore, for-you) clear the filter.
+              // Either way, switching tabs should reset the
+              // accumulated `allNews` so the user doesn't see a
+              // flash of the previous category's content while the
+              // new fetch is in flight.
+              const resolved = resolveCustomTabSelection(
+                tabId,
+                categories().map((c) => ({ name: c.name, slug: c.slug })),
+              );
+              if (resolved.categoryName) setActiveCategory(resolved.categoryName);
+              else if (tabId !== activeFeedTab()) setActiveCategory('Todas');
+              if (resolved.shouldReset) resetFeed();
             }}
             customTabs={customTabs()}
             onAddCustomTab={(cat) => {
@@ -569,6 +636,108 @@ export default function App() {
                       />
                     </Show>
 
+                    {/* Blindspot: news from sources the user does NOT follow */}
+                    <BlindspotSection
+                      items={blindspotItems()}
+                      loading={blindspotLoading()}
+                      onItemClick={(item) => handleNewsClick(item)}
+                    />
+
+                    {/* Feed toolbar: density toggle + Mate mode */}
+                    <div class="flex items-center justify-between px-4 pt-3 pb-1">
+                      <DensityToggle density={density()} onChange={updateDensity} />
+                      <div class="flex items-center gap-2">
+                        <button
+                          onClick={() => { haptic.vibrate('tap'); setShowFilters(s => !s); }}
+                          class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
+                          style={hasActiveFilters(filterState())
+                            ? { background: 'var(--accent)', color: '#fff' }
+                            : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
+                          }
+                          aria-pressed={showFilters()}
+                          aria-label="Filtros"
+                        >
+                          <span
+                            class="material-symbols-rounded text-base leading-none"
+                            style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
+                            aria-hidden="true"
+                          >
+                            tune
+                          </span>
+                          Filtros
+                        </button>
+                        <button
+                          onClick={() => { haptic.vibrate('tap'); setMateMode(m => !m); }}
+                          class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
+                          style={mateMode()
+                            ? { background: 'var(--accent)', color: '#fff' }
+                            : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
+                          }
+                          aria-pressed={mateMode()}
+                        >
+                          <span
+                            class="material-symbols-rounded text-base leading-none"
+                            style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
+                            aria-hidden="true"
+                          >
+                            record_voice_over
+                          </span>
+                          Modo Mate
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Filter panel (collapsible) */}
+                    <Show when={showFilters()}>
+                      <div
+                        class="px-4 py-3 space-y-2 border-b border-border-base"
+                        style={{ background: 'var(--bg-elevated)' }}
+                      >
+                        <div class="flex items-center justify-between mb-1">
+                          <p class="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
+                            Período
+                          </p>
+                          <Show when={hasActiveFilters(filterState())}>
+                            <button
+                              onClick={() => { haptic.vibrate('tap'); clearFilters(); }}
+                              class="text-[11px] font-semibold"
+                              style={{ color: 'var(--accent)' }}
+                            >
+                              Limpiar
+                            </button>
+                          </Show>
+                        </div>
+                        <TimeFilters activeFilter={filterState().time} onFilterChange={updateTime} />
+                        <p class="text-[10px] font-extrabold uppercase tracking-widest mt-2" style={{ color: 'var(--text-tertiary)' }}>
+                          Calidad
+                        </p>
+                        <QualityFilters activeFilter={filterState().quality} onFilterChange={updateQuality} />
+                        <p class="text-[10px] font-extrabold uppercase tracking-widest mt-2" style={{ color: 'var(--text-tertiary)' }}>
+                          Sesgo
+                        </p>
+                        <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
+                          {(['all', 'left', 'right', 'neutral'] as const).map((b) => {
+                            const labels: Record<BiasFilter, string> = {
+                              all: 'Todos', left: 'Opositor', right: 'Oficialista', neutral: 'Neutral',
+                            };
+                            const active = () => filterState().bias === b;
+                            return (
+                              <button
+                                onClick={() => updateBias(b)}
+                                class="px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors border"
+                                style={active()
+                                  ? { background: 'var(--accent)', color: '#fff', 'border-color': 'var(--accent)' }
+                                  : { background: 'var(--bg-elevated)', color: 'var(--text-tertiary)', 'border-color': 'var(--border-base)' }
+                                }
+                              >
+                                {labels[b]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </Show>
+
                     {/* City selector — mobile only, between trending and chips */}
                     <div class="xl:hidden">
                       <CitySelector
@@ -589,10 +758,28 @@ export default function App() {
                             {(item) => (
                               <NewsCard
                                 news={item}
+                                variant={density() === 'compact' ? 'compact' : 'default'}
                                 onClick={() => handleNewsClick(item)}
-                                onUpvote={() => haptic.vibrate('tap')}
+                                onUpvote={(_id, current) => {
+                                  haptic.vibrate('tap');
+                                  // Fire-and-forget: the optimistic
+                                  // count is already shown in the UI.
+                                  // On error the local signal stays as
+                                  // is (the API may have applied it
+                                  // anyway); a real reconciliation
+                                  // pass is Sprint 5.
+                                  fetchVote(item.id, current).catch(() => {});
+                                }}
                                 onBookmark={() => { haptic.vibrate('tap'); toggleBookmark(item.id); }}
                                 onShare={() => shareNews(item)}
+                                onRepost={() => {
+                                  haptic.vibrate('success');
+                                  fetchRepost(item.id)
+                                    .then((res) => {
+                                      if (res) toast('Repost publicado', 'info');
+                                    })
+                                    .catch(() => toast('No se pudo republicar', 'error'));
+                                }}
                                 onOpenSource={() => {
                                   if (item.sourceUrl) {
                                     haptic.vibrate('tap');
@@ -681,8 +868,9 @@ export default function App() {
               fetchBreaking(50).then(r => setBreakingItems(r.news)).catch(() => {});
             }
             else if (tab === 'search') {
-              setActiveTab('home');
-              setSearchOpen(true);
+              if (typeof window !== 'undefined') {
+                window.location.href = '/buscar';
+              }
             }
           }}
           unreadCount={(() => {
@@ -695,6 +883,12 @@ export default function App() {
           savedCount={bookmarks().length}
         />
       </Show>
+
+      <ModoMate
+        visible={mateMode()}
+        newsItems={mappedNews().map(n => ({ title: n.title, summary: n.summary }))}
+        currentIndex={0}
+      />
 
       <MobileDrawer
         open={drawerOpen()}

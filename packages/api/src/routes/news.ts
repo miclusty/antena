@@ -198,6 +198,136 @@ newsRoutes.get("/:id", async (c) => {
   }, { ttl: 300, swr: 3600 })(c.req.raw);
 });
 
+// ─── Engagement: votes + reposts ────────────────────────────────
+// Per-device anonymous signals. The count columns on news_cards
+// are the materialized projection; these tables are the source
+// of truth for "did THIS device vote" and idempotency.
+
+const voteBodySchema = z.object({
+  device_id: z.string().min(1).max(128),
+  /** 1 = upvote, -1 = downvote, 0 = clear vote. */
+  vote: z.union([z.literal(1), z.literal(-1), z.literal(0)]),
+});
+
+newsRoutes.post("/:id/vote", async (c) => {
+  const parsed = articleIdSchema.safeParse(c.req.param());
+  if (!parsed.success) return c.json(formatZodError(parsed.error), 400);
+  const body = voteBodySchema.safeParse(await c.req.json().catch(() => ({})));
+  if (!body.success) return c.json(formatZodError(body.error), 400);
+  const { id } = parsed.data;
+  const { device_id, vote } = body.data;
+
+  // Verify the article exists. We don't 404 if missing — we just
+  // return the current count (which is 0). Prevents a race where
+  // a deleted article's votes linger in the per-device table.
+  const article = await getNewsById(c.env.DB, id);
+  if (!article) return c.json({ error: "Not found" }, 404);
+
+  // Read the previous vote (if any) so we can compute the delta.
+  const prev = await c.env.DB.prepare(
+    "SELECT vote FROM news_votes WHERE device_id = ? AND news_id = ?"
+  ).bind(device_id, id).first<{ vote: number }>();
+  const prevVote = prev?.vote ?? 0;
+
+  if (vote === 0) {
+    // Clear the vote.
+    await c.env.DB.prepare(
+      "DELETE FROM news_votes WHERE device_id = ? AND news_id = ?"
+    ).bind(device_id, id).run();
+  } else if (prevVote === 0) {
+    // New vote — insert.
+    await c.env.DB.prepare(
+      "INSERT INTO news_votes (device_id, news_id, vote) VALUES (?, ?, ?)"
+    ).bind(device_id, id, vote).run();
+  } else if (prevVote !== vote) {
+    // Flip — update.
+    await c.env.DB.prepare(
+      "UPDATE news_votes SET vote = ?, updated_at = CURRENT_TIMESTAMP WHERE device_id = ? AND news_id = ?"
+    ).bind(vote, device_id, id).run();
+  }
+  // else: prevVote === vote → no-op (idempotent re-send).
+
+  // Update the materialized counters. We compute the delta from
+  // prev→new so an upvote→downvote flip subtracts one from each.
+  const upvoteDelta = (vote === 1 ? 1 : 0) - (prevVote === 1 ? 1 : 0);
+  const downvoteDelta = (vote === -1 ? 1 : 0) - (prevVote === -1 ? 1 : 0);
+  if (upvoteDelta !== 0 || downvoteDelta !== 0) {
+    await c.env.DB.prepare(
+      "UPDATE news_cards SET upvotes = MAX(0, upvotes + ?), downvotes = MAX(0, downvotes + ?) WHERE id = ?"
+    ).bind(upvoteDelta, downvoteDelta, id).run();
+  }
+
+  // Read back the new counts + this device's vote.
+  const counts = await c.env.DB.prepare(
+    "SELECT upvotes, downvotes FROM news_cards WHERE id = ?"
+  ).bind(id).first<{ upvotes: number; downvotes: number }>();
+
+  return c.json({
+    upvotes: counts?.upvotes ?? 0,
+    downvotes: counts?.downvotes ?? 0,
+    myVote: vote,
+  });
+});
+
+const repostBodySchema = z.object({
+  device_id: z.string().min(1).max(128),
+});
+
+newsRoutes.post("/:id/repost", async (c) => {
+  const parsed = articleIdSchema.safeParse(c.req.param());
+  if (!parsed.success) return c.json(formatZodError(parsed.error), 400);
+  const body = repostBodySchema.safeParse(await c.req.json().catch(() => ({})));
+  if (!body.success) return c.json(formatZodError(body.error), 400);
+  const { id } = parsed.data;
+  const { device_id } = body.data;
+
+  const article = await getNewsById(c.env.DB, id);
+  if (!article) return c.json({ error: "Not found" }, 404);
+
+  // Idempotent insert. If a row already exists for (device, news)
+  // the INSERT OR IGNORE silently no-ops, the counter doesn't
+  // double, and the response says "you already reposted".
+  const ins = await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO news_reposts (device_id, news_id) VALUES (?, ?)"
+  ).bind(device_id, id).run();
+  const wasNew = ins.meta.changes > 0;
+  if (wasNew) {
+    await c.env.DB.prepare(
+      "UPDATE news_cards SET reposts = reposts + 1 WHERE id = ?"
+    ).bind(id).run();
+  }
+
+  const counts = await c.env.DB.prepare(
+    "SELECT reposts FROM news_cards WHERE id = ?"
+  ).bind(id).first<{ reposts: number }>();
+
+  return c.json({ reposts: counts?.reposts ?? 0, alreadyReposted: !wasNew });
+});
+
+newsRoutes.delete("/:id/repost", async (c) => {
+  const parsed = articleIdSchema.safeParse(c.req.param());
+  if (!parsed.success) return c.json(formatZodError(parsed.error), 400);
+  const deviceId = c.req.query("device_id");
+  if (!deviceId) return c.json({ error: "device_id required" }, 400);
+  const { id } = parsed.data;
+
+  const del = await c.env.DB.prepare(
+    "DELETE FROM news_reposts WHERE device_id = ? AND news_id = ?"
+  ).bind(deviceId, id).run();
+  const wasDeleted = del.meta.changes > 0;
+  if (wasDeleted) {
+    await c.env.DB.prepare(
+      "UPDATE news_cards SET reposts = MAX(0, reposts - 1) WHERE id = ?"
+    ).bind(id).run();
+  }
+
+  const counts = await c.env.DB.prepare(
+    "SELECT reposts FROM news_cards WHERE id = ?"
+  ).bind(id).first<{ reposts: number }>();
+
+  return c.json({ reposts: counts?.reposts ?? 0, removed: wasDeleted });
+});
+
 newsRoutes.get("/:id/cluster", async (c) => {
   const parsed = articleIdSchema.safeParse(c.req.param());
   if (!parsed.success) {

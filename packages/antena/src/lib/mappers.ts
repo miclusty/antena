@@ -211,6 +211,9 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     publishedAt: card.published_at || card.created_at,
     voces: computeVoices([{ bias_score: card.bias_score }]),
     propagation: [],
+    upvotes: card.upvotes ?? 0,
+    downvotes: card.downvotes ?? 0,
+    reposts: card.reposts ?? 0,
   };
 }
 

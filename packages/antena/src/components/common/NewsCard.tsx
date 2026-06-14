@@ -55,9 +55,10 @@ export interface NewsCardProps {
   onClick: () => void;
   variant?: 'default' | 'compact';
   isBookmarked?: boolean;
-  onUpvote?: (id: string, delta: 1 | -1) => void;
+  onUpvote?: (id: string, current: 0 | 1 | -1) => void;
   onBookmark?: (id: string) => void;
   onShare?: (id: string) => void;
+  onRepost?: (id: string) => void;
   onOpenSource?: (id: string) => void;
   onViewCluster?: (id: string) => void;
 }
@@ -66,10 +67,11 @@ export default function NewsCard(props: NewsCardProps) {
   const haptic = useHaptic();
   const compact = () => props.variant === 'compact';
 
-  const [vote, setVote] = createSignal<0|1|-1>(0);
-  const [voteN, setVoteN] = createSignal(Math.floor(Math.random()*200)+10);
-  const [cmtN] = createSignal(Math.floor(Math.random()*50));
-  const [rpstN] = createSignal(Math.floor(Math.random()*20));
+  const [vote, setVote] = createSignal<0|1|-1>(props.news.myVote ?? 0);
+  const [voteN, setVoteN] = createSignal(props.news.upvotes ?? 0);
+  const [cmtN] = createSignal(0);
+  const [rpstN, setRpstN] = createSignal(props.news.reposts ?? 0);
+  const [reposted, setReposted] = createSignal(false);
   const [actionSheetOpen, setActionSheetOpen] = createSignal(false);
 
   // ─── Long-press detection ─────────────────────────────────
@@ -148,12 +150,30 @@ export default function NewsCard(props: NewsCardProps) {
   const handleVote = (d: 1|-1, e: Event) => {
     e.stopPropagation();
     haptic.vibrate('tap');
-    const cur = vote(); const ns = cur === d ? 0 : d;
-    setVote(ns as 0|1|-1);
+    const cur = vote();
+    const ns: 0|1|-1 = cur === d ? 0 : d;
+    setVote(ns);
+    // Optimistic count update. If the API call later fails or
+    // returns a different total, the local signal is reconciled
+    // in a future Sprint (S5: feedback sync).
     let diff = 0;
-    if (cur === d) diff = -d; else if (cur === 0) diff = d; else diff = d*2;
-    setVoteN(c => Math.max(0, c+diff));
-    props.onUpvote?.(props.news.id, d);
+    if (cur === d) diff = -d;
+    else if (cur === 0) diff = d;
+    else diff = d * 2;
+    setVoteN((c) => Math.max(0, c + diff));
+    props.onUpvote?.(props.news.id, ns);
+  };
+
+  const handleRepost = (e: Event) => {
+    e.stopPropagation();
+    if (reposted()) {
+      haptic.vibrate('tap');
+      return;
+    }
+    haptic.vibrate('success');
+    setReposted(true);
+    setRpstN((c) => c + 1);
+    props.onRepost?.(props.news.id);
   };
 
   const read = createMemo(() => isRead(props.news.id));
@@ -270,9 +290,10 @@ export default function NewsCard(props: NewsCardProps) {
               <span class="text-[15px] xl:text-[16px] font-medium tabular-nums">{cmtN()}</span>
             </button>
             <button
-              onClick={(e)=>{e.stopPropagation();haptic.vibrate('tap');}}
+              onClick={handleRepost}
               aria-label="Repost"
-              class="flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-full hover:bg-green-500/10 active:scale-90 transition-all text-text-tertiary hover:text-green-500"
+              class="flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-full hover:bg-green-500/10 active:scale-90 transition-all"
+              style={{ color: reposted() ? 'var(--green-500, #10B981)' : 'var(--text-tertiary)' }}
             >
               <span class="w-[20px] h-[20px] flex items-center justify-center" innerHTML={SVG_RPST_20} />
               <span class="text-[15px] xl:text-[16px] font-medium tabular-nums">{rpstN()}</span>

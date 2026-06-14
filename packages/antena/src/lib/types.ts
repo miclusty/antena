@@ -41,6 +41,13 @@ export interface NewsItem {
   sourcesCount: number;
   imageUrl?: string;
   publishedAt: string;
+  // Engagement counters (server-side, denormalized on news_cards).
+  upvotes?: number;
+  downvotes?: number;
+  reposts?: number;
+  /** Local override of the device's current vote. Used to
+   *  color the buttons while waiting for the server response. */
+  myVote?: -1 | 0 | 1;
 }
 
 export interface PropagationEvent {

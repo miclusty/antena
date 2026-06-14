@@ -33,6 +33,13 @@ export interface ApiNewsCard {
   created_at: string;
   sources_count?: number;
   quality_score?: number | null;
+  // Engagement counters from /api/news/{id}/vote and /repost.
+  // Default 0 in older D1 rows (migration 0002 added the columns
+  // — rows written before that migration return 0 via the
+  // column DEFAULT 0 in the schema).
+  upvotes?: number;
+  downvotes?: number;
+  reposts?: number;
 }
 
 export interface MasterArticle {
@@ -380,4 +387,65 @@ export async function fetchFeedFiltered(
   const res = await fetch(`${API_BASE}/api/news/feed?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch feed: ${res.status}`);
   return res.json();
+}
+
+// ─── Engagement: votes + reposts ────────────────────────────
+// Per-device signals. The frontend keeps a local signal of the
+// user's current vote (1 / -1 / 0) so the UI updates immediately;
+// the server response is the source of truth for the displayed
+// counts. On error, we revert the local signal.
+
+export interface VoteResponse {
+  upvotes: number;
+  downvotes: number;
+  myVote: -1 | 0 | 1;
+}
+
+export async function fetchVote(
+  newsId: string,
+  vote: -1 | 0 | 1,
+): Promise<VoteResponse | null> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/news/${newsId}/vote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_id: deviceId, vote }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as VoteResponse;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchRepost(newsId: string): Promise<{ reposts: number; alreadyReposted: boolean } | null> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/news/${newsId}/repost`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_id: deviceId }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchUnrepost(newsId: string): Promise<{ reposts: number; removed: boolean } | null> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/news/${newsId}/repost?device_id=${encodeURIComponent(deviceId)}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }

@@ -100,7 +100,7 @@ export const clusters = sqliteTable("clusters", {
 export type Cluster = typeof clusters.$inferSelect;
 export type NewCluster = typeof clusters.$inferInsert;
 
-// ─── news_cards ──────────────────────────────────────────────
+  // ─── news_cards ──────────────────────────────────────────────
 export const newsCards = sqliteTable(
   "news_cards",
   {
@@ -122,6 +122,11 @@ export const newsCards = sqliteTable(
     clusterId: text("cluster_id"),
     publishedAt: text("published_at"),
     createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+    // Denormalized engagement counters. Updated atomically by
+    // the vote/repost endpoints in routes/news.ts.
+    upvotes: integer("upvotes").notNull().default(0),
+    downvotes: integer("downvotes").notNull().default(0),
+    reposts: integer("reposts").notNull().default(0),
   },
   (t) => ({
     byLocation: index("idx_news_location").on(t.locationId, t.publishedAt),
@@ -129,6 +134,8 @@ export const newsCards = sqliteTable(
     byCluster: index("idx_news_cluster").on(t.clusterId),
     byBias: index("idx_news_bias").on(t.biasScore),
     byPublished: index("idx_news_published").on(t.publishedAt),
+    byUpvotes: index("idx_news_upvotes").on(t.upvotes, t.createdAt),
+    byReposts: index("idx_news_reposts").on(t.reposts, t.createdAt),
   })
 );
 
@@ -189,6 +196,51 @@ export const sourceFollows = sqliteTable(
 export type SourceFollow = typeof sourceFollows.$inferSelect;
 export type NewSourceFollow = typeof sourceFollows.$inferInsert;
 
+// ─── News engagement: votes + reposts ───────────────────────────
+// Anonymous per-device engagement signals. Same auth model as
+// source_follows: device_id is a UUID generated client-side.
+// (device_id, news_id) is unique for both tables — a device
+// can only have one vote (1 or -1) per article, and only one
+// repost. Counter updates on news_cards are the materialized
+// projection of these tables.
+
+export const newsVotes = sqliteTable(
+  "news_votes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    deviceId: text("device_id").notNull(),
+    newsId: text("news_id").notNull(),
+    vote: integer("vote").notNull(), // 1 or -1
+    createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+    updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
+  },
+  (t) => ({
+    byDevice: index("idx_votes_device").on(t.deviceId),
+    byNews: index("idx_votes_news").on(t.newsId),
+    uniquePair: uniqueIndex("uniq_votes_device_news").on(t.deviceId, t.newsId),
+  })
+);
+
+export const newsReposts = sqliteTable(
+  "news_reposts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    deviceId: text("device_id").notNull(),
+    newsId: text("news_id").notNull(),
+    createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  },
+  (t) => ({
+    byDevice: index("idx_reposts_device").on(t.deviceId),
+    byNews: index("idx_reposts_news").on(t.newsId),
+    uniquePair: uniqueIndex("uniq_reposts_device_news").on(t.deviceId, t.newsId),
+  })
+);
+
+export type NewsVote = typeof newsVotes.$inferSelect;
+export type NewNewsVote = typeof newsVotes.$inferInsert;
+export type NewsRepost = typeof newsReposts.$inferSelect;
+export type NewNewsRepost = typeof newsReposts.$inferInsert;
+
 // ─── Table reference map (for typed query helpers) ───────────
 export const tables = {
   categories,
@@ -198,4 +250,6 @@ export const tables = {
   newsCards,
   masterArticles,
   sourceFollows,
+  newsVotes,
+  newsReposts,
 } as const;
