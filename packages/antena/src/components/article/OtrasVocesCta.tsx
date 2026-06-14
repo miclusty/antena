@@ -5,6 +5,7 @@ import { useHaptic } from '../../lib/haptic';
 import { createScrollProgress } from '../../lib/scroll-progress';
 import { trackEvent } from '../../lib/analytics';
 import BottomSheet from '../common/BottomSheet';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface OtrasVocesCtaProps {
   otherSources: NewsItem[];
@@ -94,12 +95,7 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
                 </Show>
               </p>
             </div>
-            <span
-              class="material-symbols-rounded text-2xl shrink-0"
-              style={{ color: 'var(--accent)' }}
-            >
-              arrow_forward
-            </span>
+            <MaterialIcon name="arrow_forward" size="2xl" class="text-2xl shrink-0" style={{ color: 'var(--accent)' }} />
           </button>
         </div>
       </Show>
@@ -162,13 +158,7 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
                       </span>
                     </div>
                   </div>
-                  <span
-                    class="material-symbols-rounded text-lg leading-none self-center opacity-60 group-hover:opacity-100 transition-opacity"
-                    style={{ color: 'var(--text-tertiary)' }}
-                    aria-hidden="true"
-                  >
-                    chevron_right
-                  </span>
+                  <MaterialIcon name="chevron_right" size="lg" class="text-lg self-center opacity-60 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
                 </button>
               </li>
             )}

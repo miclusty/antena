@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import type { Category } from '../../lib/types';
+import MaterialIcon from '../common/MaterialIcon';
 
 export interface FeedTab {
   id: string;
@@ -124,12 +125,7 @@ export default function FeedTabs(props: FeedTabsProps) {
                   class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-bg-hover text-text-tertiary"
                   aria-label={`Quitar pestaña ${tab.label}`}
                 >
-                  <span
-                    class="material-symbols-rounded text-base leading-none"
-                    style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                  >
-                    close
-                  </span>
+                  <MaterialIcon name="close" size="base" class="text-base " style={{ }} />
                 </button>
               </div>
             );
@@ -148,12 +144,7 @@ export default function FeedTabs(props: FeedTabsProps) {
             aria-expanded={pickerOpen()}
             aria-haspopup="listbox"
           >
-            <span
-              class="material-symbols-rounded text-lg text-text-tertiary"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              add
-            </span>
+            <MaterialIcon name="add" size="lg" class="text-lg text-text-tertiary" style={{ }} />
           </button>
 
           <Show when={pickerOpen()}>
@@ -184,13 +175,7 @@ export default function FeedTabs(props: FeedTabsProps) {
                       }}
                       class="w-full flex items-center gap-3 px-4 min-h-[44px] py-2 text-left hover:bg-bg-hover active:bg-bg-hover transition-colors"
                     >
-                      <span
-                        class="material-symbols-rounded text-lg leading-none text-text-tertiary"
-                        style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-                        aria-hidden="true"
-                      >
-                        {cat.icon}
-                      </span>
+                      <MaterialIcon name={cat.icon} size="lg" class="text-lg text-text-tertiary" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />
                       <span class="text-sm font-medium text-text-primary">
                         {cat.name}
                       </span>

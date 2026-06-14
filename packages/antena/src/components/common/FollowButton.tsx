@@ -2,6 +2,7 @@
 import { Show, createSignal } from "solid-js";
 import { useFollows } from "../../lib/follows";
 import { useHaptic } from "../../lib/haptic";
+import MaterialIcon from '../common/MaterialIcon';
 
 /**
  * FollowButton — toggle a source's follow state.
@@ -75,18 +76,7 @@ export default function FollowButton(props: FollowButtonProps) {
       aria-label={isFollowing() ? "Siguiendo" : "Seguir"}
       aria-pressed={isFollowing()}
     >
-      <span
-        class="material-symbols-rounded"
-        style={{
-          "font-size": props.size === "md" ? "18px" : "14px",
-          "font-variation-settings": isFollowing()
-            ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20"
-            : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20",
-        }}
-        aria-hidden="true"
-      >
-        {isFollowing() ? "check" : "add"}
-      </span>
+      <MaterialIcon name={isFollowing() ? "check" : "add"} size="base" class="" style={{ "font-size": props.size === "md" ? "18px" : "14px", "font-variation-settings": isFollowing() ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20", }} aria-hidden="true" />
       <Show when={props.size === "md"}>
         <span>{isFollowing() ? "Siguiendo" : "Seguir"}</span>
       </Show>

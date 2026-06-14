@@ -2,6 +2,7 @@
 import { createSignal, createResource, For, Show, onMount, onCleanup } from 'solid-js';
 import { fetchLocations } from '../../lib/api';
 import type { ApiLocation } from '../../lib/api';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface LocationSelectorProps {
   activeLocation: string | null;
@@ -59,19 +60,9 @@ export default function LocationSelector(props: LocationSelectorProps) {
         aria-expanded={isOpen()}
         aria-haspopup="listbox"
       >
-        <span
-          class="material-symbols-rounded text-base leading-none"
-          style={{ color: 'var(--accent)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-        >
-          location_on
-        </span>
+        <MaterialIcon name="location_on" size="base" class="text-base " style={{ color: 'var(--accent)' }} />
         <span class="max-w-[120px] truncate">{activeName()}</span>
-        <span
-          class="material-symbols-rounded text-base leading-none"
-          style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-        >
-          expand_more
-        </span>
+        <MaterialIcon name="expand_more" size="base" class="text-base " style={{ color: 'var(--text-tertiary)' }} />
       </button>
 
       <Show when={isOpen()}>
@@ -87,12 +78,7 @@ export default function LocationSelector(props: LocationSelectorProps) {
             class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-bg-hover transition-colors"
             style={{ color: !props.activeLocation ? 'var(--accent)' : 'var(--text-primary)' }}
           >
-            <span
-              class="material-symbols-rounded text-base leading-none"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              public
-            </span>
+            <MaterialIcon name="public" size="base" class="text-base " style={{ }} />
             Todas las ubicaciones
           </button>
 
@@ -108,12 +94,7 @@ export default function LocationSelector(props: LocationSelectorProps) {
                 class="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-bg-hover transition-colors"
                 style={{ color: String(loc.id) === props.activeLocation ? 'var(--accent)' : 'var(--text-primary)' }}
               >
-                <span
-                  class="material-symbols-rounded text-base leading-none"
-                  style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-                >
-                  map
-                </span>
+                <MaterialIcon name="map" size="base" class="text-base " style={{ color: 'var(--text-tertiary)' }} />
                 {loc.name}
               </button>
             )}
@@ -130,12 +111,7 @@ export default function LocationSelector(props: LocationSelectorProps) {
                 class="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-bg-hover transition-colors"
                 style={{ color: String(loc.id) === props.activeLocation ? 'var(--accent)' : 'var(--text-primary)' }}
               >
-                <span
-                  class="material-symbols-rounded text-base leading-none"
-                  style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-                >
-                  location_on
-                </span>
+                <MaterialIcon name="location_on" size="base" class="text-base " style={{ color: 'var(--text-tertiary)' }} />
                 {loc.name}
               </button>
             )}

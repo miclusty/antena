@@ -3,6 +3,7 @@ import { Show } from 'solid-js';
 import { useHaptic } from '../../lib/haptic';
 import { toast } from '../Toast';
 import { isSupported as speechSupported, isSpeaking, stop as stopSpeech } from '../../lib/speech';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface ArticleBottomBarProps {
   sourceUrl?: string;
@@ -37,12 +38,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
           class="flex items-center gap-1.5 text-xs font-medium"
           style={{ color: 'var(--accent)' }}
         >
-          <span
-            class="material-symbols-rounded text-base leading-none"
-            style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-          >
-            open_in_new
-          </span>
+          <MaterialIcon name="open_in_new" size="base" class="text-base " style={{ }} />
           Leer en fuente
         </a>
 
@@ -57,13 +53,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
             title="Copiar enlace"
             aria-label="Copiar enlace"
           >
-            <span
-              class="material-symbols-rounded text-xl leading-none"
-              style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              aria-hidden="true"
-            >
-              link
-            </span>
+            <MaterialIcon name="link" size="xl" class="text-xl " style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
           </button>
 
           <Show when={canSpeak}>
@@ -84,18 +74,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
               aria-label={props.isSpeaking ? 'Detener lectura' : 'Escuchar'}
               aria-pressed={!!props.isSpeaking}
             >
-              <span
-                class="material-symbols-rounded text-xl leading-none"
-                style={{
-                  color: props.isSpeaking ? 'var(--accent)' : 'var(--text-tertiary)',
-                  'font-variation-settings': props.isSpeaking
-                    ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20"
-                    : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-                }}
-                aria-hidden="true"
-              >
-                {props.isSpeaking ? 'stop' : 'volume_up'}
-              </span>
+              <MaterialIcon name={props.isSpeaking ? 'stop' : 'volume_up'} size="xl" class="text-xl " style={{ color: props.isSpeaking ? 'var(--accent)' : 'var(--text-tertiary)', 'font-variation-settings': props.isSpeaking ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20", }} aria-hidden="true" />
             </button>
           </Show>
 
@@ -105,18 +84,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
             title={props.isBookmarked ? 'Quitar de guardados' : 'Guardar'}
             aria-label={props.isBookmarked ? 'Quitar de guardados' : 'Guardar'}
           >
-            <span
-              class="material-symbols-rounded text-xl leading-none"
-              style={{
-                color: props.isBookmarked ? 'var(--accent)' : 'var(--text-tertiary)',
-                'font-variation-settings': props.isBookmarked
-                  ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20"
-                  : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-              aria-hidden="true"
-            >
-              bookmark
-            </span>
+            <MaterialIcon name="bookmark" size="xl" class="text-xl " style={{ color: props.isBookmarked ? 'var(--accent)' : 'var(--text-tertiary)', 'font-variation-settings': props.isBookmarked ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20", }} aria-hidden="true" />
           </button>
 
           <button
@@ -125,13 +93,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
             title="Compartir"
             aria-label="Compartir"
           >
-            <span
-              class="material-symbols-rounded text-xl leading-none"
-              style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              aria-hidden="true"
-            >
-              share
-            </span>
+            <MaterialIcon name="share" size="xl" class="text-xl " style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
           </button>
 
           <button
@@ -140,13 +102,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
             title="Modo lectura"
             aria-label="Modo lectura"
           >
-            <span
-              class="material-symbols-rounded text-xl leading-none"
-              style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              aria-hidden="true"
-            >
-              menu_book
-            </span>
+            <MaterialIcon name="menu_book" size="xl" class="text-xl " style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
           </button>
         </div>
       </div>

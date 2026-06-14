@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import SourceLogo from '../common/SourceLogo';
+import MaterialIcon from '../common/MaterialIcon';
 
 export interface DrawerStats {
   total_news: number;
@@ -57,17 +58,7 @@ function Accordion(props: AccordionProps) {
         >
           {props.title}
         </span>
-        <span
-          class="material-symbols-rounded text-base leading-none transition-transform duration-200"
-          style={{
-            color: 'var(--text-tertiary)',
-            'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-            transform: props.open ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-          aria-hidden="true"
-        >
-          expand_more
-        </span>
+        <MaterialIcon name="expand_more" size="base" class="text-base transition-transform duration-200" style={{ color: 'var(--text-tertiary)', transform: props.open ? 'rotate(180deg)' : 'rotate(0deg)' }} aria-hidden="true" />
       </button>
       <Show when={props.open}>
         <div>{props.children}</div>
@@ -208,15 +199,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
             class="w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:bg-bg-hover shrink-0"
             aria-label="Cerrar menú"
           >
-            <span
-              class="material-symbols-rounded text-[24px] leading-none"
-              style={{
-                color: 'var(--text-secondary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24",
-              }}
-            >
-              close
-            </span>
+            <MaterialIcon name="close" size="xl" class="text-[24px] " style={{ color: 'var(--text-secondary)' }} />
           </button>
         </header>
 
@@ -252,15 +235,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
               'font-weight': props.activeFeedTab === 'home' ? '700' : '500',
             }}
           >
-            <span
-              class="material-symbols-rounded text-[20px] leading-none"
-              style={{
-                color: props.activeFeedTab === 'home' ? 'var(--accent)' : 'var(--text-secondary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-            >
-              home
-            </span>
+            <MaterialIcon name="home" size="lg" class="text-[20px] " style={{ color: props.activeFeedTab === 'home' ? 'var(--accent)' : 'var(--text-secondary)' }} />
             Inicio
             <Show when={props.unreadCount > 0}>
               <span
@@ -280,15 +255,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
               'font-weight': props.activeFeedTab === 'for-you' ? '700' : '500',
             }}
           >
-            <span
-              class="material-symbols-rounded text-[20px] leading-none"
-              style={{
-                color: props.activeFeedTab === 'for-you' ? 'var(--accent)' : 'var(--text-secondary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-            >
-              auto_awesome
-            </span>
+            <MaterialIcon name="auto_awesome" size="lg" class="text-[20px] " style={{ color: props.activeFeedTab === 'for-you' ? 'var(--accent)' : 'var(--text-secondary)' }} />
             Para vos
           </button>
           <button
@@ -300,15 +267,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
               'font-weight': props.activeFeedTab === 'following' ? '700' : '500',
             }}
           >
-            <span
-              class="material-symbols-rounded text-[20px] leading-none"
-              style={{
-                color: props.activeFeedTab === 'following' ? 'var(--accent)' : 'var(--text-secondary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-            >
-              group
-            </span>
+            <MaterialIcon name="group" size="lg" class="text-[20px] " style={{ color: props.activeFeedTab === 'following' ? 'var(--accent)' : 'var(--text-secondary)' }} />
             Siguiendo
           </button>
           <button
@@ -317,15 +276,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
             class="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-bg-hover"
             style={{ color: 'var(--text-primary)', 'font-weight': '500' }}
           >
-            <span
-              class="material-symbols-rounded text-[20px] leading-none"
-              style={{
-                color: 'var(--text-secondary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-            >
-              bookmark
-            </span>
+            <MaterialIcon name="bookmark" size="lg" class="text-[20px] " style={{ color: 'var(--text-secondary)' }} />
             Guardados
             <Show when={props.savedCount > 0}>
               <span
@@ -341,15 +292,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
             class="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-bg-hover"
             style={{ color: 'var(--text-primary)', 'font-weight': '500' }}
           >
-            <span
-              class="material-symbols-rounded text-[20px] leading-none"
-              style={{
-                color: 'var(--text-secondary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-            >
-              history
-            </span>
+            <MaterialIcon name="history" size="lg" class="text-[20px] " style={{ color: 'var(--text-secondary)' }} />
             Historial
           </button>
         </Accordion>
@@ -374,13 +317,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
                         : { background: 'var(--bg-base)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
                     }
                   >
-                    <span
-                      class="material-symbols-rounded text-[14px] leading-none"
-                      style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
-                      aria-hidden="true"
-                    >
-                      {cat.icon}
-                    </span>
+                    <MaterialIcon name={cat.icon} size="xs" class="text-[14px] " style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }} aria-hidden="true" />
                     {cat.name}
                   </button>
                 );
@@ -432,15 +369,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
             class="w-full flex items-center gap-3 px-0 py-2 text-sm transition-colors"
             style={{ color: 'var(--text-secondary)' }}
           >
-            <span
-              class="material-symbols-rounded text-[20px] leading-none"
-              style={{
-                color: 'var(--text-tertiary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-            >
-              settings
-            </span>
+            <MaterialIcon name="settings" size="lg" class="text-[20px] " style={{ color: 'var(--text-tertiary)' }} />
             Configuración
           </a>
         </div>

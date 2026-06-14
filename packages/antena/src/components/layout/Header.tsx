@@ -2,6 +2,7 @@
 import { createSignal, Show } from 'solid-js';
 import SearchBar from '../common/SearchBar';
 import { useTheme } from '../../lib/theme';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface HeaderProps {
   activeCategory?: string;
@@ -63,12 +64,7 @@ export default function Header(props: HeaderProps) {
               class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
               aria-label="Volver"
             >
-              <span
-                class="material-symbols-rounded text-xl text-text-primary"
-                style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              >
-                arrow_back
-              </span>
+              <MaterialIcon name="arrow_back" size="xl" class="text-xl text-text-primary" style={{ }} />
             </button>
           </Show>
         </div>
@@ -89,12 +85,7 @@ export default function Header(props: HeaderProps) {
             aria-label={themeLabel()}
             title={themeLabel()}
           >
-            <span
-              class="material-symbols-rounded text-xl text-text-secondary"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              {themeIcon()}
-            </span>
+            <MaterialIcon name={themeIcon()} size="xl" class="text-xl text-text-secondary" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} />
           </button>
 
           {/* Search button */}
@@ -103,12 +94,7 @@ export default function Header(props: HeaderProps) {
             class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
             aria-label="Buscar"
           >
-            <span
-              class="material-symbols-rounded text-xl text-text-secondary"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              search
-            </span>
+            <MaterialIcon name="search" size="xl" class="text-xl text-text-secondary" style={{ }} />
           </button>
 
           {/* Settings link */}
@@ -118,12 +104,7 @@ export default function Header(props: HeaderProps) {
             aria-label="Configuración"
             title="Configuración"
           >
-            <span
-              class="material-symbols-rounded text-xl text-text-secondary"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              settings
-            </span>
+            <MaterialIcon name="settings" size="xl" class="text-xl text-text-secondary" style={{ }} />
           </a>
         </div>
       </div>

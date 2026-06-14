@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { createSignal } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface ModoMateProps {
   newsItems: { title: string; summary: string }[];
@@ -50,12 +51,7 @@ export default function ModoMate(props: ModoMateProps) {
         class="flex items-center gap-2 text-sm font-medium transition-colors"
         style={{ color: 'var(--accent)' }}
       >
-        <span
-          class="material-symbols-rounded text-lg leading-none"
-          style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-        >
-          {isSpeaking() ? 'stop' : 'record_voice_over'}
-        </span>
+        <MaterialIcon name={isSpeaking() ? 'stop' : 'record_voice_over'} size="lg" class="text-lg " style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} />
         {isSpeaking() ? 'Detener' : 'Modo Mate'}
       </button>
 

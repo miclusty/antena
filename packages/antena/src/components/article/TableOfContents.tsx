@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { For, Show, createSignal } from "solid-js";
+import MaterialIcon from '../common/MaterialIcon';
 
 interface TocItem {
   level: 2 | 3;
@@ -55,17 +56,7 @@ export default function TableOfContents(props: TableOfContentsProps) {
           >
             Contenido
           </span>
-          <span
-            class="material-symbols-rounded text-base leading-none transition-transform"
-            style={{
-              color: "var(--text-tertiary)",
-              "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18",
-              transform: collapsed() ? "rotate(-90deg)" : "rotate(0deg)",
-            }}
-            aria-hidden="true"
-          >
-            expand_more
-          </span>
+          <MaterialIcon name="expand_more" size="base" class="text-base transition-transform" style={{ color: "var(--text-tertiary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18", transform: collapsed() ? "rotate(-90deg)" : "rotate(0deg)", }} aria-hidden="true" />
         </button>
         <Show when={!collapsed()}>
           <ol id="toc-list" class="mt-2 space-y-0.5">

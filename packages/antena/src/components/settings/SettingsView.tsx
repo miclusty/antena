@@ -18,6 +18,7 @@ import {
 import { useTheme } from "../../lib/theme";
 import { getAntenaDeviceId, fetchFollows, fetchSources, unfollowSource, followSource, type ApiSourceEntry } from "../../lib/api";
 import { toast } from "../Toast";
+import MaterialIcon from '../common/MaterialIcon';
 
 const QUALITY_OPTIONS: { id: ImageQuality; label: string; desc: string }[] = [
   { id: "auto", label: "Auto", desc: "El server decide" },
@@ -187,13 +188,7 @@ export default function SettingsView() {
             style={{ background: "var(--accent-muted)", color: "var(--accent)" }}
             aria-label="Cambiar tema"
           >
-            <span
-              class="material-symbols-rounded text-base leading-none"
-              style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-              aria-hidden="true"
-            >
-              {themeIcon()}
-            </span>
+            <MaterialIcon name={themeIcon()} size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
             Cambiar
           </button>
         </Row>
@@ -280,13 +275,7 @@ export default function SettingsView() {
             style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-base)" }}
             title="Copiar al portapapeles"
           >
-            <span
-              class="material-symbols-rounded text-sm leading-none"
-              style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
-              aria-hidden="true"
-            >
-              content_copy
-            </span>
+            <MaterialIcon name="content_copy" size="sm" class="text-sm " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }} aria-hidden="true" />
             {deviceId() ? deviceId().slice(0, 8) + "…" : "—"}
           </button>
         </Row>
@@ -388,13 +377,7 @@ function Section(props: { title: string; icon: string; children: any }) {
   return (
     <section class="border-b border-border-base px-5 py-4">
       <h2 class="text-[10px] font-extrabold uppercase tracking-widest mb-3 flex items-center gap-1.5" style={{ color: "var(--text-tertiary)" }}>
-        <span
-          class="material-symbols-rounded text-base leading-none"
-          style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-          aria-hidden="true"
-        >
-          {props.icon}
-        </span>
+        <MaterialIcon name={props.icon} size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
         {props.title}
       </h2>
       <div class="space-y-3">{props.children}</div>

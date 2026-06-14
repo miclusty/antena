@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { createSignal, createMemo, Show } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface MediaEmbedProps {
   url: string;
@@ -52,12 +53,7 @@ export default function MediaEmbed(props: MediaEmbedProps) {
                     'border-color': 'var(--border-base)',
                   }}
                 >
-                  <span
-                    class="material-symbols-rounded text-[32px] leading-none"
-                    style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-                  >
-                    play_circle
-                  </span>
+                  <MaterialIcon name="play_circle" size="3xl" class="text-[32px] " style={{ color: 'var(--text-tertiary)' }} />
                 </div>
                 <span class="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
                   {videoInfo()!.type === 'youtube' ? 'YouTube' : 'Vimeo'}

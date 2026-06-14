@@ -3,6 +3,7 @@ import { createSignal, createResource, For, Show, onMount, createMemo } from "so
 import { fetchCities, fetchCategories, fetchSources, followSource, type ApiSourceEntry, type ApiCategory, type ApiCity } from "../../lib/api";
 import { useHaptic } from "../../lib/haptic";
 import { toast } from "../Toast";
+import MaterialIcon from '../common/MaterialIcon';
 
 const ONBOARDED_KEY = "antena-onboarded";
 const ONBOARDING_DRAFT_KEY = "antena-onboarding-draft";
@@ -208,13 +209,7 @@ export default function OnboardingView(props: OnboardingViewProps) {
                           : { background: "var(--bg-elevated)", color: "var(--text-primary)", "border-color": "var(--border-base)" }
                       }
                     >
-                      <span
-                        class="material-symbols-rounded text-base leading-none"
-                        style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                        aria-hidden="true"
-                      >
-                        {c.icon}
-                      </span>
+                      <MaterialIcon name={c.icon} size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
                       {c.name}
                     </button>
                   );
@@ -268,13 +263,7 @@ export default function OnboardingView(props: OnboardingViewProps) {
                           {s.location_name ?? s.province ?? "Argentina"} · {s.news_count ?? 0} notas
                         </p>
                       </div>
-                      <span
-                        class="material-symbols-rounded text-xl leading-none shrink-0"
-                        style={{ color: active() ? "var(--accent)" : "var(--text-tertiary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 22" }}
-                        aria-hidden="true"
-                      >
-                        {active() ? "check_circle" : "add_circle"}
-                      </span>
+                      <MaterialIcon name={active() ? "check_circle" : "add_circle"} size="xl" class="text-xl shrink-0" style={{ color: active() ? "var(--accent)" : "var(--text-tertiary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 22" }} aria-hidden="true" />
                     </button>
                   );
                 }}
@@ -329,13 +318,7 @@ function StepHeader(props: { step: number; title: string; subtitle: string; icon
         class="w-12 h-12 rounded-full flex items-center justify-center mb-3"
         style={{ background: "var(--accent-muted)", color: "var(--accent)" }}
       >
-        <span
-          class="material-symbols-rounded text-2xl leading-none"
-          style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 28" }}
-          aria-hidden="true"
-        >
-          {props.icon}
-        </span>
+        <MaterialIcon name={props.icon} size="2xl" class="text-2xl " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 28" }} aria-hidden="true" />
       </div>
       <h1 class="text-2xl font-bold" style={{ "font-family": "var(--font-display)", color: "var(--text-primary)" }}>
         {props.title}

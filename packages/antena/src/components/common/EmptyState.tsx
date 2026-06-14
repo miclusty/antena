@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { Show } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 type IconKey = 'antenna' | 'signal' | 'radio' | 'wave' | 'satellite' | 'search' | 'bookmark';
 
@@ -134,17 +135,7 @@ export default function EmptyState(props: EmptyStateProps) {
         <IllustrationFor icon={props.icon} />
       </Show>
       <Show when={!hasIllustration() && props.icon}>
-        <span
-          class="material-symbols-rounded text-5xl mb-4"
-          style={{
-            color: 'var(--text-tertiary)',
-            'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-            opacity: 0.4,
-          }}
-          aria-hidden="true"
-        >
-          {props.icon}
-        </span>
+        <MaterialIcon name={props.icon} size="5xl" class="text-5xl mb-4" style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20", opacity: 0.4, }} aria-hidden="true" />
       </Show>
       <h3
         class="text-base font-semibold mb-1.5"

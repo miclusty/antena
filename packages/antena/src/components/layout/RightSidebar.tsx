@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
 import { For, Show, createMemo } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface RightSidebarProps {
   news: NewsItem[];
@@ -40,15 +41,7 @@ function Card(p: { title: string; icon: string; children: any; accent?: boolean 
           aria-hidden="true"
         />
         <h3 class="text-[12px] xl:text-[13px] font-extrabold uppercase tracking-widest text-text-tertiary flex items-center gap-1.5">
-          <span
-            class="material-symbols-rounded text-[14px] xl:text-[16px] leading-none"
-            style={{
-              color: p.accent ? 'var(--accent)' : 'var(--text-tertiary)',
-              'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 18",
-            }}
-          >
-            {p.icon}
-          </span>
+          <MaterialIcon name={p.icon} size="xs" class="text-[14px] xl:text-[16px] " style={{ color: p.accent ? 'var(--accent)' : 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 18", }} />
           {p.title}
         </h3>
       </div>
@@ -116,12 +109,7 @@ function ReadingInsight(props: { news: NewsItem[] }) {
         <strong class="text-accent">{stats().sourceCount}</strong> medios distintos.
       </p>
       <div class="flex items-center gap-2 text-[13px] xl:text-[14px] text-text-tertiary">
-        <span
-          class="material-symbols-rounded text-[16px] xl:text-[18px] leading-none"
-          style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-        >
-          schedule
-        </span>
+        <MaterialIcon name="schedule" size="base" class="text-[16px] xl:text-[18px] " style={{ }} />
         <span>~{stats().minRead} min de lectura estimada</span>
       </div>
     </div>
@@ -250,12 +238,7 @@ export default function RightSidebar(props: RightSidebarProps) {
         {/* ── Footer ── */}
         <div class="text-[12px] xl:text-[13px] text-text-tertiary px-2 space-y-1 pt-2">
           <p class="flex items-center gap-1.5">
-            <span
-              class="material-symbols-rounded text-[14px] leading-none"
-              style={{ 'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 18", color: 'var(--accent)' }}
-            >
-              radio
-            </span>
+            <MaterialIcon name="radio" size="base" class="text-[14px] " style={{ color: 'var(--accent)' }} />
             <span class="font-extrabold text-text-secondary">Antena v0.1</span>
           </p>
           <p class="leading-relaxed">

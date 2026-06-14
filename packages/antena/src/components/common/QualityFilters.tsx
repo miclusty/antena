@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { For } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 export type QualityFilter = 0 | 0.4 | 0.7;
 
@@ -30,12 +31,7 @@ export default function QualityFilters(props: QualityFiltersProps) {
               }
               title={filter.desc}
             >
-              <span
-                class="material-symbols-rounded text-base leading-none"
-                style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              >
-                {filter.icon}
-              </span>
+              <MaterialIcon name={filter.icon} size="base" class="text-base " style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} />
               <span>{filter.label}</span>
             </button>
           );

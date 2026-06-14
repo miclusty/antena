@@ -5,6 +5,7 @@ import LocationSelector from '../common/LocationSelector';
 import SourceLogo from '../common/SourceLogo';
 import { useHaptic } from '../../lib/haptic';
 import { updateURL } from '../../lib/urlState';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface LeftSidebarProps {
   activeCategory: string;
@@ -113,17 +114,7 @@ function SideRow(p: {
       }
     >
       <Show when={p.dotColor} fallback={
-        <span
-          class="material-symbols-rounded text-[20px] xl:text-[22px] leading-none shrink-0"
-          style={{
-            color: p.active ? 'var(--accent)' : (p.dimmed ? 'var(--text-tertiary)' : 'var(--text-secondary)'),
-            'font-variation-settings': p.active
-              ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20"
-              : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-          }}
-        >
-          {p.icon}
-        </span>
+        <MaterialIcon name={p.icon} size="lg" class="text-[20px] xl:text-[22px] shrink-0" style={{ color: p.active ? 'var(--accent)' : (p.dimmed ? 'var(--text-tertiary)' : 'var(--text-secondary)'), 'font-variation-settings': p.active ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20", }} />
       }>
         <span
           class="w-2.5 h-2.5 rounded-full shrink-0 transition-transform group-hover:scale-125"
@@ -320,12 +311,7 @@ export default function LeftSidebar(props: LeftSidebarProps) {
             href="/settings"
             class="flex items-center gap-2 px-2.5 py-2 text-[14px] xl:text-[15px] text-text-tertiary hover:text-accent transition-colors"
           >
-            <span
-              class="material-symbols-rounded text-[18px] xl:text-[20px] leading-none"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              settings
-            </span>
+            <MaterialIcon name="settings" size="base" class="text-[18px] xl:text-[20px] " style={{ }} />
             <span>Configuración</span>
           </a>
         </div>

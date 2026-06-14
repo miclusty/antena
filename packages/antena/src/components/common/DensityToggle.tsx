@@ -30,12 +30,7 @@ export default function DensityToggle(props: DensityToggleProps) {
             }
             title={d}
           >
-            <span
-              class="material-symbols-rounded text-base leading-none"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              {ICONS[d]}
-            </span>
+            <MaterialIcon name={ICONS[d]} size="base" class="text-base " style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} />
           </button>
         );
       })}

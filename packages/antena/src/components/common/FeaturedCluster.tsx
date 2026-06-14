@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
 import type { NewsItem } from '../../lib/types';
 import { getBiasGradientColor } from '../../lib/bias';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface FeaturedClusterProps {
   news: NewsItem;
@@ -30,12 +31,7 @@ export default function FeaturedCluster(props: FeaturedClusterProps) {
         </p>
       </div>
 
-      <span
-        class="material-symbols-rounded text-lg leading-none"
-        style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-      >
-        arrow_forward
-      </span>
+      <MaterialIcon name="arrow_forward" size="lg" class="text-lg " style={{ color: 'var(--text-tertiary)' }} />
     </button>
   );
 }

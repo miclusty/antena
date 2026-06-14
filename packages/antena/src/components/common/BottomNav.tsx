@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { For, Show } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 export type TabId = 'home' | 'search' | 'bookmarks' | 'menu' | 'live';
 
@@ -51,17 +52,7 @@ export default function BottomNav(props: BottomNavProps) {
                 aria-current={isActive() ? 'page' : undefined}
               >
                 <span class="relative">
-                  <span
-                    class="material-symbols-rounded text-[26px] leading-none transition-colors duration-100"
-                    style={{
-                      color: isActive() ? 'var(--accent)' : 'var(--text-tertiary)',
-                      'font-variation-settings': isActive()
-                        ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
-                        : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24",
-                    }}
-                  >
-                    {isActive() ? tab.icon : tab.iconOutline}
-                  </span>
+                  <MaterialIcon name={isActive() ? tab.icon : tab.iconOutline} size="2xl" class="text-[26px] transition-colors duration-100" style={{ color: isActive() ? 'var(--accent)' : 'var(--text-tertiary)', 'font-variation-settings': isActive() ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" : "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24", }} />
                   <Show when={badge() > 0}>
                     <span
                       class="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full text-[10px] font-extrabold leading-[16px] text-white text-center tabular-nums"

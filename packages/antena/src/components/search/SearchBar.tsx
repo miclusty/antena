@@ -2,6 +2,7 @@
 import { Show, createSignal, createEffect, onCleanup } from 'solid-js';
 import { useHaptic } from '../../lib/haptic';
 import { searchNews, type SearchResult } from '../../lib/search';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface SearchBarProps {
   onSubmit: (query: string) => void;
@@ -101,16 +102,7 @@ export default function SearchBar(props: SearchBarProps) {
           background: 'var(--bg-elevated)',
         }}
       >
-        <span
-          class="material-symbols-rounded text-lg leading-none mr-2"
-          style={{
-            color: 'var(--text-tertiary)',
-            'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-          }}
-          aria-hidden="true"
-        >
-          search
-        </span>
+        <MaterialIcon name="search" size="lg" class="text-lg mr-2" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
         <input
           ref={inputRef}
           type="search"
@@ -128,17 +120,7 @@ export default function SearchBar(props: SearchBarProps) {
           style={{ 'min-height': '44px' }}
         />
         <Show when={loading()}>
-          <span
-            class="material-symbols-rounded text-lg leading-none ml-1 animate-spin"
-            style={{
-              color: 'var(--text-tertiary)',
-              'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              animation: 'spin 1s linear infinite',
-            }}
-            aria-hidden="true"
-          >
-            progress_activity
-          </span>
+          <MaterialIcon name="progress_activity" size="lg" class="text-lg ml-1 animate-spin" style={{ color: 'var(--text-tertiary)', animation: 'spin 1s linear infinite' }} aria-hidden="true" />
         </Show>
         <Show when={!loading() && value().length > 0}>
           <button
@@ -147,16 +129,7 @@ export default function SearchBar(props: SearchBarProps) {
             aria-label="Limpiar busqueda"
             class="ml-1 w-7 h-7 rounded-full flex items-center justify-center hover:bg-bg-hover active:scale-90 transition-all"
           >
-            <span
-              class="material-symbols-rounded text-base leading-none"
-              style={{
-                color: 'var(--text-tertiary)',
-                'font-variation-settings': "'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-              }}
-              aria-hidden="true"
-            >
-              close
-            </span>
+            <MaterialIcon name="close" size="base" class="text-base " style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
           </button>
         </Show>
       </div>
@@ -176,16 +149,7 @@ export default function SearchBar(props: SearchBarProps) {
               class="w-full flex items-start gap-3 px-4 min-h-[44px] py-2.5 text-left hover:bg-bg-hover active:bg-bg-hover transition-colors border-b border-border-base last:border-b-0"
               role="option"
             >
-              <span
-                class="material-symbols-rounded text-lg leading-none mt-0.5"
-                style={{
-                  color: 'var(--text-tertiary)',
-                  'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20",
-                }}
-                aria-hidden="true"
-              >
-                article
-              </span>
+              <MaterialIcon name="article" size="lg" class="text-lg mt-0.5" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-medium text-text-primary truncate">
                   {s.title}

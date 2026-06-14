@@ -4,6 +4,7 @@ import EmptyState from "../common/EmptyState";
 import { fetchSearch, fetchCategories, type ApiNewsCard, type ApiCategory } from "../../lib/api";
 import { mapNewsCard } from "../../lib/mappers";
 import NewsCard from "../common/NewsCard";
+import MaterialIcon from "../common/MaterialIcon";
 import {
   readSavedSearches,
   pushSavedSearch,
@@ -161,13 +162,7 @@ export default function SearchView() {
       <div class="sticky top-0 z-20 px-4 py-3 border-b border-border-base" style={{ background: "var(--bg-base)" }}>
         <div class="flex items-center gap-2">
           <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-full" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-base)" }}>
-            <span
-              class="material-symbols-rounded text-xl leading-none"
-              style={{ color: "var(--text-tertiary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              aria-hidden="true"
-            >
-              search
-            </span>
+            <MaterialIcon name="search" size="xl" class="text-xl " style={{ color: "var(--text-tertiary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />
             <input
               type="search"
               value={query()}
@@ -205,13 +200,7 @@ export default function SearchView() {
               aria-pressed={isSaved()}
               aria-label={isSaved() ? "Ya guardado" : "Guardar búsqueda"}
             >
-              <span
-                class="material-symbols-rounded text-base leading-none"
-                style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                aria-hidden="true"
-              >
-                {isSaved() ? "bookmark" : "bookmark_border"}
-              </span>
+              <MaterialIcon name={isSaved() ? "bookmark" : "bookmark_border"} size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
               <span class="hidden sm:inline">{isSaved() ? "Guardada" : "Guardar"}</span>
             </button>
           </Show>

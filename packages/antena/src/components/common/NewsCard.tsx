@@ -7,6 +7,7 @@ import { buildWhatsAppUrl } from '../../lib/share';
 import { trackEvent } from '../../lib/analytics';
 import SourceLogo from './SourceLogo';
 import FollowButton from './FollowButton';
+import MaterialIcon from '../common/MaterialIcon';
 
 // ─── Avatar ──────────────────────────────────────────────────
 const AVATAR_COLORS = ['#FF4D5A','#F59E0B','#10B981','#3B82F6','#8B5CF6','#06B6D4','#EC4899','#EF4444'];
@@ -375,14 +376,14 @@ export default function NewsCard(props: NewsCardProps) {
                 onClick={handleShare}
                 class="flex items-center gap-4 px-5 min-h-[56px] hover:bg-bg-hover active:bg-bg-hover transition-colors text-left"
               >
-                <span class="material-symbols-rounded text-2xl text-accent" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24" }}>share</span>
+                <MaterialIcon name="share" size="2xl" class="text-2xl text-accent" style={{ }} />
                 <span class="text-base font-medium text-text-primary">Compartir</span>
               </button>
               <button
                 onClick={handleBookmark}
                 class="flex items-center gap-4 px-5 min-h-[56px] hover:bg-bg-hover active:bg-bg-hover transition-colors text-left"
               >
-                <span class="material-symbols-rounded text-2xl text-accent" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24" }}>bookmark</span>
+                <MaterialIcon name="bookmark" size="2xl" class="text-2xl text-accent" style={{ }} />
                 <span class="text-base font-medium text-text-primary">Guardar</span>
               </button>
               <button

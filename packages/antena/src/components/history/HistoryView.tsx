@@ -6,6 +6,7 @@ import EmptyState from "../common/EmptyState";
 import { useHaptic } from "../../lib/haptic";
 import { readHistory, clearHistory, type HistoryEntry } from "../../lib/history";
 import { formatRelativeFromIso } from "../../lib/relative-time";
+import MaterialIcon from '../common/MaterialIcon';
 
 interface HistoryViewProps {
   onBack: () => void;
@@ -71,7 +72,7 @@ export default function HistoryView(props: HistoryViewProps) {
             style={{ color: 'var(--text-primary)' }}
             aria-label="Volver"
           >
-            <span class="material-symbols-rounded text-xl leading-none" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}>arrow_back</span>
+            <MaterialIcon name="arrow_back" size="xl" class="text-xl " style={{ }} />
           </button>
           <span class="flex-1 text-center text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
             Historial ({items().length})

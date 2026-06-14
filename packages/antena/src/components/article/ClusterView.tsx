@@ -2,6 +2,7 @@
 import { For } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import { useHaptic } from '../../lib/haptic';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface ClusterViewProps {
   clusterId: string;
@@ -20,12 +21,7 @@ export default function ClusterView(props: ClusterViewProps) {
         class="text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5"
         style={{ color: 'var(--text-tertiary)' }}
       >
-        <span
-          class="material-symbols-rounded text-base leading-none"
-          style={{ 'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20", color: 'var(--accent)' }}
-        >
-          hub
-        </span>
+        <MaterialIcon name="hub" size="base" class="text-base " style={{ color: 'var(--accent)' }} />
         Otras fuentes sobre esta noticia
       </h2>
       <p class="text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>
@@ -68,13 +64,7 @@ export default function ClusterView(props: ClusterViewProps) {
                   </span>
                 </div>
               </div>
-              <span
-                class="material-symbols-rounded text-lg leading-none self-center opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-                aria-hidden="true"
-              >
-                chevron_right
-              </span>
+              <MaterialIcon name="chevron_right" size="lg" class="text-lg self-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
             </button>
           )}
         </For>

@@ -1,4 +1,5 @@
 import { createSignal, onCleanup, onMount, Show } from "solid-js";
+import MaterialIcon from './common/MaterialIcon';
 
 const AUTO_DISMISS_MS = 5000;
 const SESSION_KEY = "antena-offline-toast-dismissed";
@@ -63,13 +64,7 @@ export default function ConnectionStatus() {
         role="status"
         aria-live="polite"
       >
-        <span
-          class="material-symbols-rounded text-[18px] shrink-0"
-          style={{ "font-variation-settings": "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
-          aria-hidden="true"
-        >
-          wifi_off
-        </span>
+        <MaterialIcon name="wifi_off" size="base" class="text-[18px] shrink-0" style={{ "font-variation-settings": "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }} aria-hidden="true" />
         <span class="flex-1 leading-snug">Sin conexión — mostrando artículos guardados</span>
         <button
           onClick={() => {
@@ -79,13 +74,7 @@ export default function ConnectionStatus() {
           aria-label="Cerrar aviso de sin conexión"
           class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/10 active:scale-90 transition-all"
         >
-          <span
-            class="material-symbols-rounded text-[16px]"
-            style={{ "font-variation-settings": "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
-            aria-hidden="true"
-          >
-            close
-          </span>
+          <MaterialIcon name="close" size="base" class="text-[16px]" style={{ "font-variation-settings": "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }} aria-hidden="true" />
         </button>
       </div>
     </Show>

@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { createSignal, Show } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface ReadingModeProps {
   title: string;
@@ -43,12 +44,7 @@ export default function ReadingMode(props: ReadingModeProps) {
             class="p-2 -ml-2 rounded-full transition-colors"
             style={{ color: theme().text }}
           >
-            <span
-              class="material-symbols-rounded text-xl leading-none"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              close
-            </span>
+            <MaterialIcon name="close" size="xl" class="text-xl " style={{ }} />
           </button>
 
           <div class="flex items-center gap-3">

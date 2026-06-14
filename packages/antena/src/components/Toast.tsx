@@ -1,6 +1,7 @@
 import { For } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { createStore } from 'solid-js/store';
+import MaterialIcon from './common/MaterialIcon';
 
 type ToastVariant = 'success' | 'warning' | 'error' | 'info';
 interface ToastItem {
@@ -72,13 +73,7 @@ export default function ToastContainer() {
                 border: `1px solid ${variantBorder[t.variant]}`,
               }}
             >
-              <span
-                class="material-symbols-rounded text-[18px] shrink-0"
-                style={{ 'font-variation-settings': "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
-                aria-hidden="true"
-              >
-                {variantIcon[t.variant]}
-              </span>
+              <MaterialIcon name={variantIcon[t.variant]} size="base" class="text-[18px] shrink-0" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }} aria-hidden="true" />
               <span class="flex-1 leading-snug">{t.message}</span>
               {t.dismissible && (
                 <button
@@ -86,13 +81,7 @@ export default function ToastContainer() {
                   aria-label="Cerrar aviso"
                   class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/10 active:scale-90 transition-all"
                 >
-                  <span
-                    class="material-symbols-rounded text-[16px]"
-                    style={{ 'font-variation-settings': "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }}
-                    aria-hidden="true"
-                  >
-                    close
-                  </span>
+                  <MaterialIcon name="close" size="base" class="text-[16px]" style={{ }} aria-hidden="true" />
                 </button>
               )}
             </div>

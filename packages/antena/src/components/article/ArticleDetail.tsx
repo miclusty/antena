@@ -20,6 +20,7 @@ import { speak as ttsSpeak, stop as ttsStop, isSupported as ttsSupported, isSpea
 import TableOfContents from './TableOfContents';
 import ImageLightbox from './ImageLightbox';
 import { readingTimeText, remainingReadingMinutes, computeScrollPct } from '../../lib/reading-progress';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface ArticleDetailProps {
   news: NewsItem;
@@ -303,12 +304,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             style={{ color: 'var(--text-primary)' }}
             aria-label="Volver"
           >
-            <span
-              class="material-symbols-rounded text-xl leading-none"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              arrow_back
-            </span>
+            <MaterialIcon name="arrow_back" size="xl" class="text-xl " style={{ }} />
           </button>
           <span
             class="flex-1 text-center text-xs font-medium truncate px-3"
@@ -325,12 +321,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             }}
             aria-label="Modo lectura"
           >
-            <span
-              class="material-symbols-rounded text-lg leading-none"
-              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            >
-              menu_book
-            </span>
+            <MaterialIcon name="menu_book" size="lg" class="text-lg " style={{ }} />
             Modo lectura
           </button>
         </div>
@@ -376,15 +367,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           </span>
           <Show when={n().author}>
             <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
-            <span
-              class="material-symbols-rounded text-sm leading-none"
-              style={{
-                color: 'var(--text-tertiary)',
-                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16'",
-              }}
-            >
-              person
-            </span>
+            <MaterialIcon name="person" size="sm" class="text-sm " style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16'", }} />
             <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>Por {n().author}</span>
           </Show>
           <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
@@ -398,25 +381,14 @@ export default function ArticleDetail(props: ArticleDetailProps) {
               style={{ color: 'var(--accent)' }}
               aria-live="polite"
             >
-              <span
-                class="material-symbols-rounded text-sm leading-none"
-                style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
-                aria-hidden="true"
-              >
-                schedule
-              </span>
+              <MaterialIcon name="schedule" size="sm" class="text-sm " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }} aria-hidden="true" />
               Te quedan {remainingMinutes()} min
             </span>
           </Show>
           <Show when={cleanLocation()}>
             <>
               <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
-              <span
-                class="material-symbols-rounded text-base leading-none"
-                style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              >
-                location_on
-              </span>
+              <MaterialIcon name="location_on" size="base" class="text-base " style={{ color: 'var(--text-tertiary)' }} />
               <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{cleanLocation()}</span>
             </>
           </Show>
@@ -437,12 +409,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                 'border-color': 'var(--accent)',
               }}
             >
-              <span
-                class="material-symbols-rounded text-base leading-none"
-                style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-              >
-                open_in_new
-              </span>
+              <MaterialIcon name="open_in_new" size="base" class="text-base " style={{ }} />
               Leer en fuente original
             </a>
           </div>
@@ -534,13 +501,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                 aria-pressed={myUseful() === 1}
                 aria-label="Sí, me fue útil"
               >
-                <span
-                  class="material-symbols-rounded text-base leading-none"
-                  style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                  aria-hidden="true"
-                >
-                  thumb_up
-                </span>
+                <MaterialIcon name="thumb_up" size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
                 Sí
                 <span class="text-[11px] opacity-70 tabular-nums">{usefulYes()}</span>
               </button>
@@ -556,13 +517,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                 aria-pressed={myUseful() === 0}
                 aria-label="No me fue útil"
               >
-                <span
-                  class="material-symbols-rounded text-base leading-none"
-                  style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                  aria-hidden="true"
-                >
-                  thumb_down
-                </span>
+                <MaterialIcon name="thumb_down" size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
                 No
                 <span class="text-[11px] opacity-70 tabular-nums">{usefulNo()}</span>
               </button>
@@ -579,13 +534,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             class="mt-3 text-[11px] font-semibold inline-flex items-center gap-1"
             style={{ color: 'var(--text-tertiary)' }}
           >
-            <span
-              class="material-symbols-rounded text-sm leading-none"
-              style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
-              aria-hidden="true"
-            >
-              flag
-            </span>
+            <MaterialIcon name="flag" size="sm" class="text-sm " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }} aria-hidden="true" />
             Reportar contenido
           </button>
         </section>
@@ -649,12 +598,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             style={{ 'background': 'rgba(245,158,11,0.06)', 'border-color': 'rgba(245,158,11,0.2)' }}
           >
             <div class="flex items-start gap-2">
-              <span
-                class="material-symbols-rounded text-lg leading-none mt-0.5"
-                style={{ color: 'var(--warning)', 'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}
-              >
-                shield
-              </span>
+              <MaterialIcon name="shield" size="lg" class="text-lg mt-0.5" style={{ color: 'var(--warning)' }} />
               <div>
                 <p class="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--warning)' }}>
                   Ruido Filtrado
@@ -755,13 +699,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           style={{ color: 'var(--text-tertiary)' }}
           aria-label="Deslizá para navegar entre artículos relacionados"
         >
-          <span
-            class="material-symbols-rounded text-base leading-none"
-            style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
-            aria-hidden="true"
-          >
-            swipe
-          </span>
+          <MaterialIcon name="swipe" size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }} aria-hidden="true" />
           <span>Deslizá para ver {clusterIds().length === 1 ? '1 cobertura más' : `${clusterIds().length} coberturas más`}</span>
         </div>
       </Show>

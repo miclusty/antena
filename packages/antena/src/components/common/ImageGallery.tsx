@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { createSignal, For } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface ImageGalleryProps {
   images: string[];
@@ -60,7 +61,7 @@ export default function ImageGallery(props: ImageGalleryProps) {
           onClick={() => setIsLightbox(false)}
         >
           <button class="absolute top-4 right-4 text-white/80 hover:text-white transition-colors" onClick={() => setIsLightbox(false)}>
-            <span class="material-symbols-rounded text-[32px] leading-none" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}>close</span>
+            <MaterialIcon name="close" size="base" class="text-[32px] " style={{ }} />
           </button>
 
           {images().length > 1 && (
@@ -68,7 +69,7 @@ export default function ImageGallery(props: ImageGalleryProps) {
               class="absolute left-4 text-white/80 hover:text-white transition-colors"
               onClick={(e) => { e.stopPropagation(); setSelectedIndex((selectedIndex() - 1 + images().length) % images().length); }}
             >
-              <span class="material-symbols-rounded text-[40px] leading-none" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}>chevron_left</span>
+              <MaterialIcon name="chevron_left" size="base" class="text-[40px] " style={{ }} />
             </button>
           )}
 
@@ -79,7 +80,7 @@ export default function ImageGallery(props: ImageGalleryProps) {
               class="absolute right-4 text-white/80 hover:text-white transition-colors"
               onClick={(e) => { e.stopPropagation(); setSelectedIndex((selectedIndex() + 1) % images().length); }}
             >
-              <span class="material-symbols-rounded text-[40px] leading-none" style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}>chevron_right</span>
+              <MaterialIcon name="chevron_right" size="base" class="text-[40px] " style={{ }} />
             </button>
           )}
         </div>

@@ -2,6 +2,7 @@
 import { For, Show, createSignal } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import EmptyState from '../common/EmptyState';
+import MaterialIcon from '../common/MaterialIcon';
 
 export interface BlindspotItem {
   id: string;
@@ -35,13 +36,7 @@ export default function BlindspotSection(props: BlindspotSectionProps) {
     >
       <header class="flex items-center justify-between px-4 pt-3 pb-2">
         <div class="flex items-center gap-2 min-w-0">
-          <span
-            class="material-symbols-rounded text-lg leading-none shrink-0"
-            style={{ color: 'var(--warning)', 'font-variation-settings': "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}
-            aria-hidden="true"
-          >
-            visibility_off
-          </span>
+          <MaterialIcon name="visibility_off" size="lg" class="text-lg shrink-0" style={{ color: 'var(--warning)' }} aria-hidden="true" />
           <h2
             class="text-[10px] font-extrabold uppercase tracking-widest truncate"
             style={{ color: 'var(--text-tertiary)' }}

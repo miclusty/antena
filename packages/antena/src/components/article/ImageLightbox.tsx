@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { Show } from "solid-js";
+import MaterialIcon from '../common/MaterialIcon';
 
 interface ImageLightboxProps {
   open: boolean;
@@ -40,13 +41,7 @@ export default function ImageLightbox(props: ImageLightboxProps) {
           style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
           aria-label="Cerrar"
         >
-          <span
-            class="material-symbols-rounded text-xl leading-none"
-            style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            aria-hidden="true"
-          >
-            close
-          </span>
+          <MaterialIcon name="close" size="xl" class="text-xl " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />
         </button>
         <img
           src={props.src}

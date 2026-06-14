@@ -48,6 +48,7 @@ import {
   type FeedFilterState,
 } from './lib/feed-filters';
 import { CATEGORIES, type Category } from './lib/types';
+import MaterialIcon from './components/common/MaterialIcon';
 
 const CAT_COLORS: Record<string, string> = {
   'Política':'#FF4D5A','Economía':'#F59E0B','Deportes':'#10B981','Policiales':'#EF4444',
@@ -672,13 +673,7 @@ export default function App() {
                           aria-pressed={showFilters()}
                           aria-label="Filtros"
                         >
-                          <span
-                            class="material-symbols-rounded text-base leading-none"
-                            style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                            aria-hidden="true"
-                          >
-                            tune
-                          </span>
+                          <MaterialIcon name="tune" size="base" class="text-base " style={{ }} aria-hidden="true" />
                           Filtros
                         </button>
                         <button
@@ -690,13 +685,7 @@ export default function App() {
                           }
                           aria-pressed={mateMode()}
                         >
-                          <span
-                            class="material-symbols-rounded text-base leading-none"
-                            style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                            aria-hidden="true"
-                          >
-                            record_voice_over
-                          </span>
+                          <MaterialIcon name="record_voice_over" size="base" class="text-base " style={{ }} aria-hidden="true" />
                           Modo Mate
                         </button>
                       </div>

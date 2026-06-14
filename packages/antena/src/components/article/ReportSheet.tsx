@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
 import { Show, For, createSignal } from "solid-js";
 import type { ReportReason } from "../../lib/api";
+import MaterialIcon from '../common/MaterialIcon';
 
 const REASONS: { id: ReportReason; label: string; icon: string }[] = [
   { id: "incorrect", label: "Información incorrecta", icon: "cancel" },
@@ -73,24 +74,12 @@ export default function ReportSheet(props: ReportSheetProps) {
                       background: reason() === r.id ? "var(--accent-muted)" : "transparent",
                     }}
                   >
-                    <span
-                      class="material-symbols-rounded text-xl leading-none"
-                      style={{ color: "var(--text-secondary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-                      aria-hidden="true"
-                    >
-                      {r.icon}
-                    </span>
+                    <MaterialIcon name={r.icon} size="xl" class="text-xl " style={{ color: "var(--text-secondary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />
                     <span class="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                       {r.label}
                     </span>
                     <Show when={reason() === r.id}>
-                      <span
-                        class="ml-auto material-symbols-rounded text-lg leading-none"
-                        style={{ color: "var(--accent)", "font-variation-settings": "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}
-                        aria-hidden="true"
-                      >
-                        check_circle
-                      </span>
+                      <MaterialIcon name="check_circle" size="lg" class="ml-auto material-symbols-rounded text-lg " style={{ color: "var(--accent)", "font-variation-settings": "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />
                     </Show>
                   </button>
                 )}

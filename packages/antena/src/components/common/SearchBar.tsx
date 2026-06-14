@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { createSignal, createEffect } from 'solid-js';
+import MaterialIcon from '../common/MaterialIcon';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -19,12 +20,7 @@ export default function SearchBar(props: SearchBarProps) {
 
   return (
     <div class="relative">
-      <span
-        class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-lg leading-none"
-        style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-      >
-        search
-      </span>
+      <MaterialIcon name="search" size="lg" class="absolute left-3 top-1/2 -translate-y-1/2 text-lg " style={{ color: 'var(--text-tertiary)' }} />
       <input
         type="text"
         value={value()}

@@ -7,6 +7,7 @@ import FollowButton from "../common/FollowButton";
 import EmptyState from "../common/EmptyState";
 import { toast } from "../Toast";
 import { useHaptic } from "../../lib/haptic";
+import MaterialIcon from '../common/MaterialIcon';
 
 export default function SourceProfileView(props: { sourceId: number; onBack: () => void; onNewsClick: (id: string) => void }) {
   const haptic = useHaptic();
@@ -42,13 +43,7 @@ export default function SourceProfileView(props: { sourceId: number; onBack: () 
           class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-bg-hover"
           aria-label="Volver"
         >
-          <span
-            class="material-symbols-rounded text-xl leading-none"
-            style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
-            aria-hidden="true"
-          >
-            arrow_back
-          </span>
+          <MaterialIcon name="arrow_back" size="xl" class="text-xl " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />
         </button>
         <h1 class="text-base font-semibold truncate flex-1" style={{ color: 'var(--text-primary)' }}>
           {source()?.name ?? "Medio"}
@@ -93,13 +88,7 @@ export default function SourceProfileView(props: { sourceId: number; onBack: () 
                   class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
                   style={{ background: 'var(--bg-elevated)', color: 'var(--accent)', border: '1px solid var(--border-base)' }}
                 >
-                  <span
-                    class="material-symbols-rounded text-base leading-none"
-                    style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
-                    aria-hidden="true"
-                  >
-                    open_in_new
-                  </span>
+                  <MaterialIcon name="open_in_new" size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }} aria-hidden="true" />
                   Visitar sitio
                 </a>
               </Show>
