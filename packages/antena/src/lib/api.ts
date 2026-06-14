@@ -101,6 +101,7 @@ export async function fetchFeed(options?: {
   bias?: string;
   time?: string;  // 'hour' | 'today' | 'week' | 'all'
   min_quality?: number;  // 0.0 to 1.0 minimum quality score filter
+  following?: boolean;   // restrict to the caller's followed sources
 }): Promise<FeedResponse> {
   const params = new URLSearchParams();
   if (options?.location_id) params.set('location_id', String(options.location_id));
@@ -110,6 +111,15 @@ export async function fetchFeed(options?: {
   if (options?.bias) params.set('bias', options.bias);
   if (options?.time && options.time !== 'all') params.set('time', options.time);
   if (options?.min_quality !== undefined) params.set('min_quality', String(options.min_quality));
+  if (options?.following) {
+    params.set('following', 'true');
+    // Send the device_id so the API can filter the feed.
+    // Re-use the getAntenaDeviceId helper (defined below).
+    if (typeof window !== 'undefined') {
+      const deviceId = getAntenaDeviceId();
+      if (deviceId) params.set('device_id', deviceId);
+    }
+  }
 
   const res = await fetch(`${API_BASE}/api/news/feed?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch feed: ${res.status}`);

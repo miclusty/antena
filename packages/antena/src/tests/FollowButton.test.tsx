@@ -1,12 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, fireEvent, cleanup } from "@solidjs/testing-library";
 import FollowButton from "../components/common/FollowButton";
+import { __resetFollowsForTests } from "../lib/follows";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  __resetFollowsForTests();
+});
 
 describe("FollowButton", () => {
   beforeEach(() => {
-    // Clean any persisted state.
+    // Reset the shared follows state and the persisted localStorage.
+    __resetFollowsForTests();
     if (typeof localStorage !== "undefined") localStorage.clear();
     // Default fetch mock: no follows yet, follow/unfollow succeed.
     globalThis.fetch = vi.fn(async (url: string, opts?: RequestInit) => {

@@ -126,7 +126,7 @@ export default function App() {
   };
 
   const [feed, { refetch }] = createResource(
-    () => `${activeCategory()}:${searchQuery()}:${activeLocation() ?? 'all'}:${activeFeedTab()}`,
+    () => `${activeCategory()}:${searchQuery()}:${activeLocation() ?? 'all'}:${activeFeedTab()}:${follows.followedIds().size}`,
     async (): Promise<FeedResponse> => {
       try {
         const catParam = activeCategory() === 'Todas' ? undefined : activeCategory();
@@ -135,6 +135,12 @@ export default function App() {
           location_id: activeLocation() ? parseInt(activeLocation()!) : undefined,
           limit: 20,
           offset: 0,
+          // When the Siguiendo tab is active, ask the server to
+          // filter the feed to the user's followed sources
+          // (instead of fetching everything and filtering
+          // client-side, which would miss news the user is
+          // following but didn't make it into the first 20).
+          following: activeFeedTab() === "following",
         });
         return result as FeedResponse;
       } catch (e) {
