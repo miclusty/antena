@@ -214,6 +214,53 @@ export async function getFeaturedStory(
   };
 }
 
+/**
+ * "Blindspot" feed: top news from sources the device does NOT
+ * follow. The point is to surface coverage the user is missing —
+ * what their follows aren't telling them. If the device has no
+ * follows, the result is the same as the regular quality-ranked
+ * top feed.
+ */
+export async function getBlindspot(
+  db: D1Database,
+  options: { deviceId?: string; limit?: number; hours?: number }
+): Promise<NewsCard[]> {
+  const limit = options.limit ?? 10;
+  const hours = options.hours ?? 168; // 7 days
+  // When a device is given, exclude news from sources they
+  // follow. We use a LEFT JOIN with a "not matched" check so
+  // news without a source_id (rare, but possible) is also
+  // excluded — those are orphan cards we don't want in the
+  // blindspot feed.
+  const excludeFollows = !!options.deviceId;
+  const whereFollow = excludeFollows
+    ? `AND (sf.source_id IS NULL)`
+    : ``;
+  const joinFollow = excludeFollows
+    ? `LEFT JOIN source_follows sf ON sf.source_id = nc.source_id AND sf.device_id = ?`
+    : ``;
+  const params: (string | number)[] = [];
+  if (excludeFollows) params.push(options.deviceId!);
+
+  const sql = `
+    SELECT nc.*, s.name as source_name, l.name as location_name, l.province as location_province
+    FROM news_cards nc
+    ${joinFollow}
+    LEFT JOIN sources s ON s.id = nc.source_id
+    LEFT JOIN locations l ON l.id = nc.location_id
+    WHERE nc.created_at >= datetime('now', ?)
+      ${whereFollow}
+    ORDER BY (nc.quality_score IS NULL), COALESCE(nc.quality_score, 0) DESC,
+             nc.sources_count DESC, nc.created_at DESC
+    LIMIT ?
+  `;
+  params.unshift(`-${hours} hours`);
+  params.push(limit);
+
+  const results = await db.prepare(sql).bind(...params).all<NewsCard>();
+  return results.results ?? [];
+}
+
 export async function getNewsByCluster(db: D1Database, cluster_id: string): Promise<NewsCard[]> {
   const results = await db.prepare(`
     SELECT nc.*, s.name as source_name, l.name as location_name, l.province as location_province

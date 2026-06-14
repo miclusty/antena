@@ -153,6 +153,35 @@ newsRoutes.get("/featured", async (c) => {
   }, { ttl: 300, swr: 600 })(c.req.raw);
 });
 
+const blindspotQuerySchema = z.object({
+  device_id: z.string().min(1).max(128).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+  hours: z.coerce.number().int().min(1).max(8760).default(168),
+});
+
+newsRoutes.get("/blindspot", async (c) => {
+  const parsed = blindspotQuerySchema.safeParse(c.req.query());
+  if (!parsed.success) {
+    return c.json(formatZodError(parsed.error), 400);
+  }
+  const { device_id, limit, hours } = parsed.data;
+  // Cache key depends on device_id since the result is per-user.
+  // Per-user requests skip the edge cache to avoid leaking one
+  // user's blindspot to another; unpersonalized (no device_id)
+  // results can be cached for 5min.
+  return withCache(async () => {
+    const items = await getBlindspot(c.env.DB, {
+      deviceId: device_id,
+      limit,
+      hours,
+    });
+    return c.json({ items, total: items.length });
+  }, {
+    ttl: device_id ? 0 : 300,
+    swr: device_id ? 0 : 600,
+  })(c.req.raw);
+});
+
 newsRoutes.get("/:id", async (c) => {
   const parsed = articleIdSchema.safeParse(c.req.param());
   if (!parsed.success) {
