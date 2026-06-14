@@ -19,6 +19,7 @@ import ReportSheet from './ReportSheet';
 import { speak as ttsSpeak, stop as ttsStop, isSupported as ttsSupported, isSpeaking as ttsIsSpeaking } from '../../lib/speech';
 import TableOfContents from './TableOfContents';
 import ImageLightbox from './ImageLightbox';
+import { readingTimeText, remainingReadingMinutes } from '../../lib/reading-progress';
 
 interface ArticleDetailProps {
   news: NewsItem;
@@ -202,8 +203,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
   };
 
   const readingTime = () => {
-    const words = displaySummary().split(/\s+/).length;
-    return `${Math.max(1, Math.ceil(words / 200))} min de lectura`;
+    return readingTimeText(displaySummary());
   };
 
   const signalColor = () => n().signalLevel >= 7 ? 'var(--accent)' : n().signalLevel >= 4 ? 'var(--warning)' : 'var(--text-tertiary)';
