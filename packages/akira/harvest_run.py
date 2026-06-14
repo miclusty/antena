@@ -30,7 +30,7 @@ def _parse_date(value):
     return None
 
 AKIRA_DB = "/Users/omatic/proyectos/news/packages/akira/data/akira.db"
-AKIRA_API = os.getenv("AKIRA_API_URL", "http://localhost:5000/extract")
+AKIRA_API = os.getenv("AKIRA_API_URL", "http://localhost:5100/extract")
 MAX_CONCURRENT = 2
 RATE_LIMIT = 2.0
 TIMEOUT = 60.0

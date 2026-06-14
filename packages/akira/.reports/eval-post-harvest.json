@@ -1,0 +1,295 @@
+{
+  "date": "2026-06-14T20:54:35.320844+00:00",
+  "model": "qwen3.5-4b",
+  "n_clusters": 6,
+  "n_clusters_with_synthesis": 4,
+  "elapsed_seconds": 174.1,
+  "retrieval_metrics_aggregate": {
+    "recall_at_20": 0.0,
+    "hit_rate_at_5": 0.0,
+    "ndcg_at_5": 0.0,
+    "recall_at_5": 0.0,
+    "n_relevant_in_cluster": 7.1667,
+    "n_relevant_out_of_cluster": 3.6667,
+    "recall_at_10": 0.0,
+    "mrr": 0.0,
+    "precision_at_5": 0.0,
+    "ndcg_at_10": 0.0,
+    "semantic_overlap_in_cluster": {
+      "max_overlap_tokens": 4.0,
+      "mean_overlap_tokens": 1.6,
+      "n_neighbors": 5.0,
+      "n_relevant_in_cluster": 10.75
+    },
+    "precision_at_10": 0.0,
+    "n_neighbor_returned": 3.3333,
+    "hit_rate_at_1": 0.0,
+    "n_irrelevant_in_cluster": 5.5,
+    "precision_at_20": 0.0,
+    "ndcg_at_20": 0.0,
+    "latency_ms_assemble": 5301.0
+  },
+  "synthesis_metrics_aggregate": {
+    "composite": 0.63,
+    "unsupported_claims_count": 6.5,
+    "faithfulness": 3.5,
+    "source_coverage": 3.0,
+    "perspective_balance": 2.5
+  },
+  "per_cluster": [
+    {
+      "cluster_id": "3672d2fcf510",
+      "label": "Horror en Morón - cuerpo enterrado",
+      "n_cluster_cards": 12,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7962,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 1,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 4
+        }
+      },
+      "synthesis": {
+        "latency_ms": 139107,
+        "judge_ms": 22091,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.66,
+          "reasoning": "El artículo introduce datos específicos como la edad de la víctima y el nombre completo del gremio que no están respaldados por los chunks, los cuales solo mencionan 'un cantante' o 'un hombre'. Además, aunque se cubren ambos temas, las tres perspectivas presentan narrativas casi idénticas sin matices diferenciadores reales, lo que reduce significativamente el equilibrio de puntos de vista."
+        }
+      }
+    },
+    {
+      "cluster_id": "5af56c44f54e",
+      "label": "Guerra EE.UU. Israel Irán",
+      "n_cluster_cards": 11,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7962,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 9,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 9,
+          "mean_overlap_tokens": 3.6,
+          "max_overlap_tokens": 7
+        }
+      },
+      "synthesis": {
+        "latency_ms": 31856,
+        "judge_ms": 77185,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 4,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 3,
+          "composite": 0.62,
+          "reasoning": "El artículo master afirma que Masoud Pezeshkian pidió a organizaciones sanitarias responder y que Donald Trump advirtió sobre bombardeos en el estrecho de Ormuz, pero los chunks solo confirman que Trump amenazó con bombardear Irán 'de regreso a la Edad de Piedra' sin mencionar el estrecho de Ormuz ni una petición específica de Pezeshkian. Además, aunque se cita el lanzamiento exitoso de Artemis II en un chunk, no se detalla su despegue desde Cabo Cañaveral ni su conexión explícita con el programa Apolo como se redacta en el resumen neutral."
+        }
+      }
+    },
+    {
+      "cluster_id": "b1ecc2018a7a",
+      "label": "Milei respalda a Adorni",
+      "n_cluster_cards": 0,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 3,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 0,
+        "n_relevant_out_of_cluster": 8,
+        "n_irrelevant_in_cluster": 0
+      },
+      "synthesis": {
+        "latency_ms": 4,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "c3f343c8147c",
+      "label": "Darthés condena firme",
+      "n_cluster_cards": 45,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7959,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 11,
+        "n_relevant_out_of_cluster": 2,
+        "n_irrelevant_in_cluster": 28,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 11,
+          "mean_overlap_tokens": 0.0,
+          "max_overlap_tokens": 0
+        }
+      },
+      "synthesis": {
+        "latency_ms": 137012,
+        "judge_ms": 29169,
+        "judge": {
+          "faithfulness": 3,
+          "source_coverage": 2,
+          "perspective_balance": 4,
+          "unsupported_claims_count": 10,
+          "composite": 0.58,
+          "reasoning": "El artículo master afirma detalles específicos sobre el tribunal brasileño (Tribunal Regional Federal de la 3ª Región), fechas exactas del abuso sexual en Brasil y la ausencia de variaciones en la ejecución de la pena, información que no aparece en los chunks proporcionados. Los chunks solo confirman que Thelma Fardin celebró la condena y que el actor deberá cumplir seis años por abuso sexual, pero omiten cualquier mención a las instancias judiciales brasileñas o la falta de cambios en la ejecución de la pena. Además, aunque se presentan tres perspectivas, dos de ellas (neutral y pro_gov) son prácticamente idénticas en su contenido factual, lo que reduce el equilibrio real del análisis."
+        }
+      }
+    },
+    {
+      "cluster_id": "eb64a12fa53d",
+      "label": "Bahía Blanca judicial",
+      "n_cluster_cards": 0,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 4,
+        "n_neighbor_returned": 0,
+        "n_relevant_in_cluster": 0,
+        "n_relevant_out_of_cluster": 12,
+        "n_irrelevant_in_cluster": 0
+      },
+      "synthesis": {
+        "latency_ms": 4,
+        "judge": null,
+        "error": "synth_returned_none"
+      }
+    },
+    {
+      "cluster_id": "f9ccd86678b7",
+      "label": "Transferencias sin alias",
+      "n_cluster_cards": 15,
+      "retrieval": {
+        "mrr": 0.0,
+        "hit_rate_at_1": 0.0,
+        "hit_rate_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "precision_at_5": 0.0,
+        "ndcg_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_10": 0.0,
+        "ndcg_at_10": 0.0,
+        "recall_at_20": 0.0,
+        "precision_at_20": 0.0,
+        "ndcg_at_20": 0.0,
+        "latency_ms_assemble": 7916,
+        "n_neighbor_returned": 5,
+        "n_relevant_in_cluster": 12,
+        "n_relevant_out_of_cluster": 0,
+        "n_irrelevant_in_cluster": 2,
+        "semantic_overlap_in_cluster": {
+          "n_neighbors": 5,
+          "n_relevant_in_cluster": 12,
+          "mean_overlap_tokens": 1.4,
+          "max_overlap_tokens": 5
+        }
+      },
+      "synthesis": {
+        "latency_ms": 31890,
+        "judge_ms": 22583,
+        "judge": {
+          "faithfulness": 4,
+          "source_coverage": 3,
+          "perspective_balance": 2,
+          "unsupported_claims_count": 10,
+          "composite": 0.66,
+          "reasoning": "El artículo master presenta afirmaciones fuertes sobre beneficios (inclusión financiera) y riesgos (centralización) que no están respaldadas explícitamente en los chunks, los cuales solo confirman el anuncio técnico y la eliminación de alias/QR. La perspectiva balanceada es baja porque dos de las tres posturas (pro_gov y anti_gov) utilizan citas textuales que no existen en la evidencia original, creando una ilusión de cobertura mediática que no se verifica."
+        }
+      }
+    }
+  ],
+  "design_doc_targets": {
+    "G1_intra_cluster_cosine_p50": {
+      "target": 0.78,
+      "measured_here": false,
+      "note": "requires cluster_centroids table; not in v1 baseline"
+    },
+    "G2_recall_at_5": {
+      "target": 0.7,
+      "measured_here": true
+    },
+    "G3_neighbor_pair_cosine_p90": {
+      "target": 0.92,
+      "measured_here": false,
+      "note": "lower is better; this is a diversity metric"
+    },
+    "G4_recall_at_10": {
+      "target": "+10% over plain",
+      "measured_here": true
+    },
+    "G5_faithfulness": {
+      "target": 4.0,
+      "measured_here": true
+    },
+    "G6_composite_score": {
+      "target": 0.75,
+      "measured_here": true
+    }
+  }
+}
