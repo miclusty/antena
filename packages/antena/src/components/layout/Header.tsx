@@ -111,18 +111,20 @@ export default function Header(props: HeaderProps) {
             </span>
           </button>
 
-          {/* More menu */}
-          <button
+          {/* Settings link */}
+          <a
+            href="/settings"
             class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
-            aria-label="Más opciones"
+            aria-label="Configuración"
+            title="Configuración"
           >
             <span
               class="material-symbols-rounded text-xl text-text-secondary"
               style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
             >
-              more_horiz
+              settings
             </span>
-          </button>
+          </a>
         </div>
       </div>
 
