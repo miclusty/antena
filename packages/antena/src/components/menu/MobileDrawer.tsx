@@ -427,8 +427,8 @@ export default function MobileDrawer(props: MobileDrawerProps) {
         </Accordion>
 
         <div class="px-4 py-4 border-t border-border-base">
-          <button
-            type="button"
+          <a
+            href="/settings"
             class="w-full flex items-center gap-3 px-0 py-2 text-sm transition-colors"
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -442,7 +442,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
               settings
             </span>
             Configuración
-          </button>
+          </a>
         </div>
       </aside>
     </Show>

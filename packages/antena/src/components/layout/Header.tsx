@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
 import { createSignal, Show } from 'solid-js';
 import SearchBar from '../common/SearchBar';
+import { useTheme } from '../../lib/theme';
 
 interface HeaderProps {
   activeCategory?: string;
@@ -16,10 +17,22 @@ interface HeaderProps {
 
 export default function Header(props: HeaderProps) {
   const [localSearchOpen, setLocalSearchOpen] = createSignal(false);
+  const { theme, toggleTheme } = useTheme();
   const searchOpen = () => props.searchOpen ?? localSearchOpen();
   const setSearchOpen = (v: boolean) => {
     if (props.onSearchOpenChange) props.onSearchOpenChange(v);
     else setLocalSearchOpen(v);
+  };
+
+  const themeIcon = () => {
+    if (theme() === "light") return "light_mode";
+    if (theme() === "dark") return "dark_mode";
+    return "brightness_auto";
+  };
+  const themeLabel = () => {
+    if (theme() === "light") return "Tema claro";
+    if (theme() === "dark") return "Tema oscuro";
+    return "Tema automático";
   };
 
   return (
@@ -69,6 +82,21 @@ export default function Header(props: HeaderProps) {
 
         {/* Right: actions */}
         <div class="flex items-center gap-1">
+          {/* Theme toggle — cycles light → auto → dark */}
+          <button
+            onClick={toggleTheme}
+            class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
+            aria-label={themeLabel()}
+            title={themeLabel()}
+          >
+            <span
+              class="material-symbols-rounded text-xl text-text-secondary"
+              style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
+            >
+              {themeIcon()}
+            </span>
+          </button>
+
           {/* Search button */}
           <button
             onClick={() => setSearchOpen(!searchOpen())}

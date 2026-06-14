@@ -316,7 +316,10 @@ export default function LeftSidebar(props: LeftSidebarProps) {
 
         {/* ── Footer link ── */}
         <div class="pt-6 border-t border-border-base">
-          <a class="flex items-center gap-2 px-2.5 py-2 text-[14px] xl:text-[15px] text-text-tertiary hover:text-accent transition-colors">
+          <a
+            href="/settings"
+            class="flex items-center gap-2 px-2.5 py-2 text-[14px] xl:text-[15px] text-text-tertiary hover:text-accent transition-colors"
+          >
             <span
               class="material-symbols-rounded text-[18px] xl:text-[20px] leading-none"
               style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }}
