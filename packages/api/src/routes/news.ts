@@ -304,6 +304,96 @@ newsRoutes.post("/:id/repost", async (c) => {
   return c.json({ reposts: counts?.reposts ?? 0, alreadyReposted: !wasNew });
 });
 
+// ─── Article feedback + reports (S3.5 + S3.6) ────────────────────
+
+const feedbackBodySchema = z.object({
+  device_id: z.string().min(1).max(128),
+  /** 1 = useful, 0 = not useful. */
+  useful: z.union([z.literal(0), z.literal(1)]),
+});
+
+newsRoutes.post("/:id/feedback", async (c) => {
+  const parsed = articleIdSchema.safeParse(c.req.param());
+  if (!parsed.success) return c.json(formatZodError(parsed.error), 400);
+  const body = feedbackBodySchema.safeParse(await c.req.json().catch(() => ({})));
+  if (!body.success) return c.json(formatZodError(body.error), 400);
+  const { id } = parsed.data;
+  const { device_id, useful } = body.data;
+
+  const article = await getNewsById(c.env.DB, id);
+  if (!article) return c.json({ error: "Not found" }, 404);
+
+  // Read previous vote so we can compute the counter delta.
+  const prev = await c.env.DB.prepare(
+    "SELECT useful FROM article_feedback WHERE device_id = ? AND news_id = ?"
+  ).bind(device_id, id).first<{ useful: number }>();
+  const prevUseful = prev?.useful ?? -1;
+
+  if (prevUseful === -1) {
+    // First-time feedback.
+    await c.env.DB.prepare(
+      "INSERT INTO article_feedback (device_id, news_id, useful) VALUES (?, ?, ?)"
+    ).bind(device_id, id, useful).run();
+  } else if (prevUseful !== useful) {
+    // User changed their mind.
+    await c.env.DB.prepare(
+      "UPDATE article_feedback SET useful = ?, updated_at = CURRENT_TIMESTAMP WHERE device_id = ? AND news_id = ?"
+    ).bind(useful, device_id, id).run();
+  }
+  // else: same vote → no-op.
+
+  // Counter delta: only the change matters. Flipping
+  // useful=1 → useful=0 decrements useful_yes and increments
+  // useful_no (and vice versa).
+  const yesDelta = (useful === 1 ? 1 : 0) - (prevUseful === 1 ? 1 : 0);
+  const noDelta = (useful === 0 ? 1 : 0) - (prevUseful === 0 ? 1 : 0);
+  if (yesDelta !== 0 || noDelta !== 0) {
+    await c.env.DB.prepare(
+      "UPDATE news_cards SET useful_yes = MAX(0, useful_yes + ?), useful_no = MAX(0, useful_no + ?) WHERE id = ?"
+    ).bind(yesDelta, noDelta, id).run();
+  }
+
+  const counts = await c.env.DB.prepare(
+    "SELECT useful_yes, useful_no FROM news_cards WHERE id = ?"
+  ).bind(id).first<{ useful_yes: number; useful_no: number }>();
+
+  return c.json({
+    useful_yes: counts?.useful_yes ?? 0,
+    useful_no: counts?.useful_no ?? 0,
+    myUseful: useful,
+  });
+});
+
+const reportBodySchema = z.object({
+  device_id: z.string().min(1).max(128),
+  reason: z.enum(["incorrect", "clickbait", "duplicate", "spam", "other"]),
+  note: z.string().max(500).optional(),
+});
+
+newsRoutes.post("/:id/report", async (c) => {
+  const parsed = articleIdSchema.safeParse(c.req.param());
+  if (!parsed.success) return c.json(formatZodError(parsed.error), 400);
+  const body = reportBodySchema.safeParse(await c.req.json().catch(() => ({})));
+  if (!body.success) return c.json(formatZodError(body.error), 400);
+  const { id } = parsed.data;
+  const { device_id, reason, note } = body.data;
+
+  const article = await getNewsById(c.env.DB, id);
+  if (!article) return c.json({ error: "Not found" }, 404);
+
+  // Reports are append-only (no idempotent counter). The
+  // is_reported flag is set once and stays — manual review is
+  // the response to a high report count.
+  await c.env.DB.prepare(
+    "INSERT INTO article_reports (device_id, news_id, reason, note) VALUES (?, ?, ?, ?)"
+  ).bind(device_id, id, reason, note ?? null).run();
+  await c.env.DB.prepare(
+    "UPDATE news_cards SET is_reported = 1 WHERE id = ?"
+  ).bind(id).run();
+
+  return c.json({ ok: true });
+});
+
 newsRoutes.delete("/:id/repost", async (c) => {
   const parsed = articleIdSchema.safeParse(c.req.param());
   if (!parsed.success) return c.json(formatZodError(parsed.error), 400);

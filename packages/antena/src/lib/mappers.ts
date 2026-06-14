@@ -214,6 +214,8 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     upvotes: card.upvotes ?? 0,
     downvotes: card.downvotes ?? 0,
     reposts: card.reposts ?? 0,
+    useful_yes: card.useful_yes ?? 0,
+    useful_no: card.useful_no ?? 0,
   };
 }
 

@@ -94,10 +94,13 @@ describe("ArticleDetail", () => {
 
   it("renders Modo lectura button", () => {
     const news = createMockNews();
-    const { getByLabelText } = render(() => (
+    const { getAllByLabelText } = render(() => (
       <ArticleDetail news={news} onBack={() => {}} />
     ));
-    expect(getByLabelText("Modo lectura")).toBeInTheDocument();
+    // The article view has two Modo lectura affordances
+    // (the header pill + the bottom bar button). The test
+    // only asserts that at least one is present.
+    expect(getAllByLabelText("Modo lectura").length).toBeGreaterThan(0);
   });
 
   it("renders reading time", () => {

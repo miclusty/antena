@@ -1,7 +1,7 @@
 /** @jsxImportSource solid-js */
 import { createResource, For, Show, createMemo, createSignal } from 'solid-js';
 import type { NewsItem, VoiceBreakdown } from '../../lib/types';
-import { fetchNewsByCluster, fetchMasterArticle, type MasterArticle } from '../../lib/api';
+import { fetchNewsByCluster, fetchMasterArticle, fetchFeedback, fetchReport, type MasterArticle, type ReportReason } from '../../lib/api';
 import { mapNewsCard, stripHtml } from '../../lib/mappers';
 import ClusterView from './ClusterView';
 import ReadingMode from './ReadingMode';
@@ -15,6 +15,8 @@ import ArticleBottomBar from './ArticleBottomBar';
 import OtrasVocesCta from './OtrasVocesCta';
 import { toast } from '../Toast';
 import { useBookmarks } from '../../lib/bookmarks';
+import ReportSheet from './ReportSheet';
+import { speak as ttsSpeak, stop as ttsStop, isSupported as ttsSupported, isSpeaking as ttsIsSpeaking } from '../../lib/speech';
 
 interface ArticleDetailProps {
   news: NewsItem;
@@ -27,6 +29,93 @@ export default function ArticleDetail(props: ArticleDetailProps) {
   const [readingModeOpen, setReadingModeOpen] = createSignal(false);
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const n = () => props.news;
+
+  // S3.5 — "Was this useful?" feedback. Local signal of the
+  // device's vote for instant button coloring; the server
+  // response carries the canonical counts.
+  const [myUseful, setMyUseful] = createSignal<0 | 1 | null>(props.news.myUseful ?? null);
+  const [usefulYes, setUsefulYes] = createSignal(props.news.useful_yes ?? 0);
+  const [usefulNo, setUsefulNo] = createSignal(props.news.useful_no ?? 0);
+
+  // S3.6 — Report modal state.
+  const [reportOpen, setReportOpen] = createSignal(false);
+
+  // S3.1 — Listen (TTS) state. The bottom bar calls onListen to
+  // toggle; the actual synth call lives in the lib/speech wrapper.
+  const [isSpeaking, setIsSpeaking] = createSignal(false);
+  const canSpeak = ttsSupported();
+
+  const toggleListen = () => {
+    if (!canSpeak) {
+      toast("Tu navegador no soporta lectura en voz alta", "warning");
+      return;
+    }
+    if (isSpeaking() || ttsIsSpeaking()) {
+      ttsStop();
+      setIsSpeaking(false);
+    } else {
+      // Speak the cleaned body (master article body if present,
+      // else the news summary). Stripping HTML is a no-op here
+      // (the body is already plain text after mappers), but it's
+      // a safety net for any future HTML body we might pass in.
+      const text = (displaySummary() || "").trim();
+      if (!text) return;
+      ttsSpeak(text, {
+        lang: "es-AR",
+        onEnd: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
+      });
+      setIsSpeaking(true);
+    }
+  };
+
+  const submitFeedback = async (useful: 0 | 1) => {
+    const prev = myUseful();
+    const next: 0 | 1 | null = prev === useful ? null : useful;
+    setMyUseful(next);
+    // Optimistic count.
+    const prevYes = usefulYes();
+    const prevNo = usefulNo();
+    if (prev === null) {
+      setUsefulYes(prevYes + (useful === 1 ? 1 : 0));
+      setUsefulNo(prevNo + (useful === 0 ? 1 : 0));
+    } else if (prev === 0 && useful === 1) {
+      setUsefulNo(Math.max(0, prevNo - 1));
+      setUsefulYes(prevYes + 1);
+    } else if (prev === 1 && useful === 0) {
+      setUsefulYes(Math.max(0, prevYes - 1));
+      setUsefulNo(prevNo + 1);
+    } else {
+      // toggling off
+      if (useful === 1) setUsefulYes(Math.max(0, prevYes - 1));
+      else setUsefulNo(Math.max(0, prevNo - 1));
+    }
+    haptic.vibrate("tap");
+    const res = await fetchFeedback(props.news.id, useful);
+    if (res) {
+      // Reconcile with server's authoritative count.
+      setUsefulYes(res.useful_yes);
+      setUsefulNo(res.useful_no);
+      setMyUseful(res.myUseful);
+    }
+  };
+
+  const submitReport = async (reason: ReportReason, note?: string) => {
+    const ok = await fetchReport(props.news.id, reason, note);
+    if (ok) {
+      toast("Reporte enviado. Gracias.", "info");
+    } else {
+      toast("No se pudo enviar el reporte", "error");
+    }
+    setReportOpen(false);
+  };
+
+  const totalFeedback = () => usefulYes() + usefulNo();
+  const usefulPct = () => {
+    const t = totalFeedback();
+    if (t === 0) return null;
+    return Math.round((usefulYes() / t) * 100);
+  };
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -301,6 +390,84 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           </div>
         </section>
 
+        {/* S3.5 — "¿Te fue útil?" + S3.6 reportar */}
+        <section
+          class="rounded-xl border p-4 mb-4"
+          style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+        >
+          <p class="text-[10px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>
+            ¿Te fue útil?
+          </p>
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => submitFeedback(1)}
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border"
+                style={
+                  myUseful() === 1
+                    ? { background: 'var(--accent)', color: '#fff', 'border-color': 'var(--accent)' }
+                    : { background: 'var(--bg-base)', color: 'var(--text-secondary)', 'border-color': 'var(--border-base)' }
+                }
+                aria-pressed={myUseful() === 1}
+                aria-label="Sí, me fue útil"
+              >
+                <span
+                  class="material-symbols-rounded text-base leading-none"
+                  style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
+                  aria-hidden="true"
+                >
+                  thumb_up
+                </span>
+                Sí
+                <span class="text-[11px] opacity-70 tabular-nums">{usefulYes()}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => submitFeedback(0)}
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border"
+                style={
+                  myUseful() === 0
+                    ? { background: 'var(--text-primary)', color: 'var(--bg-base)', 'border-color': 'var(--text-primary)' }
+                    : { background: 'var(--bg-base)', color: 'var(--text-secondary)', 'border-color': 'var(--border-base)' }
+                }
+                aria-pressed={myUseful() === 0}
+                aria-label="No me fue útil"
+              >
+                <span
+                  class="material-symbols-rounded text-base leading-none"
+                  style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 18" }}
+                  aria-hidden="true"
+                >
+                  thumb_down
+                </span>
+                No
+                <span class="text-[11px] opacity-70 tabular-nums">{usefulNo()}</span>
+              </button>
+            </div>
+            <Show when={usefulPct() !== null}>
+              <p class="text-[11px] font-semibold" style={{ color: 'var(--accent)' }}>
+                {usefulPct()}% la encontró útil
+              </p>
+            </Show>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReportOpen(true)}
+            class="mt-3 text-[11px] font-semibold inline-flex items-center gap-1"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            <span
+              class="material-symbols-rounded text-sm leading-none"
+              style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }}
+              aria-hidden="true"
+            >
+              flag
+            </span>
+            Reportar contenido
+          </button>
+        </section>
+
         {/* Sticky CTA + bottom sheet for other voices on the same story.
             The CTA becomes visible after the user scrolls past 60% of the
             article body and opens a BottomSheet listing the rest of the
@@ -436,12 +603,20 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         summary={n().summary || ''}
       />
 
+      <ReportSheet
+        open={reportOpen()}
+        onClose={() => setReportOpen(false)}
+        onSubmit={submitReport}
+      />
+
       <ArticleBottomBar
         sourceUrl={n().sourceUrl}
         isBookmarked={isBookmarked(n().id)}
         onBookmark={() => toggleBookmark(n().id)}
         onShare={handleShare}
         onReadingMode={() => setReadingModeOpen(true)}
+        onListen={toggleListen}
+        isSpeaking={isSpeaking()}
         articleUrl={typeof window !== 'undefined' ? window.location.href : ''}
       />
     </div>

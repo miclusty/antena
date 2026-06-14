@@ -40,6 +40,12 @@ export interface ApiNewsCard {
   upvotes?: number;
   downvotes?: number;
   reposts?: number;
+  // Useful feedback (S3.5). Default 0.
+  useful_yes?: number;
+  useful_no?: number;
+  /** Set to true when at least one user has reported this
+   *  article (S3.6). Mostly used for admin visibility. */
+  is_reported?: boolean;
 }
 
 export interface MasterArticle {
@@ -501,5 +507,57 @@ export async function fetchUnrepost(newsId: string): Promise<{ reposts: number; 
     return await res.json();
   } catch {
     return null;
+  }
+}
+
+// ─── Article feedback + reports (S3.5 + S3.6) ──────────────────
+// Per-device signals. Local optimistic update on click; the
+// server response carries the canonical counts.
+
+export type UsefulVote = 0 | 1;
+
+export interface FeedbackResponse {
+  useful_yes: number;
+  useful_no: number;
+  myUseful: UsefulVote;
+}
+
+export async function fetchFeedback(
+  newsId: string,
+  useful: UsefulVote,
+): Promise<FeedbackResponse | null> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/api/news/${newsId}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_id: deviceId, useful }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as FeedbackResponse;
+  } catch {
+    return null;
+  }
+}
+
+export type ReportReason = "incorrect" | "clickbait" | "duplicate" | "spam" | "other";
+
+export async function fetchReport(
+  newsId: string,
+  reason: ReportReason,
+  note?: string,
+): Promise<boolean> {
+  const deviceId = getDeviceId();
+  if (!deviceId) return false;
+  try {
+    const res = await fetch(`${API_BASE}/api/news/${newsId}/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_id: deviceId, reason, note }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
