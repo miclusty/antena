@@ -53,6 +53,8 @@ export interface NewsItem {
   myVote?: -1 | 0 | 1;
   /** Local override of the device's useful vote (S3.5). */
   myUseful?: 0 | 1;
+  // Byline / author (S3.7). Empty string means "no byline".
+  author?: string;
 }
 
 export interface PropagationEvent {

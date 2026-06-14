@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 """AKIRA Harvester v12.0 - Delta extraction with domain-aware rate limiting."""
-import re, sqlite3, json, uuid, asyncio, aiohttp, time, os
+import re, sqlite3, json, uuid, asyncio, aiohttp, time, os, sys
 from datetime import datetime
 from urllib.parse import urlparse
 from collections import defaultdict
 from email.utils import parsedate_to_datetime
+
+# Add the package root to sys.path so we can import the byline
+# extractor from extractors/base.py. The harvester runs as a
+# standalone script; without this the import below would fail
+# when invoked outside the package.
+_PKG_ROOT = os.path.dirname(os.path.abspath(__file__))
+if _PKG_ROOT not in sys.path:
+    sys.path.insert(0, _PKG_ROOT)
+from extractors.base import extract_byline  # noqa: E402
 
 def _parse_date(value):
     if not value:
@@ -179,11 +188,19 @@ async def process_sources():
                 stats["items"] += len(items)
                 for item in items:
                     article_id = str(uuid.uuid5(uuid.NAMESPACE_URL, item.get("url", "")))
+                    # Byline / author (S3.7). The cascade's RSS
+                    # feed usually exposes the author; if not,
+                    # we still get a free shot via the byline
+                    # regex on the page HTML when the extractor
+                    # provides it under item['html'].
+                    author = (item.get("author") or "").strip()[:120]
+                    if not author and item.get("html"):
+                        author = extract_byline(item["html"])
                     # bias_score and category left NULL — AKIRA cascade will enrich them
                     conn2.execute("""
                         INSERT OR IGNORE INTO news_cards
-                        (id, location_id, title, summary, image_url, source_url, source_ids, bias_score, published_at, created_at, category)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL)
+                        (id, location_id, title, summary, image_url, source_url, source_ids, bias_score, published_at, created_at, category, author)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?)
                     """, (
                         article_id, location_id,
                         item.get("title", "")[:500],
@@ -192,6 +209,7 @@ async def process_sources():
                         item.get("url", "")[:500],
                         str(source_id),
                         _parse_date(item.get("published_at")) or datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                        author,
                     ))
                 # Track the per-source yield.
                 items_count = len(items) if items else 0

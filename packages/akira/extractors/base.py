@@ -30,6 +30,70 @@ MIN_SUMMARY_LENGTH = 20
 MIN_TEXT_LENGTH = 100
 
 
+# ─── Byline / author extraction patterns (S3.7) ────────────────
+# Most news sites expose the byline in one of these places.
+# We try them in order from most-authoritative to least. The
+# LLM-based classification pass (run elsewhere) can replace
+# this with a higher-quality extraction later — these regexes
+# exist so ANTENA's byline field has SOMETHING to show
+# before the LLM pass lands.
+BYLINE_PATTERNS = [
+    # <meta name="author" content="..."> (most authoritative)
+    re.compile(
+        r'<meta[^>]+name=["\']author["\'][^>]+content=["\']([^"\']+)["\']',
+        re.IGNORECASE,
+    ),
+    # <meta property="article:author" content="..."> (OGP)
+    re.compile(
+        r'<meta[^>]+property=["\']article:author["\'][^>]+content=["\']([^"\']+)["\']',
+        re.IGNORECASE,
+    ),
+    # JSON-LD structured data
+    re.compile(
+        r'"@type"\s*:\s*"Person"[^}]*?"name"\s*:\s*"([^"]+)"',
+        re.IGNORECASE | re.DOTALL,
+    ),
+    # <span class="author..."> or <a class="author...">Name</a>
+    re.compile(
+        r'<(?:span|a)[^>]+class=["\'][^"\']*\bauthor\b[^"\']*["\'][^>]*>([^<]+)</',
+        re.IGNORECASE,
+    ),
+    # <meta name="DC.author" or "DC.creator"> (Dublin Core)
+    re.compile(
+        r'<meta[^>]+(?:name|property)=["\'](?:DC|author|creator)[^"\']*["\'][^>]+content=["\']([^"\']+)["\']',
+        re.IGNORECASE,
+    ),
+]
+
+
+def extract_byline(html: str) -> str:
+    """Best-effort byline extraction from raw HTML.
+
+    Returns the first reasonable match across the common
+    byline locations. Empty string when nothing matches —
+    callers store that as `author = ''` in the DB, which the
+    ANTENA UI treats as "no byline".
+
+    Filters out common non-author matches (site name, "Home",
+    "Staff", single-character strings) so the regexes don't
+    return garbage.
+    """
+    if not html:
+        return ""
+    for pat in BYLINE_PATTERNS:
+        m = pat.search(html)
+        if not m:
+            continue
+        candidate = m.group(1).strip()
+        # Reject obvious non-authors.
+        if not candidate or len(candidate) < 3 or len(candidate) > 120:
+            continue
+        if candidate.lower() in {"home", "staff", "editorial", "redaccion", "redacción"}:
+            continue
+        return candidate
+    return ""
+
+
 @dataclass
 class ExtractedItem:
     """Standard extraction result."""
@@ -42,6 +106,12 @@ class ExtractedItem:
     source: str = ""
     text: Optional[str] = None
     method: str = ""
+    # Byline / author (S3.7). Free-text. Empty string means
+    # "no byline available" — distinct from "we didn't try".
+    # Subclasses that have better access (e.g. Wordpress
+    # exposes author in the feed) can set this directly;
+    # otherwise the base post_extract() runs the regex pass.
+    author: str = ""
 
     def is_valid(self) -> bool:
         """Check if this item has minimum valid content."""

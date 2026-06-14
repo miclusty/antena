@@ -142,27 +142,29 @@ def sync_news_cards(akira: sqlite3.Connection, d1: sqlite3.Connection, limit: in
     #   id, location_id, title, summary, image_url, bias_score, is_gacetilla,
     #   cluster_id, category, source_ids, published_at, created_at,
     #   quality_score, gacetilla_confidence, neutral_summary, bias_reasoning,
-    #   synced, synced_at, sync_error, body
-    # D1 news_cards columns (from migrations/0000):
+    #   synced, synced_at, sync_error, body, source_url, author
+    # D1 news_cards columns (from migrations/0000+0005):
     #   id, location_id, title, summary, body, image_url, source_url,
     #   source_name, source_id, category, bias_score, is_gacetilla,
     #   gacetilla_confidence, sources_count, quality_score, cluster_id,
-    #   published_at, created_at
+    #   published_at, created_at, useful_yes, useful_no, is_reported,
+    #   author
     rows = akira.execute(
         f"""SELECT id, location_id, title, summary, image_url, bias_score,
                    is_gacetilla, cluster_id, category, source_ids,
                    published_at, created_at, quality_score, gacetilla_confidence,
-                   body
+                   body, author
             FROM news_cards
             ORDER BY created_at DESC
             LIMIT ?""",
         (limit,),
     ).fetchall()
-    # Re-order to match D1's expected 18 columns.
+    # Re-order to match D1's expected 19 columns.
     # AKIRA idx → D1 col:
     #   0 id, 1 location_id, 2 title, 3 summary, 14 body, 4 image_url,
     #   12 quality_score, 8 category, 5 bias_score, 6 is_gacetilla,
-    #   13 gacetilla_confidence, 7 cluster_id, 10 published_at, 11 created_at
+    #   13 gacetilla_conf, 7 cluster_id, 10 published_at, 11 created_at
+    #   15 author
     # (source_url, source_name, source_id, sources_count filled in by
     # resolve_source_meta() below)
     norm = []
@@ -171,7 +173,7 @@ def sync_news_cards(akira: sqlite3.Connection, d1: sqlite3.Connection, limit: in
             r[0], r[1], r[2], r[3], r[14], r[4],    # id, loc, title, summary, body, image
             None, None, None, r[8],                 # source_url, source_name, source_id, category
             r[5], r[6], r[13], None, r[12],        # bias, is_gacetilla, gacetilla_conf, sources_count, quality
-            r[7], r[10], r[11],                    # cluster_id, published_at, created_at
+            r[7], r[10], r[11], r[15],            # cluster_id, published_at, created_at, author
         ))
     d1.executemany(
         """INSERT OR REPLACE INTO news_cards
@@ -179,8 +181,8 @@ def sync_news_cards(akira: sqlite3.Connection, d1: sqlite3.Connection, limit: in
             source_url, source_name, source_id, category,
             bias_score, is_gacetilla, gacetilla_confidence,
             sources_count, quality_score, cluster_id,
-            published_at, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            published_at, created_at, author)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         norm,
     )
     return len(norm)

@@ -1,5 +1,5 @@
 /** @jsxImportSource solid-js */
-import { Show, createSignal, onMount, For } from "solid-js";
+import { Show, createSignal, onMount, For, createMemo } from "solid-js";
 import {
   readDataSaver,
   writeDataSaver,
@@ -8,13 +8,15 @@ import {
   writeDensity,
   readImageQuality,
   writeImageQuality,
+  readReadingModeDefault,
+  writeReadingModeDefault,
   FONT_SCALE_MIN,
   FONT_SCALE_MAX,
   FONT_SCALE_STEP,
   type ImageQuality,
 } from "../../lib/preferences";
 import { useTheme } from "../../lib/theme";
-import { getAntenaDeviceId, fetchFollows, unfollowSource } from "../../lib/api";
+import { getAntenaDeviceId, fetchFollows, fetchSources, unfollowSource, followSource, type ApiSourceEntry } from "../../lib/api";
 import { toast } from "../Toast";
 
 const QUALITY_OPTIONS: { id: ImageQuality; label: string; desc: string }[] = [
@@ -29,19 +31,35 @@ export default function SettingsView() {
   const [fontScale, setFontScale] = createSignal(1.0);
   const [dataSaver, setDataSaver] = createSignal(false);
   const [imageQuality, setImageQuality] = createSignal<ImageQuality>("auto");
+  const [readingModeDefault, setReadingModeDefault] = createSignal(false);
   const [deviceId, setDeviceId] = createSignal<string>("");
   const [follows, setFollows] = createSignal<Array<{ sourceId: number; sourceName: string | null; sourceUrl: string | null }>>([]);
+  const [sources, setSources] = createSignal<ApiSourceEntry[]>([]);
+
+  // Top-5 sources the user does NOT already follow. Computed
+  // memo so it stays in sync with `follows()` and `sources()`
+  // — no manual re-filter on each follow/unfollow click.
+  const suggestedSources = createMemo(() => {
+    const followedIds = new Set(follows().map((f) => f.sourceId));
+    return sources()
+      .filter((s) => !followedIds.has(s.id) && (s.is_active === 1 || s.is_active === undefined))
+      .slice(0, 5);
+  });
 
   onMount(() => {
     setFontScale(readFontScale());
     setDataSaver(readDataSaver());
     setImageQuality(readImageQuality());
+    setReadingModeDefault(readReadingModeDefault());
     setDeviceId(getAntenaDeviceId());
     // Apply font scale immediately so the UI re-flows.
     document.documentElement.style.setProperty("--font-scale", String(readFontScale()));
     if (readDataSaver()) document.documentElement.classList.add("data-saver");
-    // Load follows for the account section
-    fetchFollows().then(setFollows).catch(() => setFollows([]));
+    // Load follows + sources in parallel for the account section.
+    Promise.all([
+      fetchFollows().then(setFollows).catch(() => setFollows([])),
+      fetchSources(30).then(setSources).catch(() => setSources([])),
+    ]);
   });
 
   const updateFontScale = (v: number) => {
@@ -60,6 +78,11 @@ export default function SettingsView() {
   const updateImageQuality = (q: ImageQuality) => {
     setImageQuality(q);
     writeImageQuality(q);
+  };
+
+  const updateReadingModeDefault = (v: boolean) => {
+    setReadingModeDefault(v);
+    writeReadingModeDefault(v);
   };
 
   const clearAllData = () => {
@@ -117,6 +140,19 @@ export default function SettingsView() {
       toast("Medio removido", "info");
     } else {
       toast("No se pudo remover", "error");
+    }
+  };
+
+  const follow = async (sourceId: number) => {
+    const ok = await followSource(sourceId);
+    if (ok) {
+      // Add a placeholder entry; the real sourceName/url come
+      // from the follow response on the server. Reload to be
+      // safe.
+      void fetchFollows().then(setFollows);
+      toast("Ahora seguís este medio", "info");
+    } else {
+      toast("No se pudo seguir", "error");
     }
   };
 
@@ -194,6 +230,14 @@ export default function SettingsView() {
             </button>
           </div>
         </Row>
+
+        <Row label="Abrir artículos en Modo lectura" description="Salta directo a la vista limpia al abrir una noticia.">
+          <Toggle
+            checked={readingModeDefault()}
+            onChange={updateReadingModeDefault}
+            label="Modo lectura por defecto"
+          />
+        </Row>
       </Section>
 
       <Section title="Datos e imágenes" icon="image">
@@ -266,6 +310,36 @@ export default function SettingsView() {
                       style={{ color: "var(--accent)" }}
                     >
                       Dejar
+                    </button>
+                  </li>
+                )}
+              </For>
+            </ul>
+          </div>
+        </Show>
+
+        <Show when={suggestedSources().length > 0}>
+          <div class="pt-2 border-t border-border-base">
+            <p class="text-[10px] font-extrabold uppercase tracking-widest mb-2" style={{ color: "var(--text-tertiary)" }}>
+              Sugeridos para seguir
+            </p>
+            <ul class="space-y-1">
+              <For each={suggestedSources()}>
+                {(s) => (
+                  <li class="flex items-center justify-between gap-2 text-sm py-1">
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate" style={{ color: "var(--text-primary)" }}>{s.name}</p>
+                      <p class="text-[11px] truncate" style={{ color: "var(--text-tertiary)" }}>
+                        {s.location_name ?? s.province ?? "Argentina"} · {s.news_count ?? 0} notas
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => follow(s.id)}
+                      class="text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
+                      style={{ background: "var(--accent-muted)", color: "var(--accent)" }}
+                    >
+                      + Seguir
                     </button>
                   </li>
                 )}

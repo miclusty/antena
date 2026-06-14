@@ -290,6 +290,19 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           >
             {n().bias || 'Neutral'}
           </span>
+          <Show when={n().author}>
+            <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
+            <span
+              class="material-symbols-rounded text-sm leading-none"
+              style={{
+                color: 'var(--text-tertiary)',
+                'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16'",
+              }}
+            >
+              person
+            </span>
+            <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>Por {n().author}</span>
+          </Show>
           <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
           <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{n().time}</span>
           <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />

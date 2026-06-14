@@ -246,6 +246,11 @@ export const newsCards = sqliteTable(
     // Set to 1 when at least one user has reported this article
     // (S3.6). Acts as a quick filter for the moderation queue.
     isReported: integer("is_reported", { mode: "boolean" }).notNull().default(false),
+    // Author byline (S3.7). Free-text. Empty string when the
+    // source didn't expose a byline (most wire/syndicated
+    // content). Empty != NULL so the mapper can do a single
+    // `if (author) show()` check without a coalesce.
+    author: text("author").notNull().default(""),
   },
   (t) => ({
     byLocation: index("idx_news_location").on(t.locationId, t.publishedAt),

@@ -216,6 +216,7 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     reposts: card.reposts ?? 0,
     useful_yes: card.useful_yes ?? 0,
     useful_no: card.useful_no ?? 0,
+    author: card.author ?? "",
   };
 }
 

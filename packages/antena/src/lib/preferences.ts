@@ -100,6 +100,31 @@ export function writeImageQuality(v: ImageQuality): void {
   }
 }
 
+// ─── Reading mode default (S3.10) ───────────────────────────────
+// When true, opening any article jumps straight into Modo
+// lectura without the user having to tap the pill. Persisted
+// across sessions so users who prefer the reading view don't
+// have to toggle it every time.
+const READING_MODE_KEY = "antena-reading-mode-default";
+
+export function readReadingModeDefault(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(READING_MODE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function writeReadingModeDefault(v: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(READING_MODE_KEY, v ? "true" : "false");
+  } catch {
+    /* private mode */
+  }
+}
+
 // ─── Density ────────────────────────────────────────────────────
 const DENSITY_KEY = "antena-density";
 const DEFAULT_DENSITY: Density = "comfortable";

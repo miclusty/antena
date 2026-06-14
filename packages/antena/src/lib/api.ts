@@ -46,6 +46,9 @@ export interface ApiNewsCard {
   /** Set to true when at least one user has reported this
    *  article (S3.6). Mostly used for admin visibility. */
   is_reported?: boolean;
+  // Byline (S3.7). Empty string when the source didn't
+  // expose an author. ANTENA hides the row when empty.
+  author?: string;
 }
 
 export interface MasterArticle {
