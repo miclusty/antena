@@ -1,31 +1,96 @@
-"""News clustering service - groups news cards by title similarity.
+"""News clustering service v2 - groups news cards by event.
 
-Uses normalized text fingerprinting and edit-distance for lightweight clustering.
-No external ML dependencies required.
+Improvements over v1:
+  - Multi-strategy matching: exact signature, Jaccard, n-gram
+    containment, entity (capitalized word) overlap
+  - Lower threshold (0.25) to catch paraphrased coverage
+  - Stops on common stopwords to focus on entities
+  - Soft canonical-URL match: same domain often means
+    syndicated reprints (one source aggregating many)
+  - Recomputes clusters from scratch each run so we can
+    re-balance after threshold changes (idempotent for
+    unchanged data)
+
+No external ML dependencies.
 """
 
 import re
 import hashlib
 import logging
-from typing import List, Dict, Set, Optional
-from collections import defaultdict
+from typing import List, Dict, Set, Optional, Tuple
+from collections import defaultdict, Counter
+from urllib.parse import urlparse
 
 from core.db_helpers import get_db_connection
 
 logger = logging.getLogger("akira")
 
-# Min word overlap ratio to consider two items part of the same cluster
-OVERLAP_THRESHOLD = 0.5
-# Minimum cluster size
+# Min jaccard similarity to consider two items part of the same cluster.
+# Lower than v1 (0.5) because news paraphrasing drops overlap sharply.
+OVERLAP_THRESHOLD = 0.25
+
+# N-gram containment threshold: how much of the smaller item's
+# n-grams need to appear in the larger item. Catches cases
+# where one headline is a subset of another.
+NGRAM_CONTAINMENT_THRESHOLD = 0.55
+
+# Entity overlap: ratio of shared capitalized words (proper
+# nouns) that are NOT in the stopword set.
+ENTITY_OVERLAP_THRESHOLD = 0.4
+
+# Minimum cluster size (cards below this become singletons
+# in their own cluster).
 MIN_CLUSTER_SIZE = 2
+
+# Spanish stopwords that don't carry meaning. Lowercased.
+STOPWORDS = {
+    "a", "al", "algo", "algunas", "algunos", "ante", "antes", "como", "con",
+    "contra", "cual", "cuando", "de", "del", "desde", "donde", "durante",
+    "e", "el", "ella", "ellas", "ellos", "en", "entre", "era", "erais",
+    "eran", "eras", "eres", "es", "esa", "esas", "ese", "eso", "esos",
+    "esta", "estaba", "estabais", "estaban", "estabas", "estad", "estada",
+    "estadas", "estado", "estados", "estais", "estamos", "estan", "estar",
+    "estará", "estarán", "estarás", "estaré", "estaréis", "estaríamos",
+    "estarían", "estarías", "estas", "este", "esto", "estos", "estoy",
+    "estuve", "estuviera", "estuvierais", "estuvieran", "estuvieras",
+    "estuvieron", "estuviese", "estuvieseis", "estuviesen", "estuvieses",
+    "estuvimos", "estuviste", "estuvisteis", "estuvo", "etc", "fue",
+    "fuera", "fuerais", "fueran", "fueras", "fueron", "fuese", "fueseis",
+    "fuesen", "fueses", "fui", "fuimos", "fuiste", "fuisteis", "ha", "habida",
+    "habidas", "habido", "habidos", "habiendo", "habremos", "habrá",
+    "habrán", "habrás", "habré", "habréis", "habríamos", "habrían",
+    "habías", "habíamos", "habido", "hay", "haya", "hayamos", "hayan",
+    "hayas", "hayáis", "he", "hemos", "hube", "hubiera", "hubierais",
+    "hubieran", "hubieras", "hubieron", "hubiese", "hubieseis",
+    "hubiesen", "hubieses", "hubimos", "hubiste", "hubisteis", "hubo",
+    "la", "las", "le", "les", "lo", "los", "más", "me", "mi", "mis",
+    "mucho", "muchas", "muchos", "muy", "nada", "ni", "no", "nos",
+    "nosotras", "nosotros", "nuestra", "nuestras", "nuestro", "nuestros",
+    "o", "os", "otra", "otras", "otro", "otros", "para", "pero", "poco",
+    "por", "porque", "que", "quien", "quienes", "sea", "seais", "seamos",
+    "sean", "seas", "ser", "seremos", "sería", "seríais", "seríamos",
+    "serían", "serías", "si", "sido", "siendo", "sin", "sobre", "sois",
+    "somos", "son", "soy", "su", "sus", "también", "tanto", "te", "tendrá",
+    "tendrán", "tendras", "tendré", "tendremos", "tendría", "tendríais",
+    "tendríamos", "tendrían", "tenemos", "tener", "tengo", "ti", "tiene",
+    "tienen", "tienes", "todo", "todos", "tu", "tus", "un", "una",
+    "uno", "unos", "vosotras", "vosotros", "vuestra", "vuestras",
+    "vuestro", "vuestros", "y", "ya", "yo",
+    # News-specific stopwords that add noise
+    "tras", "segun", "dijo", "anuncio", "anunció", "afirmo", "afirmó",
+    "aseguro", "aseguró", "confirmo", "confirmó", "aseguran", "sostuvo",
+    "manifesto", "manifestó", "denuncio", "denunció", "cuestiono", "cuestionó",
+    "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo",
+    "ano", "año", "mes", "dia", "día", "hora", "horas", "minuto", "minutos",
+    "argentina", "argentino", "argentinos", "nacion", "país", "pais",
+}
 
 
 def normalize_text(text: str) -> str:
-    """Normalize text for comparison: lowercase, remove accents, punctuation, extra spaces."""
+    """Lowercase, strip accents and punctuation, collapse whitespace."""
     if not text:
         return ""
     text = text.lower()
-    # Remove accents
     text = (
         text.replace("á", "a")
         .replace("é", "e")
@@ -34,192 +99,313 @@ def normalize_text(text: str) -> str:
         .replace("ú", "u")
     )
     text = text.replace("ü", "u").replace("ñ", "n")
-    text = re.sub(r"[^\w\s]", "", text)  # Remove punctuation
-    text = re.sub(r"\s+", " ", text).strip()  # Normalize whitespace
+    text = re.sub(r"[^\w\s]", "", " ")
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
 
-def get_title_words(title: str, min_len: int = 3) -> Set[str]:
-    """Get significant words from a title."""
-    words = normalize_text(title).split()
-    return {w for w in words if len(w) >= min_len}
+def tokenize(text: str, min_len: int = 3) -> Set[str]:
+    """Get significant tokens (no stopwords, min length filter)."""
+    words = normalize_text(text).split()
+    return {w for w in words if len(w) >= min_len and w not in STOPWORDS}
+
+
+def get_entities(title: str) -> Set[str]:
+    """Get proper-noun-like entities: capitalized words not in stopwords.
+
+    We look at the original (non-normalized) title for capitalized
+    tokens. Common Spanish titles have "Milei", "Caputo", "CABA",
+    "Argentina" etc. as entities.
+    """
+    if not title:
+        return set()
+    # Strip punctuation and split
+    raw = re.sub(r"[^\w\s]", " ", title)
+    tokens = raw.split()
+    ents = set()
+    for t in tokens:
+        if len(t) < 3:
+            continue
+        if t.lower() in STOPWORDS:
+            continue
+        if t[0].isupper():
+            # First letter is uppercase, treat as proper noun.
+            # Also catch "EE.UU." or acronyms.
+            ents.add(t.lower())
+    return ents
 
 
 def compute_title_signature(title: str) -> str:
-    """Compute a signature hash from the most significant words in a title."""
-    words = get_title_words(title)
-    # Take top 6 words by length, sorted
-    key_words = sorted(words, key=len, reverse=True)[:6]
-    return "|".join(sorted(key_words))
+    """Signature: first 5 significant tokens (sorted, deduped)."""
+    tokens = tokenize(title)
+    return "|".join(sorted(tokens)[:5])
 
 
-def jaccard_similarity(set1: Set[str], set2: Set[str]) -> float:
-    """Compute Jaccard similarity between two sets."""
-    if not set1 or not set2:
+def get_ngrams(title: str, n: int = 3) -> Set[Tuple[str, ...]]:
+    """N-gram token sequences for substring-style matching."""
+    tokens = sorted(tokenize(title))
+    if len(tokens) < n:
+        return set()
+    return {tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1)}
+
+
+def jaccard(s1: Set, s2: Set) -> float:
+    if not s1 or not s2:
         return 0.0
-    intersection = len(set1 & set2)
-    union = len(set1 | set2)
-    return intersection / union if union > 0 else 0.0
+    inter = len(s1 & s2)
+    union = len(s1 | s2)
+    return inter / union if union else 0.0
+
+
+def ngram_containment(small: Set[Tuple[str, ...]], large: Set[Tuple[str, ...]]) -> float:
+    """Fraction of small's n-grams that appear in large.
+    Catches "subset" cases (one headline is a substring of another)."""
+    if not small or not large:
+        return 0.0
+    return len(small & large) / len(small)
+
+
+def url_domain_match(url1: str, url2: str) -> bool:
+    """Same domain → often the same article syndicated. Soft signal."""
+    if not url1 or not url2:
+        return False
+    try:
+        d1 = urlparse(url1).netloc.lower()
+        d2 = urlparse(url2).netloc.lower()
+        # Strip leading www. for comparison
+        d1 = d1.removeprefix("www.")
+        d2 = d2.removeprefix("www.")
+        return d1 == d2 and d1 != ""
+    except Exception:
+        return False
+
+
+def merge_score(
+    a_tokens: Set[str], a_ents: Set[str], a_url: str,
+    b_tokens: Set[str], b_ents: Set[str], b_url: str,
+) -> float:
+    """Compute a single similarity score from multiple signals.
+
+    Returns 0..1. > threshold means the two items are about the
+    same event.
+    """
+    # 1. Token Jaccard.
+    score = jaccard(a_tokens, b_tokens)
+
+    # 2. N-gram containment. Boost if one is a subset of the other.
+    ng_a = get_ngrams(" ".join(a_tokens))
+    ng_b = get_ngrams(" ".join(b_tokens))
+    if ng_a and ng_b:
+        containment = max(
+            ngram_containment(ng_a, ng_b),
+            ngram_containment(ng_b, ng_a),
+        )
+        if containment > NGRAM_CONTAINMENT_THRESHOLD:
+            score = max(score, containment)
+
+    # 3. Entity overlap. Strong signal of "same person/place".
+    ent_sim = jaccard(a_ents, b_ents)
+    if ent_sim > ENTITY_OVERLAP_THRESHOLD:
+        score = max(score, ent_sim * 0.95)  # slightly discounted
+
+    # 4. Same URL domain → trust the URL over text.
+    if url_domain_match(a_url, b_url):
+        score = max(score, 0.6)
+
+    return score
 
 
 class ClusteringService:
     """
-    Groups news cards into clusters based on title word overlap.
+    Groups news cards into clusters by event.
 
     Algorithm:
-    1. Normalize all titles
-    2. Group by exact signature match first
-    3. For remaining items, use Jaccard similarity to merge into existing clusters
-    4. Items below threshold become singletons
+      1. Pull all unclustered (or all) cards in a batch.
+      2. For each, compute tokens + entities + n-grams.
+      3. Phase 1: group by exact 5-token signature (high confidence).
+      4. Phase 2: for each remaining singleton, find the best existing
+         cluster by merge_score; merge if score > threshold.
+      5. Phase 3: any cards that didn't find a home get their own
+         singleton cluster.
+      6. Update DB cluster_id for all participating cards.
 
-    Clusters are stored by updating cluster_id in news_cards table.
+    Threshold: 0.25 by default. Lower = more permissive (more
+    groups). Run idempotently — unchanged inputs produce unchanged
+    clusters (modulo hash ordering).
     """
 
-    def __init__(self, db_path: str, overlap_threshold: float = OVERLAP_THRESHOLD):
+    def __init__(
+        self,
+        db_path: str,
+        overlap_threshold: float = OVERLAP_THRESHOLD,
+    ):
         self.db_path = db_path
         self.threshold = overlap_threshold
 
-    def cluster_news_cards(self, card_ids: List[str]) -> Dict[str, List[str]]:
+    def cluster_news_cards(
+        self, card_ids: Optional[List[str]] = None
+    ) -> Dict[str, List[str]]:
         """
-        Cluster news cards by title similarity.
-
-        Args:
-            card_ids: List of news card IDs to cluster
+        Cluster news cards. If `card_ids` is None, cluster ALL
+        active cards (full re-cluster). Otherwise cluster the
+        given subset (used by `cluster_recent_news` for delta
+        clustering of new arrivals).
 
         Returns:
-            Dict mapping cluster_id -> list of card_ids
+            Dict mapping cluster_id -> list of card_ids.
         """
-        if not card_ids:
-            return {}
-
         with get_db_connection(self.db_path) as conn:
-            placeholders = ",".join("?" * len(card_ids))
-            rows = conn.execute(
-                f"SELECT id, title FROM news_cards WHERE id IN ({placeholders})",
-                card_ids,
-            ).fetchall()
+            if card_ids is None:
+                rows = conn.execute(
+                    "SELECT id, title, source_ids, image_url FROM news_cards"
+                ).fetchall()
+            else:
+                placeholders = ",".join("?" * len(card_ids))
+                rows = conn.execute(
+                    f"SELECT id, title, source_ids, image_url FROM news_cards "
+                    f"WHERE id IN ({placeholders})",
+                    card_ids,
+                ).fetchall()
 
             if not rows:
                 return {}
 
-            items = [(str(row["id"]), row["title"] or "") for row in rows]
+            items = [
+                (str(r["id"]), r["title"] or "", r["source_ids"] or "", r["image_url"] or "")
+                for r in rows
+            ]
+            # Wipe existing cluster_id for the cards we're re-clustering.
+            ids_to_clear = [it[0] for it in items]
+            placeholders = ",".join("?" * len(ids_to_clear))
+            conn.execute(
+                f"UPDATE news_cards SET cluster_id = NULL WHERE id IN ({placeholders})",
+                ids_to_clear,
+            )
+            conn.commit()
+
             clusters = self._compute_clusters(items)
 
-            # Update DB with cluster IDs
+            # Update DB with new cluster IDs.
             for cluster_id, ids in clusters.items():
-                for card_id in ids:
+                for cid in ids:
                     conn.execute(
                         "UPDATE news_cards SET cluster_id = ? WHERE id = ?",
-                        (cluster_id, card_id),
+                        (cluster_id, cid),
                     )
             conn.commit()
 
         logger.info(
-            f"clustering_complete cards={len(card_ids)} clusters={len(clusters)}"
+            f"clustering_v2_complete cards={len(items)} clusters={len(clusters)}"
         )
         return clusters
 
-    def _compute_clusters(self, items: List[tuple]) -> Dict[str, List[str]]:
+    def _compute_clusters(
+        self, items: List[Tuple[str, str, str, str]]
+    ) -> Dict[str, List[str]]:
         """
-        Compute clusters using word overlap.
-
-        Strategy:
-        1. Group by exact signature match (high confidence)
-        2. For signatures with 2+ items, merge into cluster
-        3. For singletons, try to merge into existing clusters via Jaccard
+        Compute clusters from a list of (id, title, source_ids, image_url).
         """
-        id_to_words = {id_: get_title_words(title) for id_, title in items}
-        id_to_sig = {id_: compute_title_signature(title) for id_, title in items}
+        # Pre-compute per-item features.
+        features: Dict[str, dict] = {}
+        for card_id, title, source_ids, image_url in items:
+            tokens = tokenize(title)
+            ents = get_entities(title)
+            # Extract the first source_id from the source_ids CSV.
+            primary_source_id = None
+            if source_ids:
+                first = source_ids.split(",")[0].strip()
+                if first.isdigit():
+                    primary_source_id = int(first)
+            # Use the image URL's domain as a "source attribution"
+            # signal: cards with the same image URL are very likely
+            # the same syndicated article.
+            image_domain = ""
+            if image_url:
+                try:
+                    image_domain = urlparse(image_url).netloc.lower()
+                except Exception:
+                    pass
+            features[card_id] = {
+                "title": title,
+                "tokens": tokens,
+                "ents": ents,
+                "source_id": primary_source_id,
+                "image_domain": image_domain,
+            }
 
-        # Phase 1: Group by exact signature
+        # Phase 1: group by exact 5-token signature.
         sig_to_ids: Dict[str, List[str]] = defaultdict(list)
-        for id_, sig in id_to_sig.items():
-            sig_to_ids[sig].append(id_)
+        for card_id, f in features.items():
+            sig = compute_title_signature(f["title"])
+            if sig:
+                sig_to_ids[sig].append(card_id)
 
-        # Build initial clusters from signature groups
         cluster_id_map: Dict[str, str] = {}  # card_id -> cluster_id
-        pending_singles: List[str] = []
-
+        clusters: Dict[str, List[str]] = defaultdict(list)
         for sig, ids in sig_to_ids.items():
             if len(ids) >= MIN_CLUSTER_SIZE:
                 cluster_id = hashlib.md5(sig.encode()).hexdigest()[:12]
-                for id_ in ids:
-                    cluster_id_map[id_] = cluster_id
-            else:
-                pending_singles.extend(ids)
+                for cid in ids:
+                    cluster_id_map[cid] = cluster_id
+                    clusters[cluster_id].append(cid)
+        # Any sig with only 1 item is a "pending singleton" — try to
+        # merge it into an existing cluster in phase 2.
 
-        # Phase 2: Try to merge singletons into existing clusters
-        clusters: Dict[str, List[str]] = defaultdict(list)
-        for id_, cid in cluster_id_map.items():
-            clusters[cid].append(id_)
-
-        for single_id in pending_singles:
-            single_words = id_to_words.get(single_id, set())
-            if not single_words:
-                # No words to compare, give it its own cluster
-                cluster_id = hashlib.md5(single_id.encode()).hexdigest()[:8]
-                clusters[cluster_id] = [single_id]
-                continue
-
+        # Phase 2: for pending singletons, find the best matching
+        # cluster by merge_score.
+        all_ids = set(features.keys())
+        pending = [cid for cid in all_ids if cid not in cluster_id_map]
+        for single_id in pending:
+            sf = features[single_id]
             best_cluster = None
             best_score = 0.0
-
-            for cid, members in clusters.items():
-                # Check similarity against cluster representative (first member)
+            for cluster_id, members in clusters.items():
+                # Use the cluster's representative (first member)
+                # for comparison — clusters with many members are
+                # already well-defined, so this is fast and robust.
                 rep_id = members[0]
-                rep_words = id_to_words.get(rep_id, set())
-                score = jaccard_similarity(single_words, rep_words)
-
-                # Also check average similarity to all cluster members (sample first 3)
-                scores = [score]
-                for mid in members[1:4]:
-                    m_words = id_to_words.get(mid, set())
-                    scores.append(jaccard_similarity(single_words, m_words))
-                avg_score = sum(scores) / len(scores)
-
-                if avg_score > best_score:
-                    best_score = avg_score
-                    best_cluster = cid
-
+                rf = features[rep_id]
+                # Same source_id and same image_domain → strong
+                # signal of the SAME article syndicated. Bump score
+                # up to the threshold.
+                if (sf["source_id"] and sf["source_id"] == rf["source_id"]) or \
+                   (sf["image_domain"] and sf["image_domain"] == rf["image_domain"]):
+                    score = max(best_score, self.threshold + 0.05)
+                else:
+                    score = merge_score(
+                        sf["tokens"], sf["ents"], sf.get("image_url", ""),
+                        rf["tokens"], rf["ents"], rf.get("image_url", ""),
+                    )
+                if score > best_score:
+                    best_score = score
+                    best_cluster = cluster_id
             if best_cluster and best_score >= self.threshold:
-                clusters[best_cluster].append(single_id)
                 cluster_id_map[single_id] = best_cluster
+                clusters[best_cluster].append(single_id)
             else:
-                # No good match, create singleton cluster
-                cluster_id = hashlib.md5(single_id.encode()).hexdigest()[:8]
-                clusters[cluster_id] = [single_id]
+                # Singleton → its own cluster with a hash of the id.
+                cid_hash = hashlib.md5(single_id.encode()).hexdigest()[:12]
+                clusters[cid_hash].append(single_id)
+                cluster_id_map[single_id] = cid_hash
 
-        # Clean up empty clusters
         return {k: v for k, v in clusters.items() if v}
 
     def cluster_recent_news(
         self, hours: int = 24, limit: int = 500
     ) -> Dict[str, List[str]]:
-        """
-        Cluster recent unclustered news cards from the database.
-
-        Args:
-            hours: Only consider news from the last N hours
-            limit: Maximum number of cards to process
-
-        Returns:
-            Dict mapping cluster_id -> list of card_ids
-        """
+        """Cluster recent unclustered news cards from the database."""
         with get_db_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT id FROM news_cards
-                WHERE (cluster_id IS NULL OR cluster_id = '')
-                AND created_at >= datetime('now', '-' || ? || ' hours')
+                WHERE cluster_id IS NULL
+                  AND created_at >= datetime('now', ?)
                 ORDER BY created_at DESC
                 LIMIT ?
                 """,
-                (hours, limit),
+                (f"-{hours} hours", limit),
             ).fetchall()
-
-            card_ids = [str(row["id"]) for row in rows]
-
-        if not card_ids:
+            ids = [str(r["id"]) for r in rows]
+        if not ids:
             return {}
-
-        return self.cluster_news_cards(card_ids)
+        return self.cluster_news_cards(ids)

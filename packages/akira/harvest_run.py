@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """AKIRA Harvester v12.0 - Delta extraction with domain-aware rate limiting."""
-import re, sqlite3, json, uuid, asyncio, aiohttp, time
+import re, sqlite3, json, uuid, asyncio, aiohttp, time, os
 from datetime import datetime
 from urllib.parse import urlparse
 from collections import defaultdict
@@ -21,7 +21,7 @@ def _parse_date(value):
     return None
 
 AKIRA_DB = "/Users/omatic/proyectos/news/packages/akira/data/akira.db"
-AKIRA_API = "http://localhost:5000/extract"
+AKIRA_API = os.getenv("AKIRA_API_URL", "http://localhost:5000/extract")
 MAX_CONCURRENT = 2
 RATE_LIMIT = 2.0
 TIMEOUT = 60.0
@@ -182,20 +182,23 @@ async def process_sources():
                     # bias_score and category left NULL — AKIRA cascade will enrich them
                     conn2.execute("""
                         INSERT OR IGNORE INTO news_cards
-                        (id, location_id, title, summary, image_url, source_ids, bias_score, published_at, created_at, category)
-                        VALUES (?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL)
+                        (id, location_id, title, summary, image_url, source_url, source_ids, bias_score, published_at, created_at, category)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL)
                     """, (
                         article_id, location_id,
                         item.get("title", "")[:500],
                         item.get("summary", "")[:1000],
                         item.get("image_url"),
+                        item.get("url", "")[:500],
                         str(source_id),
                         _parse_date(item.get("published_at")) or datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
                     ))
+                # Track the per-source yield.
+                items_count = len(items) if items else 0
                 conn2.execute("""
-                    UPDATE sources SET fetch_count=fetch_count+1, last_fetch=datetime("now"), last_success=datetime("now"), error_count=0
+                    UPDATE sources SET fetch_count=fetch_count+1, news_count=news_count+?, last_fetch=datetime("now"), last_success=datetime("now"), error_count=0
                     WHERE id=?
-                """, (source_id,))
+                """, (items_count, source_id,))
             else:
                 conn2.execute("""
                     UPDATE sources SET fetch_count=fetch_count+1, last_fetch=datetime("now"), error_count=error_count+1
