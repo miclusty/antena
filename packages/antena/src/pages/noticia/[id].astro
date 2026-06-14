@@ -149,7 +149,25 @@ const publisherLogo = `${SITE}/icons/icon.svg`;
   </Fragment>
 
   <main id="main-content" class="max-w-[680px] mx-auto px-4 py-8">
-    <a href="/" class="text-sm" style={{ color: 'var(--accent)' }}>← Volver al feed</a>
+    <nav aria-label="Breadcrumb" class="mb-6">
+      <ol class="flex items-center gap-1.5 text-xs flex-wrap" style={{ color: 'var(--text-tertiary)' }}>
+        <li><a href="/" class="hover:underline" style={{ color: 'var(--accent)' }}>Inicio</a></li>
+        {article.category && (
+          <>
+            <li aria-hidden="true">›</li>
+            <li><a href={`/?cat=${encodeURIComponent(article.category)}`} class="hover:underline" style={{ color: 'var(--accent)' }}>{article.category}</a></li>
+          </>
+        )}
+        {article.location_name && (
+          <>
+            <li aria-hidden="true">›</li>
+            <li><a href={`/?loc=${encodeURIComponent(article.location_name)}`} class="hover:underline" style={{ color: 'var(--accent)' }}>{article.location_name}</a></li>
+          </>
+        )}
+        <li aria-hidden="true">›</li>
+        <li class="truncate max-w-[200px]" style={{ color: 'var(--text-secondary)' }} aria-current="page">{article.title}</li>
+      </ol>
+    </nav>
     <article class="mt-6">
       <header>
         <p class="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>

@@ -112,7 +112,15 @@ const canonical = `${SITE}/ciudad/${city}`;
   </Fragment>
 
   <main id="main-content" class="max-w-[920px] mx-auto px-4 py-8">
-    <a href="/" class="text-sm" style={{ color: 'var(--accent)' }}>← Volver al feed</a>
+    <nav aria-label="Breadcrumb" class="mb-6">
+      <ol class="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        <li><a href="/" class="hover:underline" style={{ color: 'var(--accent)' }}>Inicio</a></li>
+        <li aria-hidden="true">›</li>
+        <li style={{ color: 'var(--text-secondary)' }} aria-current="page">Ciudades</li>
+        <li aria-hidden="true">›</li>
+        <li style={{ color: 'var(--text-secondary)' }} aria-current="page">{cityName}</li>
+      </ol>
+    </nav>
     <header class="mt-6">
       <p class="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--accent)' }}>
         Ciudad · Argentina
