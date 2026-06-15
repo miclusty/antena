@@ -256,6 +256,19 @@ export const newsCards = sqliteTable(
     // content). Empty != NULL so the mapper can do a single
     // `if (author) show()` check without a coalesce.
     author: text("author").notNull().default(""),
+    // SEO slug (Phase 2 Task 21). URL-safe identifier derived
+    // from the title. Empty by default; populated by AKIRA's
+    // `make_slug()` at insert time and by the backfill script
+    // for legacy rows. Used by Antena to build canonical
+    // article URLs (`/noticia/{slug_date}/{slug}`).
+    slug: text("slug").notNull().default(""),
+    // Slug date partition. ISO `YYYY-MM-DD` derived from
+    // `published_at` (or `created_at` as fallback). Combined
+    // with `slug` forms the unique key so the same title can
+    // recur on different days without collision. The composite
+    // (slug_date, slug) index below is what makes the canonical
+    // article URL O(1).
+    slugDate: text("slug_date").notNull().default(""),
   },
   (t) => ({
     byLocation: index("idx_news_location").on(t.locationId, t.publishedAt),
@@ -265,6 +278,14 @@ export const newsCards = sqliteTable(
     byPublished: index("idx_news_published").on(t.publishedAt),
     byUpvotes: index("idx_news_upvotes").on(t.upvotes, t.createdAt),
     byReposts: index("idx_news_reposts").on(t.reposts, t.createdAt),
+    // Unique (slug_date, slug) so the canonical URL pattern
+    // resolves to exactly one card. Backfilled and maintained
+    // by AKIRA; enforced by the backfill collision-resolver.
+    bySlug: uniqueIndex("idx_news_slug").on(t.slugDate, t.slug),
+    // Non-unique lookup on `slug` alone, for backfill collision
+    // detection and for "find the card with this slug" queries
+    // that don't care about the date.
+    bySlugLookup: index("idx_news_slug_lookup").on(t.slug),
   })
 );
 

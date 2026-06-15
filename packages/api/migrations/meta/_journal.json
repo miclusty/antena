@@ -50,6 +50,13 @@
       "when": 1781750000000,
       "tag": "0005_news_author",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1781488005844,
+      "tag": "0007_typical_chimera",
+      "breakpoints": true
     }
   ]
 }
