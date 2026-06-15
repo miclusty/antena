@@ -4,28 +4,27 @@
 // the source. AboutPage + Organization JSON-LD reinforces
 // Knowledge Graph signals.
 import Layout from '../layouts/Layout.astro';
+import SeoHead from '../components/SeoHead.astro';
 
 export const prerender = true;
 
 const SITE = 'https://www.antena.com.ar';
 ---
-<Layout
-  title="Sobre Antena"
-  description="Antena es un agregador de noticias argentino mobile-first. Sintetizamos cobertura de múltiples medios para mostrarte los hechos centrales sin sesgo editorial."
-  canonical={`${SITE}/about`}
->
+<Layout>
   <Fragment slot="head">
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Sobre Antena" />
-    <meta property="og:image" content={`${SITE}/og-default.png`} />
-    <script type="application/ld+json" set:html={JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'AboutPage',
-      'name': 'Sobre Antena',
-      'url': `${SITE}/about`,
-      'mainEntity': { '@id': `${SITE}#organization` },
-      'inLanguage': 'es-AR',
-    })} />
+    <SeoHead
+      title="Sobre Antena"
+      description="Antena es un agregador de noticias argentino mobile-first. Sintetizamos cobertura de múltiples medios para mostrarte los hechos centrales sin sesgo editorial."
+      canonical={`${SITE}/about`}
+      jsonLd={{
+        '@context': 'https://schema.org',
+        '@type': 'AboutPage',
+        'name': 'Sobre Antena',
+        'url': `${SITE}/about`,
+        'mainEntity': { '@id': `${SITE}#organization` },
+        'inLanguage': 'es-AR',
+      }}
+    />
   </Fragment>
 
   <main id="main-content" class="max-w-[680px] mx-auto px-4 py-12">
