@@ -85,3 +85,6 @@ packages/antena/playwright-report/
 __pycache__/
 *.pyc
 *.pyo
+
+# AKIRA/API runtime cache (not source)
+packages/api/.redirects-cache.json
