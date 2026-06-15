@@ -5,8 +5,8 @@ exports[`SEO head snapshots > 404 head snapshot > 404 1`] = `
          ~200ms of DNS/TCP/TLS overhead on first hit. --><link rel="preconnect" href="https://akira-api.miclusty.workers.dev"><link rel="dns-prefetch" href="https://antena-images.r2.dev"><!-- Material Symbols (icons). Self-hosted via
          @fontsource would be faster, but the Google CDN
          is acceptable with display=swap. Kept only as the
-         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/about.CjtLyneb.css">
-<link rel="stylesheet" href="/_astro/about.BU6nkFst.css">"
+         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/_slug_.CjtLyneb.css">
+<link rel="stylesheet" href="/_astro/_slug_.BU6nkFst.css">"
 `;
 
 exports[`SEO head snapshots > about head snapshot > about 1`] = `
@@ -14,8 +14,8 @@ exports[`SEO head snapshots > about head snapshot > about 1`] = `
          ~200ms of DNS/TCP/TLS overhead on first hit. --><link rel="preconnect" href="https://akira-api.miclusty.workers.dev"><link rel="dns-prefetch" href="https://antena-images.r2.dev"><!-- Material Symbols (icons). Self-hosted via
          @fontsource would be faster, but the Google CDN
          is acceptable with display=swap. Kept only as the
-         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/about.CjtLyneb.css">
-<link rel="stylesheet" href="/_astro/about.BU6nkFst.css">"
+         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/_slug_.CjtLyneb.css">
+<link rel="stylesheet" href="/_astro/_slug_.BU6nkFst.css">"
 `;
 
 exports[`SEO head snapshots > contacto head snapshot > contacto 1`] = `
@@ -23,8 +23,8 @@ exports[`SEO head snapshots > contacto head snapshot > contacto 1`] = `
          ~200ms of DNS/TCP/TLS overhead on first hit. --><link rel="preconnect" href="https://akira-api.miclusty.workers.dev"><link rel="dns-prefetch" href="https://antena-images.r2.dev"><!-- Material Symbols (icons). Self-hosted via
          @fontsource would be faster, but the Google CDN
          is acceptable with display=swap. Kept only as the
-         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/about.CjtLyneb.css">
-<link rel="stylesheet" href="/_astro/about.BU6nkFst.css">"
+         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/_slug_.CjtLyneb.css">
+<link rel="stylesheet" href="/_astro/_slug_.BU6nkFst.css">"
 `;
 
 exports[`SEO head snapshots > home head snapshot > home 1`] = `
@@ -32,8 +32,8 @@ exports[`SEO head snapshots > home head snapshot > home 1`] = `
          ~200ms of DNS/TCP/TLS overhead on first hit. --><link rel="preconnect" href="https://akira-api.miclusty.workers.dev"><link rel="dns-prefetch" href="https://antena-images.r2.dev"><!-- Material Symbols (icons). Self-hosted via
          @fontsource would be faster, but the Google CDN
          is acceptable with display=swap. Kept only as the
-         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/about.CjtLyneb.css">
-<link rel="stylesheet" href="/_astro/about.BU6nkFst.css">"
+         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/_slug_.CjtLyneb.css">
+<link rel="stylesheet" href="/_astro/_slug_.BU6nkFst.css">"
 `;
 
 exports[`SEO head snapshots > privacidad head snapshot > privacidad 1`] = `
@@ -41,6 +41,6 @@ exports[`SEO head snapshots > privacidad head snapshot > privacidad 1`] = `
          ~200ms of DNS/TCP/TLS overhead on first hit. --><link rel="preconnect" href="https://akira-api.miclusty.workers.dev"><link rel="dns-prefetch" href="https://antena-images.r2.dev"><!-- Material Symbols (icons). Self-hosted via
          @fontsource would be faster, but the Google CDN
          is acceptable with display=swap. Kept only as the
-         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/about.CjtLyneb.css">
-<link rel="stylesheet" href="/_astro/about.BU6nkFst.css">"
+         icon font — text uses system fonts. --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet"><!-- Theme init: prevent FOUC --><script type="module">const e=localStorage.getItem("antena-theme");window.matchMedia("(prefers-color-scheme: dark)").matches;e==="light"||document.documentElement.setAttribute("data-theme","dark");</script><link rel="stylesheet" href="/_astro/_slug_.CjtLyneb.css">
+<link rel="stylesheet" href="/_astro/_slug_.BU6nkFst.css">"
 `;
