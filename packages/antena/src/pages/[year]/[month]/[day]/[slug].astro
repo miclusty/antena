@@ -48,27 +48,47 @@ export async function getStaticPaths() {
   // the Phase 2 worker deploy. This makes the build robust to
   // either endpoint being unavailable.
   let items: { id: string; slug: string | null; slug_date: string | null }[] = [];
-  try {
-    const batchRes = await fetch(`${apiBase}/api/news/sitemap-batch?limit=100&offset=0`, {
-      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
-    });
-    if (batchRes.ok) {
-      const data = await batchRes.json() as { items: typeof items };
-      items = data.items ?? [];
-    } else {
-      const feedRes = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
+  // Paginate through the sitemap-batch endpoint to cover all
+  // 1100+ articles. The build used to be capped at 100 (the
+  // first page) which meant any card outside that page 404'd
+  // when accessed via its canonical URL — including any card
+  // the user clicked from the Trending section. Now we page
+  // through until we have them all.
+  const PAGE = 200;
+  const MAX_PAGES = 25;  // hard cap: 200 * 25 = 5,000 articles max
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const offset = page * PAGE;
+    let got = 0;
+    try {
+      const batchRes = await fetch(`${apiBase}/api/news/sitemap-batch?limit=${PAGE}&offset=${offset}`, {
         headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
       });
-      if (feedRes.ok) {
-        const data = await feedRes.json() as { news: { id: string; slug: string | null; slug_date: string | null }[] };
-        items = (data.news ?? []).map((a) => ({
-          id: a.id,
-          slug: a.slug,
-          slug_date: a.slug_date,
-        }));
+      if (batchRes.ok) {
+        const data = await batchRes.json() as { items: typeof items };
+        const batch = data.items ?? [];
+        items.push(...batch);
+        got = batch.length;
+      } else {
+        // Fallback: feed endpoint (also paginates).
+        const feedRes = await fetch(`${apiBase}/api/news/feed?limit=${PAGE}&offset=${offset}`, {
+          headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+        });
+        if (feedRes.ok) {
+          const data = await feedRes.json() as { news: { id: string; slug: string | null; slug_date: string | null }[] };
+          const batch = (data.news ?? []).map((a) => ({
+            id: a.id,
+            slug: a.slug,
+            slug_date: a.slug_date,
+          }));
+          items.push(...batch);
+          got = batch.length;
+        } else {
+          break;  // both endpoints failed — stop paginating
+        }
       }
-    }
-  } catch {}
+    } catch { break; }
+    if (got < PAGE) break;  // last page (partial or empty)
+  }
   for (const item of items) {
     if (!item.slug || !item.slug_date) continue;
     const [year, month, day] = item.slug_date.split('-');

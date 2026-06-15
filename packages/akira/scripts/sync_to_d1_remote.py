@@ -119,7 +119,7 @@ def read_news_cards(akira: sqlite3.Connection, limit: int) -> tuple[list[str], l
         f"""SELECT id, location_id, title, summary, image_url, bias_score,
                    is_gacetilla, cluster_id, category, source_ids,
                    published_at, created_at, quality_score, gacetilla_confidence,
-                   body, article_url
+                   body, article_url, slug, slug_date
             FROM news_cards
             ORDER BY created_at DESC
             LIMIT ?""",
@@ -132,13 +132,18 @@ def read_news_cards(akira: sqlite3.Connection, limit: int) -> tuple[list[str], l
         #   5 bias_score, 6 is_gacetilla, 7 cluster_id, 8 category,
         #   9 source_ids, 10 published_at, 11 created_at,
         #   12 quality_score, 13 gacetilla_confidence,
-        #   14 body, 15 article_url
+        #   14 body, 15 article_url, 16 slug, 17 slug_date
+        # BUGFIX: previous version didn't SELECT slug/slug_date
+        # so the INSERT didn't include them. D1's NOT NULL DEFAULT
+        # '' then reset both columns on every sync, wiping the
+        # 769+ SEO slugs we built in the backfill.
         norm.append((
             r[0], r[1], r[2], r[3], r[14], r[4],
             None, None, None, r[8],    # source_url, source_name, source_id (set by UPDATE pass), category
-            r[15],                       # article_url (NEW, from local SQLite)
+            r[15],                       # article_url
             r[5], r[6], r[13], None, r[12],
             r[7], r[10], r[11],
+            r[16] or "", r[17] or "",   # slug, slug_date (NOT NULL DEFAULT '')
         ))
     inserts = generate_inserts(
         "news_cards",
@@ -147,7 +152,8 @@ def read_news_cards(akira: sqlite3.Connection, limit: int) -> tuple[list[str], l
          "article_url",
          "bias_score", "is_gacetilla", "gacetilla_confidence",
          "sources_count", "quality_score", "cluster_id",
-         "published_at", "created_at"],
+         "published_at", "created_at",
+         "slug", "slug_date"],
         norm,
     )
     return inserts, rows

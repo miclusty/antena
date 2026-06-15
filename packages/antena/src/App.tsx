@@ -674,8 +674,20 @@ export default function App() {
                         items={trendingItems().map(n => ({ id: n.id, title: n.title, category: n.category ?? 'General' }))}
                         loading={trendingItems().length === 0}
                         onItemClick={(item) => {
+                          // Try the in-memory feed first (zero network
+                          // roundtrip). If the trending item isn't in the
+                          // current feed (filtered category, paginated
+                          // out, different time window, etc.), fall
+                          // through to loadArticleFromId which fetches
+                          // it via the API. Without the fallback the
+                          // click was a silent no-op for any trending
+                          // item not in the visible feed.
                           const full = mappedNews().find(n => n.id === item.id);
-                          if (full) handleNewsClick(full);
+                          if (full) {
+                            handleNewsClick(full);
+                          } else {
+                            loadArticleFromId(item.id);
+                          }
                         }}
                       />
                     </Show>
