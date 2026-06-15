@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
-import { createSignal, Show } from 'solid-js';
+import { createSignal, createMemo, Show } from 'solid-js';
 import MaterialIcon from '../common/MaterialIcon';
+import { sanitizeArticleHtmlForView } from '../../lib/sanitize-html';
 
 interface ReadingModeProps {
   title: string;
@@ -13,6 +14,18 @@ interface ReadingModeProps {
 export default function ReadingMode(props: ReadingModeProps) {
   const [fontSize, setFontSize] = createSignal(18);
   const [isDark, setIsDark] = createSignal(false);
+
+  // Sanitize once on render. Article bodies come from upstream RSS
+  // / WordPress / trafilatura / newspaper4k / Goose / Jina / Playwright
+  // — each is "mostly safe" but a malicious feed could XSS the site
+  // if rendered raw. DOMPurify removes script, event handlers, and
+  // any non-allowlisted tag/attribute. We force `rel=noopener
+  // noreferrer` on external links and `loading=lazy` on images.
+  // ReadingMode is the only place article bodies render with
+  // innerHTML, so this is the single chokepoint.
+  const safeHtml = createMemo(() =>
+    sanitizeArticleHtmlForView(props.body || props.summary || '')
+  );
 
   const theme = () => ({
     bg: isDark() ? '#0f0f13' : '#ffffff',
@@ -85,7 +98,7 @@ export default function ReadingMode(props: ReadingModeProps) {
             {props.title}
           </h1>
           <p class="text-sm mb-6" style={{ color: theme().muted }}>{readingTime()}</p>
-          <div innerHTML={props.body || props.summary} />
+          <div innerHTML={safeHtml()} />
         </article>
       </div>
     </Show>

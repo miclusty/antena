@@ -8,7 +8,7 @@ plus the cron-driven sitemap ping keep things fresh.
 
 - Open https://search.google.com/search-console
 - Add property `https://antena.com.ar` (DNS TXT verify)
-- Submit sitemap: `https://antena.com.ar/sitemap-index.xml`
+- Submit sitemap: `https://www.antena.com.ar/sitemap.xml`
 - Inspect URL: paste any `/noticia/<id>` URL and click
   "Request indexing" for the top 10 most-shared ones
 - Coverage: fix any "Excluded" or "Discovered - currently
@@ -19,7 +19,7 @@ plus the cron-driven sitemap ping keep things fresh.
 
 - Open https://www.bing.com/webmasters
 - Add `https://antena.com.ar`
-- Submit sitemap: `https://antena.com.ar/sitemap-index.xml`
+- Submit sitemap: `https://www.antena.com.ar/sitemap.xml`
 - IndexNow is already wired via `/antena2026indexnow.txt`
   — Bing will pick up new URLs within minutes.
 
@@ -53,7 +53,7 @@ plus the cron-driven sitemap ping keep things fresh.
   https://about.flipboard.com/flipboard-news-publisher-2/
 
 ### Bing News PubHub
-- https://www.bing.com/ping?u=https://antena.com.ar/sitemap-index.xml
+- https://www.bing.com/ping?u=https://www.antena.com.ar/sitemap.xml
   (we already auto-ping this from the cron)
 
 ## 5. Wikipedia / Wikidata (huge SEO boost)

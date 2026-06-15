@@ -47,9 +47,22 @@ async function fetchArticles(): Promise<SsrArticle[]> {
 const articles = await fetchArticles();
 const now = new Date().toISOString();
 
+// Filter out articles older than 12 months. Google News only
+// indexes articles from the last 30 days, but regular Google
+// crawls up to ~12 months for news sites. Older articles
+// stay in D1 for archive purposes but don't bloat the
+// sitemap. This keeps the sitemap focused on fresh content
+// and improves crawl budget.
+const twelveMonthsAgo = new Date();
+twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+const cutoffISO = twelveMonthsAgo.toISOString();
+const freshArticles = articles.filter(
+  (a) => a.published_at && a.published_at >= cutoffISO
+);
+
 const cities = new Set<string>();
 const categories = new Set<string>();
-for (const a of articles) {
+for (const a of freshArticles) {
   if (a.location_name) cities.add(a.location_name);
   if (a.category) categories.add(a.category);
 }
@@ -76,7 +89,7 @@ const urls = [
     changefreq: 'hourly',
     priority: '0.8',
   })),
-  ...articles.map((a) => {
+  ...freshArticles.map((a) => {
     const loc = a.slug && a.slug_date
       ? `${SITE}/${a.slug_date.split('-').join('/')}/${a.slug}`
       : `${SITE}/noticia/${a.id}`;

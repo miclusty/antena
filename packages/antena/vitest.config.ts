@@ -55,6 +55,13 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
+    // The sanitize-html tests need a real DOMParser implementation
+    // because DOMPurify relies on parsing + serialization round-trips.
+    // happy-dom's parser is incomplete (drops block-level tags
+    // when serializing). Use jsdom only for those tests.
+    environmentMatchGlobs: [
+      ["src/tests/sanitize-html.test.ts", "jsdom"],
+    ],
     globals: true,
     setupFiles: ["./src/tests/setup.ts"],
     include: ["src/tests/**/*.{test,spec}.{ts,tsx}"],
