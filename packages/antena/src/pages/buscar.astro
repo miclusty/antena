@@ -1,11 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import SeoHead from '../components/SeoHead.astro';
 import SearchView from '../components/search/SearchView';
 ---
-<Layout
-  title="Buscar"
-  description="Buscá noticias por palabra clave, fecha, fuente o sesgo político. Filtrá por ciudad o región."
-  canonical="https://www.antena.com.ar/buscar"
->
+<Layout>
+  <Fragment slot="head">
+    <SeoHead
+      title="Buscar"
+      description="Buscá noticias por palabra clave, fecha, fuente o sesgo político. Filtrá por ciudad o región."
+      canonical="https://www.antena.com.ar/buscar"
+      noindex={true}
+    />
+  </Fragment>
   <SearchView client:load />
 </Layout>

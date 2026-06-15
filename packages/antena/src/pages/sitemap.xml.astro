@@ -12,6 +12,10 @@ export const prerender = true;
 interface SsrArticle {
   id: string;
   published_at: string | null;
+  slug: string | null;
+  slug_date: string | null;
+  location_name: string | null;
+  category: string | null;
 }
 
 const SITE = 'https://www.antena.com.ar';
@@ -22,6 +26,13 @@ async function fetchArticles(): Promise<SsrArticle[]> {
     ? 'https://akira-api.miclusty.workers.dev'
     : fromEnv;
   try {
+    const batchRes = await fetch(`${apiBase}/api/news/sitemap-batch?limit=500&offset=0`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (batchRes.ok) {
+      const batchData = await batchRes.json() as { items: SsrArticle[] };
+      if (batchData.items?.length) return batchData.items;
+    }
     const res = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
       headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
     });
@@ -36,29 +47,12 @@ async function fetchArticles(): Promise<SsrArticle[]> {
 const articles = await fetchArticles();
 const now = new Date().toISOString();
 
-// Collect unique cities + categories from the article set.
 const cities = new Set<string>();
 const categories = new Set<string>();
 for (const a of articles) {
-  // We don't have location_name in SsrArticle here, so we
-  // also pull the feed separately for hub discovery.
+  if (a.location_name) cities.add(a.location_name);
+  if (a.category) categories.add(a.category);
 }
-const fromEnv = import.meta.env.PUBLIC_API_BASE;
-const apiBase = (!fromEnv || fromEnv.includes('localhost'))
-  ? 'https://akira-api.miclusty.workers.dev'
-  : fromEnv;
-try {
-  const res = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
-    headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
-  });
-  if (res.ok) {
-    const data = await res.json() as { news: { location_name: string | null; category: string | null }[] };
-    for (const a of data.news ?? []) {
-      if (a.location_name) cities.add(a.location_name);
-      if (a.category) categories.add(a.category);
-    }
-  }
-} catch {}
 
 const slugify = (s: string) => s
   .toLowerCase()
@@ -82,12 +76,17 @@ const urls = [
     changefreq: 'hourly',
     priority: '0.8',
   })),
-  ...articles.map((a) => ({
-    loc: `${SITE}/noticia/${a.id}`,
-    lastmod: a.published_at ?? now,
-    changefreq: 'weekly',
-    priority: '0.8',
-  })),
+  ...articles.map((a) => {
+    const loc = a.slug && a.slug_date
+      ? `${SITE}/${a.slug_date.split('-').join('/')}/${a.slug}`
+      : `${SITE}/noticia/${a.id}`;
+    return {
+      loc,
+      lastmod: a.published_at ?? now,
+      changefreq: 'weekly',
+      priority: '0.8',
+    };
+  }),
 ];
 ---
 <?xml version="1.0" encoding="UTF-8"?>

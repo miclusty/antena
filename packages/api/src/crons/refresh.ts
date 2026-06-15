@@ -1,4 +1,5 @@
 import type { Env } from "../lib/types";
+import { runSeoHealthCheck } from "../lib/seo-monitor";
 
 export async function handleRefreshCron(env: Env): Promise<void> {
   const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
@@ -25,4 +26,11 @@ export async function handleRefreshCron(env: Env): Promise<void> {
     doubles: [Date.now()],
     indexes: ["cron-refresh"],
   });
+
+  // SEO health check piggybacks on the same scheduled tick.
+  // Writes a row per check to the same Analytics Engine dataset
+  // (so a dashboard can graph pass/fail over time) and posts
+  // to Discord on any failure.
+  const seo = await runSeoHealthCheck(env);
+  console.log(`[cron:refresh] seo-monitor ${seo.ok}/${seo.ok + seo.fail} passed`);
 }

@@ -17,7 +17,12 @@ import { extractUnifiedRoutes } from "./routes/extract-unified";
 import { healthRoutes } from "./routes/health";
 import { synthesisRoutes } from "./routes/synthesis";
 import { followsRoutes } from "./routes/follows";
+import llmCite from "./routes/llm/cite";
+import { sitemapBatchRoutes } from "./routes/news-sitemap-batch";
+import { newsCanonicalRoutes } from "./routes/news-canonical";
+import { legacyRedirectMiddleware } from "./middleware/redirects";
 import { handleRefreshCron } from "./crons/refresh";
+import { runSeoHealthCheck } from "./lib/seo-monitor";
 import { handleImagePipeline } from "./queues/image-pipeline";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -49,6 +54,11 @@ app.use("*", cors({
   credentials: true,
 }));
 app.use("*", logger());
+// Phase 3 Task 32: legacy /noticia/<uuid> → canonical slug URL
+// for the long tail (>2000 rules) that doesn't fit in
+// _redirects. Mounted before all /api routes so it short-
+// circuits before any DB lookup.
+app.use("*", legacyRedirectMiddleware());
 
 // Routes
 app.route("/api/news", newsRoutes);
@@ -65,7 +75,10 @@ app.route("/api/extract", extractUnifiedRoutes);
 app.route("/health", healthRoutes);
 app.route("/api/synthesis", synthesisRoutes);
 app.route("/api", followsRoutes);
+app.route("/", llmCite);
 app.route("/", sitemapRoutes);
+app.route("/api/news", sitemapBatchRoutes);
+app.route("/api/news", newsCanonicalRoutes);
 
 // Simple health endpoint
 app.get("/api/health", (c) => c.json({
@@ -85,6 +98,11 @@ app.get("/api/health", (c) => c.json({
 app.get("/__cron/refresh", async (c) => {
   await handleRefreshCron(c.env);
   return c.json({ ok: true });
+});
+
+app.get("/__cron/seo-monitor", async (c) => {
+  const result = await runSeoHealthCheck(c.env);
+  return c.json(result);
 });
 
 export default {

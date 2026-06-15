@@ -1,16 +1,29 @@
 ---
 // /contacto — minimal contact page. Required for E-E-A-T.
 import Layout from '../layouts/Layout.astro';
+import SeoHead from '../components/SeoHead.astro';
 
 export const prerender = true;
 
 const SITE = 'https://www.antena.com.ar';
 ---
-<Layout
-  title="Contacto"
-  description="Contacto de Antena. Reporte de errores, sugerencias, alianzas comerciales o prensa."
-  canonical={`${SITE}/contacto`}
->
+<Layout>
+  <Fragment slot="head">
+    <SeoHead
+      title="Contacto"
+      description="Contacto de Antena. Reporte de errores, sugerencias, alianzas comerciales o prensa."
+      canonical={`${SITE}/contacto`}
+      jsonLd={{
+        '@context': 'https://schema.org',
+        '@type': 'ContactPage',
+        'name': 'Contacto',
+        'url': `${SITE}/contacto`,
+        'inLanguage': 'es-AR',
+        'publisher': { '@id': `${SITE}#organization` },
+      }}
+    />
+  </Fragment>
+
   <main id="main-content" class="max-w-[680px] mx-auto px-4 py-12">
     <h1 class="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
       Contacto

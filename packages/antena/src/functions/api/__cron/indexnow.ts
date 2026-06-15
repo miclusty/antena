@@ -76,7 +76,7 @@ async function handleIndexNow(ctx: { request: Request; env: PagesEnv }): Promise
   let googlePing = false;
   try {
     const res = await fetch(
-      `https://www.google.com/ping?sitemap=${encodeURIComponent(`${origin}/sitemap-index.xml`)}`,
+      `https://www.google.com/ping?sitemap=${encodeURIComponent(`${origin}/sitemap.xml`)}`,
     );
     googlePing = res.ok;
   } catch {

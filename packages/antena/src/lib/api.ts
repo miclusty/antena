@@ -189,6 +189,45 @@ export async function fetchNewsById(id: string): Promise<ApiNewsCard | null> {
   return data;
 }
 
+// ─── LLM-friendly markdown export (Task 16) ─────────────────────
+// Static path generation calls /api/news/feed to build the slug
+// tree (the DB has no slug/slug_date columns). The GET handler
+// then fetches the full article by id and renders markdown with
+// YAML frontmatter.
+export interface ArticleMarkdown {
+  id: string;
+  title: string;
+  slug: string;
+  slug_date: string;
+  summary: string;
+  body: string | null;
+  source_name: string | null;
+  source_url: string | null;
+  author: string | null;
+  category: string | null;
+  location_name: string | null;
+  published_at: string;
+  sources: { name: string; url: string }[];
+}
+
+export async function fetchArticleMarkdownData(
+  id: string,
+  apiBase: string,
+): Promise<ArticleMarkdown | null> {
+  try {
+    const res = await fetch(`${apiBase}/api/news/${id}`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as ArticleMarkdown & { news?: ArticleMarkdown; error?: string };
+    if (data.error) return null;
+    // API may return either { news: {...} } (legacy) or the card directly.
+    return (data.news ?? data) as ArticleMarkdown;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchNewsByIds(ids: string[]): Promise<ApiNewsCard[]> {
   const results = await Promise.allSettled(
     ids.map(id => safeFetch(`${API_BASE}/api/news/${id}`).then(r => r ? r.json() : null))

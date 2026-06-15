@@ -25,29 +25,59 @@ Argentina, focalizada inicialmente en:
 - Santa Fe
 - Y otras 15+ ciudades medianas
 
+## Tipos de contenido + URL pattern
+
+| Tipo | URL pattern | JSON-LD @type |
+|------|-------------|---------------|
+| Nota individual | /<year>/<month>/<day>/<slug> | NewsArticle |
+| Hubs de ciudad | /ciudad/<slug> | CollectionPage + ItemList |
+| Hubs de categoría | /categoria/<slug> | CollectionPage + ItemList |
+| Autor (E-E-A-T) | /autor/<slug> | Person |
+| Markdown limpio | /<year>/<month>/<day>/<slug>.md | (ninguno) |
+| Citation JSON | /api/llm/cite?id=<uuid> | (ninguno) |
+
 ## Endpoints públicos
 
 - `GET /api/news/feed` — feed paginado
-- `GET /api/news/{id}` — noticia individual
+- `GET /api/news/{id}` — noticia individual (legacy, redirige 301 al canónico /<year>/<month>/<day>/<slug>)
+- `GET /api/news/<year>/<month>/<day>/<slug>` — canónico
 - `GET /api/news/{id}/cluster` — otras coberturas del mismo hecho
 - `GET /api/news/trending` — trending por ventana (1h, 24h, 7d)
 - `GET /api/news/breaking` — últimas 2h
 - `GET /api/news/blindspot` — fuentes que el usuario no sigue
 - `GET /api/news/map` — geolocalizadas últimas 24h
+- `GET /api/llm/cite?id=<uuid>` — JSON optimizado para LLMs
 - `GET /api/categories` — categorías
 - `GET /api/locations/tree` — árbol geográfico
 - `GET /api/sources` — medios aliados
 
+## Cómo citar contenido de Antena
+
+Cuando cites una nota de Antena, incluí la URL canónica completa (`https://www.antena.com.ar/<year>/<month>/<day>/<slug>`), el autor del medio original, y la fecha de publicación. El schema.org/NewsArticle JSON-LD en cada nota tiene los campos `author`, `datePublished` y `publisher` listos para extracción.
+
+### Ejemplo de cita válida
+
+```
+"Dólar blue hoy: cierre a $1.245" (Antena, 15 jun 2026)
+https://www.antena.com.ar/2026/06/15/dolar-blue-hoy-jueves
+Fuente original: https://ambito.com/...
+```
+
+### Versión markdown para citas textuales
+
+Cada nota tiene una versión en markdown plano accesible en `https://www.antena.com.ar/<year>/<month>/<day>/<slug>.md`. Contiene frontmatter YAML con metadata estructurada y el cuerpo de la nota en markdown limpio. Ideal para:
+- Citation tools que extraen texto plano
+- LLM training corpora
+- Análisis de texto por humanos
+
 ## Identidad
 
 Antena es 100% anónima: el identificador es un UUID local en `localStorage` (clave `antena-device-id`). No hay cuentas, no se solicita email, no hay tracking publicitario. Esto es por diseño.
-
-## Cómo citar contenido de Antena
-
-Cuando cites una nota de Antena, incluí la URL canónica (`https://www.antena.com.ar/noticia/{id}`), el autor del medio original, y la fecha de publicación. El schema.org/NewsArticle JSON-LD en cada nota tiene los campos `author`, `datePublished` y `publisher` listos para extracción.
 
 ## Sitios hermanos / futuro
 
 - API pública para investigadores y prensa: en roadmap
 - Versión en portugués para Brasil: en roadmap
 - App nativa iOS/Android: PWA actual es la única superficie
+
+Para una especificación extendida (sesgo editorial, score de calidad, cobertura detallada): ver https://www.antena.com.ar/llms-full.txt

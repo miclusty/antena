@@ -17,6 +17,8 @@ interface SsrArticle {
   category: string | null;
   location_name: string | null;
   published_at: string | null;
+  slug: string | null;
+  slug_date: string | null;
 }
 
 const SITE = 'https://www.antena.com.ar';
@@ -88,7 +90,9 @@ const canonical = `${SITE}/categoria/${cat}`;
         'item': {
           '@type': 'NewsArticle',
           'headline': a.title,
-          'url': `${SITE}/noticia/${a.id}`,
+          'url': a.slug && a.slug_date
+            ? `${SITE}/${a.slug_date.split('-').join('/')}/${a.slug}`
+            : `${SITE}/noticia/${a.id}`,
           'datePublished': a.published_at,
         },
       })),
@@ -103,6 +107,48 @@ const canonical = `${SITE}/categoria/${cat}`;
       'inLanguage': 'es-AR',
       'isPartOf': { '@id': 'https://www.antena.com.ar/#website' },
       'about': category,
+    })} />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      'name': `Preguntas frecuentes sobre noticias de ${category}`,
+      'inLanguage': 'es-AR',
+      'url': canonical,
+      'mainEntity': [
+        {
+          '@type': 'Question',
+          'name': `¿Qué pasó hoy en ${category}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Las últimas noticias de ${category} están en ${canonical}. Cobertura sintetizada de ${articles.length} notas recientes.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Cuáles son las últimas noticias de ${category} en Argentina?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Encontrá las ${articles.length} notas más recientes de ${category} en Argentina en ${canonical}.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Qué medios cubren mejor ${category}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Antena sintetiza la cobertura de medios aliados categorizados como ${category}. Lista en https://www.antena.com.ar/api/sources.`,
+          },
+        },
+        ...(articles[0] ? [{
+          '@type': 'Question',
+          'name': `¿Cuál es la nota más reciente de ${category}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `"${articles[0].title}" es la nota más reciente de ${category}. Leela en ${SITE}/noticia/${articles[0].id}.`,
+          },
+        }] : []),
+      ],
     })} />
   </Fragment>
 
@@ -134,7 +180,9 @@ const canonical = `${SITE}/categoria/${cat}`;
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       {articles.map((a) => (
         <a
-          href={`/noticia/${a.id}`}
+          href={a.slug && a.slug_date
+            ? `/${a.slug_date.split('-').join('/')}/${a.slug}`
+            : `/noticia/${a.id}`}
           class="block rounded-xl border p-4 transition-colors hover:bg-bg-hover"
           style={{ 'border-color': 'var(--border-base)' }}
         >

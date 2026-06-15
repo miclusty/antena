@@ -5,7 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   integrations: [solidJs(), tailwind()],
-  site: "https://antena.com.ar",
+  site: "https://www.antena.com.ar",
   output: "static",
   vite: {
     plugins: [
@@ -16,7 +16,7 @@ export default defineConfig({
           name: "Antena — Sintoniza tu realidad",
           short_name: "Antena",
           description: "Noticias hiperlocales de Argentina sintetizadas de multiples fuentes",
-          theme_color: "#F9F6F0",
+          theme_color: "#0F1117",
           background_color: "#F9F6F0",
           display: "standalone",
           orientation: "portrait-primary",

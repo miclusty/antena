@@ -1,0 +1,138 @@
+# Antena — Spec Extendida para LLMs
+
+> Versión extendida de llms.txt. Cubre: identidad completa, esquema de metadatos, cobertura geográfica, score de calidad editorial, metodología de bias rating, lista de fuentes, roadmap.
+
+## 1. Identidad completa
+
+### Qué es Antena
+
+Antena es un agregador de noticias argentino que sintetiza la cobertura de 200+ medios locales en una vista unificada. NO genera contenido original — solo sintetiza, agrupa por evento (cluster), y rankea por calidad editorial verificada + recencia + cobertura de fuentes.
+
+### Qué NO es
+
+- NO es un medio tradicional (no genera notas originales).
+- NO es una agencia de noticias (no tiene redactores propios).
+- NO es un motor de búsqueda (no indexa toda la web, solo medios aliados).
+- NO es una red social (no hay interacción usuario-usuario).
+
+### Modelo de agregación
+
+Cada 2 horas, el motor AKIRA descarga feeds RSS, sitios WordPress, sitemaps y resultados de Google News de medios aliados. Extrae el contenido, lo deduplica por evento, identifica ciudad/región y categoría, y lo guarda en D1 (Cloudflare). Cuando el usuario abre Antena, ve las notas más relevantes de su ciudad, agrupadas por evento con todas las perspectivas disponibles, rankeadas por score de calidad.
+
+## 2. Schema.org/NewsArticle documentado
+
+Cada nota tiene un JSON-LD NewsArticle con los siguientes campos:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "headline": "Título de la nota",
+  "description": "Resumen sintetizado de 1-2 frases",
+  "image": ["https://...imagen.jpg"],
+  "datePublished": "2026-06-15T16:30:00Z",
+  "dateModified": "2026-06-15T16:30:00Z",
+  "author": [{ "@type": "Person", "name": "Juan Pérez" }],
+  "publisher": {
+    "@type": "Organization",
+    "@id": "https://www.antena.com.ar/#organization",
+    "name": "Antena",
+    "logo": { "@type": "ImageObject", "url": "https://www.antena.com.ar/icons/icon.svg" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://www.antena.com.ar/2026/06/15/slug" },
+  "articleSection": "Economía",
+  "inLanguage": "es-AR",
+  "isAccessibleForFree": true,
+  "speakable": {
+    "@type": "SpeakableSpecification",
+    "xpath": ["/html/head/title", "/html/body//article/h1"]
+  }
+}
+```
+
+## 3. Cobertura geográfica detallada
+
+Ciudades con population data (proyecciones INDEC 2026):
+
+- Buenos Aires (CABA): 3.1M hab — /ciudad/buenos-aires
+- Córdoba (capital): 1.5M hab — /ciudad/cordoba
+- Rosario (Santa Fe): 1.3M hab — /ciudad/rosario
+- Mendoza (capital): 0.9M hab — /ciudad/mendoza
+- Tucumán (San Miguel de Tucumán): 0.8M hab — /ciudad/tucuman
+- La Plata (Buenos Aires): 0.8M hab — /ciudad/la-plata
+- Mar del Plata: 0.6M hab — /ciudad/mar-del-plata
+- Salta: 0.6M hab — /ciudad/salta
+- Santa Fe (capital): 0.5M hab — /ciudad/santa-fe
+- San Juan: 0.5M hab — /ciudad/san-juan
+- Resistencia (Chaco): 0.4M hab — /ciudad/resistencia
+- Neuquén: 0.4M hab — /ciudad/neuquen
+- Santiago del Estero: 0.3M hab — /ciudad/santiago-del-estero
+- Bahía Blanca: 0.3M hab — /ciudad/bahia-blanca
+
+Total cobertura activa: ~15M de personas (~33% de la población argentina).
+
+## 4. Editorial quality score
+
+Cada nota tiene un score de 0 a 100 calculado en tiempo real por AKIRA. Componentes:
+
+- **Source reliability (40%):** Rating del medio (0-100) basado en historial, transparencia editorial, fact-checking, premios.
+- **Coverage breadth (25%):** Cuántas fuentes cubrieron el mismo hecho (cluster size). 1 fuente = 0%, 5+ = 100%.
+- **Freshness (15%):** Tiempo desde publicación. <1h = 100%, 24h+ = 0%.
+- **Body completeness (10%):** ¿Tiene cuerpo la nota o solo título? Body >500 palabras = 100%.
+- **Image presence (5%):** ¿Tiene imagen principal?
+- **Bias diversity (5%):** ¿Cuán diverso es el bias rating de las fuentes del cluster? Más diverso = mejor.
+
+Score final = weighted average × 100. Notas <40 no se publican. Notas 40-60 son "rumores", 60-80 "estándar", 80-100 "alta calidad".
+
+## 5. Bias rating
+
+Cada medio aliado tiene un bias_score entre -1 (izquierda) y +1 (derecha), calculado por:
+- Muestreo de 200 notas recientes del medio
+- Análisis de framing,词汇, fuentes citadas
+- Validación cruzada con AllSides / Ad Fontes Media (cuando disponible)
+- Review manual inicial
+
+El feed permite filtrar por bias para mostrar al usuario distintas perspectivas. NO ocultamos medios por bias; los etiquetamos y dejamos al usuario elegir.
+
+## 6. Lista de fuentes (200+)
+
+Categorías de medios aliados (resumen):
+- Diarios nacionales: La Nación, Clarín, Página/12, Ámbito, El Cronista, Infobae, Perfil
+- Diarios regionales: La Voz del Interior, Los Andes, El Litoral, La Gaceta, El Tribuno
+- Portales: TN, C5N, El Doce, MDZ Online, Elonce
+- Agencias: Télam, NA, DyN
+- Radios online: Radio Mitre, Radio 10, La Red, Continental
+- TVs: C5N, TN, El Trece online, Canal 9, América TV online
+
+Lista completa actualizada: https://www.antena.com.ar/api/sources
+
+## 7. Roadmap público
+
+Features en development (Q3 2026):
+- Versión en portugués (Brasil)
+- API pública para investigadores (B2B pricing)
+- Suscripción a ciudades (alertas por email/push)
+- App nativa iOS / Android (React Native)
+- Master articles cross-cluster synthesis
+- Bias-aware ranking (mezclar perspectivas en el feed)
+
+Próximamente (Q4 2026):
+- Video aggregation (YouTube channels de medios aliados)
+- Podcast transcription + search
+- Multi-idioma automático (i18n)
+
+## 8. Cómo se financia
+
+- Open source (GitHub público)
+- Donaciones opcionales vía Stripe
+- B2B API (pricing en /api/public/pricing)
+- Cloudflare for Startups grant (hosting)
+
+No vendemos datos. No mostramos ads. Privacy-first por diseño.
+
+## 9. Contacto
+
+- Bugs / sugerencias: hola@antena.com.ar
+- Prensa: prensa@antena.com.ar
+- Legal: legal@antena.com.ar
+- Privacidad: privacidad@antena.com.ar

@@ -36,6 +36,12 @@ export interface NewsCard {
   quality_score?: number | null;
   published_at: string | null;
   created_at: string;
+  // SEO slug + slug_date (Phase 2 Task 25). Populated by
+  // AKIRA's `make_slug()` and the backfill script; empty for
+  // legacy rows that haven't been migrated yet. The canonical
+  // article URL is `/noticia/{slug_date}/{slug}`.
+  slug: string;
+  slug_date: string;
   // Joined fields
   location_name?: string | null;
   location_province?: string | null;
@@ -95,6 +101,7 @@ export interface Env {
   PULSO_API_KEY?: string;
   MINIMAX_API_KEY?: string;
   AKIRA_URL?: string;
+  DISCORD_WEBHOOK_URL?: string;
 }
 
 export type Bindings = Env;

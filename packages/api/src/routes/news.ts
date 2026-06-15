@@ -216,6 +216,15 @@ newsRoutes.get("/:id", async (c) => {
     if (!news) {
       return c.json({ error: "Not found" }, 404);
     }
+    // Phase 3 Task 28: if the card has a slug, redirect to the
+    // canonical /<y>/<m>/<d>/<slug> URL. We 301 (permanent) so
+    // crawlers and the redirect cache converge on the new URL
+    // and we stop indexing the UUID. Locked decision (AGENTS.md):
+    // the canonical host is https://www.antena.com.ar (with www).
+    if (news.slug && news.slug_date) {
+      const [y, m, d] = news.slug_date.split("-");
+      return c.redirect(`https://www.antena.com.ar/${y}/${m}/${d}/${news.slug}`, 301);
+    }
     return c.json(news);
   }, { ttl: 300, swr: 3600 })(c.req.raw);
 });

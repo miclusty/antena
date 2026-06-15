@@ -4,16 +4,30 @@
 // (GDPR-style transparency even though Argentina has
 // its own data protection regime under the PDPA law 25.326).
 import Layout from '../layouts/Layout.astro';
+import SeoHead from '../components/SeoHead.astro';
 
 export const prerender = true;
 
 const SITE = 'https://www.antena.com.ar';
 ---
-<Layout
-  title="Política de privacidad"
-  description="Política de privacidad de Antena. Qué datos recolectamos, qué NO recolectamos, y tus derechos."
-  canonical={`${SITE}/privacidad`}
->
+<Layout>
+  <Fragment slot="head">
+    <SeoHead
+      title="Política de privacidad"
+      description="Política de privacidad de Antena. Qué datos recolectamos, qué NO recolectamos, y tus derechos."
+      canonical={`${SITE}/privacidad`}
+      jsonLd={{
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        'name': 'Política de privacidad',
+        'url': `${SITE}/privacidad`,
+        'inLanguage': 'es-AR',
+        'about': 'PrivacyPolicy',
+        'publisher': { '@id': `${SITE}#organization` },
+      }}
+    />
+  </Fragment>
+
   <main id="main-content" class="max-w-[680px] mx-auto px-4 py-12">
     <h1 class="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
       Política de privacidad
