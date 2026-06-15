@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
-# AKIRA pipeline orchestrator.
+# AKIRA pipeline orchestrator (auto-run, every 6h via launchd).
 #
 # Runs:
 #   1. Reset seen_urls (so RSS feeds re-extract today's items)
-#   2. harvest_run.py — fetch all 681 active sources, insert into SQLite
+#   2. harvest_run.py — fetch all 680 active sources, insert into SQLite
 #   3. enrich_body_parallel.py — fetch article body with trafilatura
-#   4. sync_to_d1_remote.py — push to D1 production
+#   4. embed_cards.py — vectorize cards (nomic embed via LM Studio M5)
+#   5. cluster_all_cards.py — re-cluster cards (cosine on embeddings)
+#   6. sync_to_d1_remote.py — push to D1 production
+#
+# Entity extraction (extract_entities.py) is OMITTED from the
+# cron run. Qwen 3.5-4B on LM Studio runs in "thinking" mode
+# (~20s/req for 200 cards = 18 min), and that flag is
+# hardcoded in this model — there's no API parameter to
+# disable it. Entity extraction is a manual task; run
+# `python scripts/extract_entities.py` from a shell
+# when you have time to spare.
 #
 # Designed to be invoked by launchd (every 6h) or manually.
 # Logs to /tmp/akira-pipeline.log
@@ -30,10 +40,22 @@ log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*" | tee -a /tmp/akira-pipeline.log
 }
 
+step() {
+    local label="$1"
+    local cmd="$2"
+    local start
+    start=$(date +%s)
+    log "Step $label starting"
+    if eval "$cmd" >> /tmp/akira-pipeline.out.log 2>&1; then
+        log "Step $label OK in $(( $(date +%s) - start ))s"
+    else
+        log "Step $label FAILED in $(( $(date +%s) - start ))s (continuing)"
+    fi
+}
+
 log "=== Pipeline start ==="
 
-# Step 0: ensure AKIRA server is up (the orchestrator assumes
-# the FastAPI server is already running on :5100)
+# Step 0: ensure AKIRA server is up
 if ! curl -sf -m 5 http://127.0.0.1:5100/health > /dev/null; then
     log "ERROR: AKIRA server not running on :5100 — aborting"
     exit 1
@@ -49,22 +71,28 @@ UPDATE source_health SET consecutive_failures = 0, is_circuit_open = 0;
 UPDATE sources SET error_count = 0 WHERE is_active = 1;
 EOF
 
-# Step 2: harvest
-log "Step 1/3: harvest_run.py"
-START=$(date +%s)
-python harvest_run.py 2>&1 | tail -5
-log "Harvest done in $(( $(date +%s) - START ))s"
+# Step 2: harvest (RSS + WordPress via AKIRA cascade)
+step "1/6 harvest_run.py" \
+    "python harvest_run.py"
 
 # Step 3: enrich body with trafilatura (parallel)
-log "Step 2/3: enrich_body_parallel.py"
-START=$(date +%s)
-python scripts/enrich_body_parallel.py --since-hours 1 --workers 10 2>&1 | tail -5
-log "Enrich done in $(( $(date +%s) - START ))s"
+step "2/6 enrich_body_parallel.py" \
+    "python scripts/enrich_body_parallel.py --since-hours 1 --workers 10"
 
-# Step 4: sync to D1
-log "Step 3/3: sync_to_d1_remote.py"
-START=$(date +%s)
-python scripts/sync_to_d1_remote.py --limit 500 --tables news_cards --config ../api/wrangler.toml 2>&1 | tail -5
-log "Sync done in $(( $(date +%s) - START ))s"
+# Step 4: embed (nomic embed via LM Studio M5 — fast, ~30 cards/sec)
+step "3/6 embed_cards.py" \
+    "python scripts/embed_cards.py --limit 500"
+
+# Step 5: cluster (uses embeddings to dedup stories)
+step "4/6 cluster_all_cards.py" \
+    "python scripts/cluster_all_cards.py --batch-size 500"
+
+# Step 6: sync to D1
+step "5/6 sync_to_d1_remote.py" \
+    "python scripts/sync_to_d1_remote.py --limit 1000 --tables news_cards --config ../api/wrangler.toml"
+
+# (manual) entity extraction: skip in cron. See script comment.
+# (manual) KB build: depends on entities
+# (manual) RAG synthesize: depends on KB
 
 log "=== Pipeline complete ==="

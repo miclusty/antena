@@ -278,12 +278,21 @@ class LMStudioClient:
         self,
         messages: Sequence[Dict[str, str]],
         model: Optional[str] = None,
-        max_tokens: int = 4000,
+        max_tokens: int = 1024,
         temperature: float = 0.1,
         timeout: float = REQUEST_TIMEOUT_CHAT,
+        no_thinking: bool = True,
     ) -> str:
         """Call the chat completions endpoint. Returns the content
-        string (or reasoning_content if content is empty)."""
+        string (or reasoning_content if content is empty).
+
+        no_thinking=True (default) asks Qwen 3.5-4B to skip its
+        "thinking" phase. Without this, the model burns through
+        1000+ tokens of internal reasoning before producing the
+        actual response, inflating per-request latency from ~0.5s
+        to ~20s. Qwen 3.5 supports this via a system message
+        prefix and the `chat_template_kwargs` flag.
+        """
         model = model or self.chat_model
         payload = {
             "model": model,
@@ -291,6 +300,9 @@ class LMStudioClient:
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if no_thinking:
+            # Qwen 3.5 honors /no_think in chat_template_kwargs.
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
         raw = self._post_json("/v1/chat/completions", payload, timeout)
         try:
             msg = raw["choices"][0]["message"]
