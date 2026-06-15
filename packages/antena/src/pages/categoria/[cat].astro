@@ -104,6 +104,48 @@ const canonical = `${SITE}/categoria/${cat}`;
       'isPartOf': { '@id': 'https://www.antena.com.ar/#website' },
       'about': category,
     })} />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      'name': `Preguntas frecuentes sobre noticias de ${category}`,
+      'inLanguage': 'es-AR',
+      'url': canonical,
+      'mainEntity': [
+        {
+          '@type': 'Question',
+          'name': `¿Qué pasó hoy en ${category}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Las últimas noticias de ${category} están en ${canonical}. Cobertura sintetizada de ${articles.length} notas recientes.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Cuáles son las últimas noticias de ${category} en Argentina?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Encontrá las ${articles.length} notas más recientes de ${category} en Argentina en ${canonical}.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Qué medios cubren mejor ${category}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Antena sintetiza la cobertura de medios aliados categorizados como ${category}. Lista en https://www.antena.com.ar/api/sources.`,
+          },
+        },
+        ...(articles[0] ? [{
+          '@type': 'Question',
+          'name': `¿Cuál es la nota más reciente de ${category}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `"${articles[0].title}" es la nota más reciente de ${category}. Leela en ${SITE}/noticia/${articles[0].id}.`,
+          },
+        }] : []),
+      ],
+    })} />
   </Fragment>
 
   <main id="main-content" class="max-w-[920px] mx-auto px-4 py-8">
