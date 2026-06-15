@@ -49,11 +49,10 @@ AKIRA_DB=packages/akira/data/akira.db
 MINIMAX_API_KEY=<ask user>
 ```
 
-### SEO Monitor (cron Discord alerts)
+### SEO Monitor (cron alerts)
 
-```bash
-wrangler secret put DISCORD_WEBHOOK_URL
-```
+Currently logs to console + Analytics Engine dataset `seo_health`. No external alerting.
+To re-enable Discord/Slack/email alerting, add back `DISCORD_WEBHOOK_URL` secret and restore the alert block in `packages/api/src/lib/seo-monitor.ts`.
 
 ## Cómo rotar credenciales
 

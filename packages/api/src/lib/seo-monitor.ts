@@ -8,9 +8,10 @@
 //   - og-default.webp and the IndexNow key file are reachable
 //
 // Each check writes a row to the Analytics Engine dataset
-// `seo_health` (so the dashboard can graph pass/fail over time),
-// and on any failure we POST a Discord webhook so on-call sees it
-// before users do.
+// `seo_health` (so the dashboard can graph pass/fail over time).
+// On failure the summary is also logged via console.error so it
+// shows up in `wrangler tail` / Cloudflare Logs. No external
+// alerting (Discord/Slack/email) — the user reads the dashboard.
 
 const SITE = "https://www.antena.com.ar";
 
@@ -110,7 +111,6 @@ async function runCheck(check: Check): Promise<CheckResult> {
 
 export interface SeoMonitorEnv {
   ANALYTICS?: AnalyticsEngineDataset;
-  DISCORD_WEBHOOK_URL?: string;
 }
 
 export interface SeoHealthSummary {
@@ -140,20 +140,14 @@ export async function runSeoHealthCheck(
     }
   }
 
-  if (fail > 0 && env.DISCORD_WEBHOOK_URL) {
+  if (fail > 0) {
     const failed = results.filter((r) => !r.pass);
-    const message =
-      `🚨 SEO Health Check FAILED (${fail}/${results.length})\n\n` +
-      failed.map((r) => `❌ ${r.name}: ${r.detail}`).join("\n");
-    try {
-      await fetch(env.DISCORD_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: message }),
-      });
-    } catch {
-      // ignore discord errors
-    }
+    const summary =
+      `🚨 SEO Health Check FAILED (${fail}/${results.length})\n` +
+      failed.map((r) => `  ❌ ${r.name}: ${r.detail}`).join("\n");
+    console.error(summary);
+  } else {
+    console.log(`✅ SEO Health Check OK (${ok}/${results.length})`);
   }
 
   return { ok, fail, results };
