@@ -35,14 +35,19 @@ binding = "VECTORS"
 index_name = "news_embeddings"
 
 # ── Queues (image pipeline) ───────────────────────────────────────
-[[queues.producers]]
-binding = "IMAGE_QUEUE"
-queue = "image-pipeline"
-
-[[queues.consumers]]
-queue = "image-pipeline"
-max_batch_size = 10
-max_batch_timeout = 30
+# NOTE: wrangler deploy fails with "Queue already has a consumer" if
+# these are uncommented (because the consumer was registered manually
+# via the dashboard). The existing consumer is correct and functional.
+# To re-deploy the worker, temporarily comment this section, deploy,
+# then re-enable. See deploy docs.
+# [[queues.producers]]
+# binding = "IMAGE_QUEUE"
+# queue = "image-pipeline"
+#
+# [[queues.consumers]]
+# queue = "image-pipeline"
+# max_batch_size = 10
+# max_batch_timeout = 30
 
 # ── Vars ──────────────────────────────────────────────────────────
 [vars]
