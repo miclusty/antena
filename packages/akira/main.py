@@ -196,11 +196,12 @@ async def lifespan(app: FastAPI):
     )
 
     from extractors.google_news import GoogleNewsExtractor
+    from extractors.trafilatura import TrafilaturaExtractor
 
     extractors = [
         RSSExtractor,
         WordPressExtractor,
-        NewspaperExtractor,
+        TrafilaturaExtractor,  # Replaces broken NewspaperExtractor
         GooseExtractor,
         SitemapExtractor,
         PlaywrightExtractor,
