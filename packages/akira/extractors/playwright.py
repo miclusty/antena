@@ -105,7 +105,7 @@ class PlaywrightExtractor(BaseExtractor):
             ExtractedItem(
                 title=title,
                 url=url,
-                summary=content[:1200],
+                summary=content[:3000],
                 source=url,
                 text=content[:3000],
                 image_url=image_url,

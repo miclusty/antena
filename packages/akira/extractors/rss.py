@@ -173,7 +173,7 @@ class RSSExtractor(BaseExtractor):
                 # because the API layer (sanitizeCard) does
                 # that at delivery time.
                 summary = body_html if len(body_html) > len(teaser_html) else teaser_html
-                summary = summary[:1200]
+                summary = summary[:3000]
 
                 items.append(
                     ExtractedItem(

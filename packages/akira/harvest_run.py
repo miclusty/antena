@@ -266,8 +266,19 @@ async def process_sources():
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?, ?, ?)
                     """, (
                         article_id, location_id,
-                        item.get("title", "")[:500],
-                        item.get("summary", "")[:1000],
+                        # Title cap raised from 500 → 1000 so
+                        # long Spanish titles (which often
+                        # run 100-200 chars with subhead) are
+                        # not truncated before they reach the
+                        # user.
+                        item.get("title", "")[:1000],
+                        # Summary cap raised from 1000 → 2500
+                        # so feed items with content:encoded
+                        # or longer <description> blocks
+                        # actually reach the user. Most
+                        # modern feeds cap their lede at
+                        # ~1500-2000 chars; this matches.
+                        item.get("summary", "")[:2500],
                         body,
                         item.get("image_url"),
                         item.get("url", "")[:500],
