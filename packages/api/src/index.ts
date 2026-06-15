@@ -22,6 +22,7 @@ import { sitemapBatchRoutes } from "./routes/news-sitemap-batch";
 import { newsCanonicalRoutes } from "./routes/news-canonical";
 import { legacyRedirectMiddleware } from "./middleware/redirects";
 import { handleRefreshCron } from "./crons/refresh";
+import { runSeoHealthCheck } from "./lib/seo-monitor";
 import { handleImagePipeline } from "./queues/image-pipeline";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -97,6 +98,11 @@ app.get("/api/health", (c) => c.json({
 app.get("/__cron/refresh", async (c) => {
   await handleRefreshCron(c.env);
   return c.json({ ok: true });
+});
+
+app.get("/__cron/seo-monitor", async (c) => {
+  const result = await runSeoHealthCheck(c.env);
+  return c.json(result);
 });
 
 export default {

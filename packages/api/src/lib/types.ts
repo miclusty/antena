@@ -101,6 +101,7 @@ export interface Env {
   PULSO_API_KEY?: string;
   MINIMAX_API_KEY?: string;
   AKIRA_URL?: string;
+  DISCORD_WEBHOOK_URL?: string;
 }
 
 export type Bindings = Env;
