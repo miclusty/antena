@@ -18,6 +18,7 @@ import { healthRoutes } from "./routes/health";
 import { synthesisRoutes } from "./routes/synthesis";
 import { followsRoutes } from "./routes/follows";
 import llmCite from "./routes/llm/cite";
+import { sitemapBatchRoutes } from "./routes/news-sitemap-batch";
 import { handleRefreshCron } from "./crons/refresh";
 import { handleImagePipeline } from "./queues/image-pipeline";
 
@@ -68,6 +69,7 @@ app.route("/api/synthesis", synthesisRoutes);
 app.route("/api", followsRoutes);
 app.route("/", llmCite);
 app.route("/", sitemapRoutes);
+app.route("/api/news", sitemapBatchRoutes);
 
 // Simple health endpoint
 app.get("/api/health", (c) => c.json({
