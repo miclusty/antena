@@ -20,6 +20,7 @@ import { followsRoutes } from "./routes/follows";
 import llmCite from "./routes/llm/cite";
 import { sitemapBatchRoutes } from "./routes/news-sitemap-batch";
 import { newsCanonicalRoutes } from "./routes/news-canonical";
+import { legacyRedirectMiddleware } from "./middleware/redirects";
 import { handleRefreshCron } from "./crons/refresh";
 import { handleImagePipeline } from "./queues/image-pipeline";
 
@@ -52,6 +53,11 @@ app.use("*", cors({
   credentials: true,
 }));
 app.use("*", logger());
+// Phase 3 Task 32: legacy /noticia/<uuid> → canonical slug URL
+// for the long tail (>2000 rules) that doesn't fit in
+// _redirects. Mounted before all /api routes so it short-
+// circuits before any DB lookup.
+app.use("*", legacyRedirectMiddleware());
 
 // Routes
 app.route("/api/news", newsRoutes);
