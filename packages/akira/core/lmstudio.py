@@ -181,15 +181,43 @@ class LMStudioClient:
         # the latency-aware picker has real data. Without this,
         # all requests go to the first-configured node (whose
         # latency is finite) while the others sit at "inf" forever.
-        for node in self._nodes:
-            try:
-                t0 = time.monotonic()
-                req = urllib.request.Request(f"{node.url}/v1/models", method="GET")
-                with urllib.request.urlopen(req, timeout=3) as resp:
-                    resp.read()
-                node.record_latency(time.monotonic() - t0)
-            except Exception as e:  # noqa: BLE001
-                logger.warning(f"probe_failed node={node.url} error={e}")
+        #
+        # If a node's probe fails, REMOVE it from the active pool
+        # for this script run. Reasoning: a node that's
+        # unreachable at script start is almost certainly down
+        # (the user is launching a pipeline, not while LM Studio
+        # is restarting on the other Mac). Letting the
+        # circuit-breaker try to recover it (60s cooldown,
+        # re-probe, fail, 60s cooldown, ...) wastes 1-3% of
+        # total pipeline time on a doomed node and risks
+        # false-positive "FAILED" exits on the calling script.
+        # The next script invocation will re-probe and
+        # automatically add the node back if it's recovered.
+        for node in list(self._nodes):  # copy — we mutate the list
+            ok = False
+            for attempt in range(3):
+                try:
+                    t0 = time.monotonic()
+                    req = urllib.request.Request(
+                        f"{node.url}/v1/models", method="GET"
+                    )
+                    with urllib.request.urlopen(req, timeout=3) as resp:
+                        resp.read()
+                    node.record_latency(time.monotonic() - t0)
+                    ok = True
+                    break
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(
+                        f"probe_failed node={node.url} "
+                        f"attempt={attempt + 1}/3 error={e}"
+                    )
+            if not ok:
+                logger.error(
+                    f"LM Studio node {node.url} is unreachable at startup — "
+                    f"REMOVED from active pool for this run. "
+                    f"The next script invocation will re-probe."
+                )
+                self._nodes.remove(node)
 
     # ─── Public sync API ──────────────────────────────────────
 
@@ -330,7 +358,7 @@ class LMStudioClient:
     def _hash(self, text: str) -> str:
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
-    def _pick_node(self) -> _NodeState:
+    def _pick_node(self, avoid_url: Optional[str] = None) -> _NodeState:
         """Pick a healthy node. The primary signal is the in-flight
         count: the node with FEWER concurrent requests in progress
         is the one that can start the next call immediately.
@@ -348,6 +376,15 @@ class LMStudioClient:
         historically faster one wins). Last tie-break: lowest
         request_count (round-robin among same-speed nodes).
 
+        `avoid_url`: a node URL to skip (e.g. one that just
+        failed in a retry context). When the caller is
+        retrying, the previous attempt's node is unlikely to
+        be healthy even if it's not yet in cooldown (it has
+        at least 1 failure recorded). Excluding it gives
+        the round-robin a chance to pick a different node
+        even when the in-flight count would normally favor
+        the failing one.
+
         Thread-safe: caller must NOT hold self._lock.
         """
         with self._lock:
@@ -355,9 +392,15 @@ class LMStudioClient:
             if n == 0:
                 raise LMStudioError("No LM Studio nodes configured")
             healthy = [nd for nd in self._nodes if nd.cooldown_remaining() == 0.0]
+            if avoid_url is not None:
+                healthy = [nd for nd in healthy if nd.url != avoid_url]
             if not healthy:
-                # All in cooldown — return the one with the shortest wait
-                return min(self._nodes, key=lambda nd: nd.cooldown_remaining())
+                # All in cooldown (or all = avoid_url) — return the
+                # one with the shortest wait, ignoring avoid_url.
+                candidates = [nd for nd in self._nodes if nd.cooldown_remaining() == 0.0]
+                if not candidates:
+                    return min(self._nodes, key=lambda nd: nd.cooldown_remaining())
+                return min(candidates, key=lambda nd: nd.cooldown_remaining())
             if len(healthy) == 1:
                 return healthy[0]
             # Primary: in-flight count (ascending — fewest in flight wins).
@@ -383,12 +426,22 @@ class LMStudioClient:
         _pick_node may pick it again — that call doubles as a
         health probe. If it succeeds, the node is back online;
         if it fails, the cooldown restarts.
+
+        Retry policy: the second attempt always avoids the URL
+        that just failed (via `avoid_url`). This is critical when
+        a node is freshly down — only 1-2 failures recorded, so
+        it's not in cooldown yet, and `_pick_node` would otherwise
+        re-pick it because its `in_flight=0` is lower than the
+        healthy node's. Without `avoid_url`, both attempts of
+        a retry land on the same dead node and the call fails
+        even though the other node is healthy.
         """
         body = json.dumps(payload).encode("utf-8")
         nodes_tried: List[str] = []
+        last_failed_url: Optional[str] = None
         for attempt in range(2):
             # _pick_node acquires self._lock internally — caller must NOT hold it.
-            node = self._pick_node()
+            node = self._pick_node(avoid_url=last_failed_url)
             nodes_tried.append(node.url)
             with self._lock:
                 node.request_count += 1
@@ -434,6 +487,8 @@ class LMStudioClient:
                     f"LM Studio call failed (attempt {attempt + 1}/2) "
                     f"node={node.url} error={type(e).__name__}: {e}"
                 )
+                # Next iteration of the loop will skip this node
+                last_failed_url = node.url
         raise LMStudioError(
             f"LM Studio unreachable after retries. Nodes tried: {nodes_tried}"
         )

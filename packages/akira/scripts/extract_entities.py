@@ -260,15 +260,21 @@ def process_one(
     title: str,
     summary: str,
     model: str,
-) -> Tuple[str, List[Tuple[str, str, str, float]]]:
-    """Process a single card. Returns (card_id, rows) where
+) -> Tuple[str, List[Tuple[str, str, str, float]], str]:
+    """Process a single card. Returns (card_id, rows, status) where
     rows is the list of (entity_name, entity_type, card_id, confidence)
-    tuples ready to be committed. rows is empty on failure."""
+    tuples ready to be committed, and status is one of:
+      - "ok": LLM responded, rows may be empty (legitimate 0-entity card)
+      - "llm_error": network/timeout — caller should dead-letter
+      - "parse_error": LLM responded but JSON didn't parse — log
+    Empty rows on status="ok" is NOT a failure (e.g. a sports score
+    update or a "domain for sale" page may have zero entities).
+    """
     try:
         entities = call_llm_for_entities(client, title, summary, model)
     except LMStudioError as e:
         logger.warning(f"llm_failed card_id={card_id} error={e}")
-        return (card_id, [])
+        return (card_id, [], "llm_error")
     rows: List[Tuple[str, str, str, float]] = []
     for src_key, etype in ENTITY_TYPE_MAP.items():
         for name in entities.get(src_key, []):
@@ -276,7 +282,14 @@ def process_one(
             if not canonical:
                 continue
             rows.append((canonical, etype, card_id, 1.0))
-    return (card_id, rows)
+    if not rows and not entities:
+        # LLM returned but parser got nothing. Could be:
+        # - genuinely empty (e.g. RSS XML summary, "for sale" page)
+        # - JSON truncated by max_tokens
+        # - LLM returned non-JSON
+        # We treat this as "ok with 0 entities" — not a hard failure.
+        logger.debug(f"empty_extraction card_id={card_id} title={title[:60]!r}")
+    return (card_id, rows, "ok")
 
 
 def main() -> int:
@@ -355,11 +368,13 @@ def main() -> int:
             for cid, title, summary in cards
         }
         for i, fut in enumerate(as_completed(futures), 1):
-            card_id, rows = fut.result()
-            if not rows and card_id not in dead_letter:
-                # Either an LLM error or empty extraction
-                failed += 1
-                dead_letter.append(card_id)
+            card_id, rows, status = fut.result()
+            if status == "llm_error":
+                if card_id not in dead_letter:
+                    failed += 1
+                    dead_letter.append(card_id)
+            # status="ok" with 0 rows is a legitimate empty extraction
+            # (e.g. RSS XML card, "for sale" page). Not a failure.
             pending_rows.extend(rows)
             if len(pending_rows) >= args.batch:
                 n = commit_entities(args.db, pending_rows, db_lock)
@@ -398,6 +413,8 @@ def main() -> int:
         f"DONE: {done} processed, {total_mentions} mentions written, "
         f"{failed} failed, {elapsed:.1f}s total ({done/elapsed:.2f}/s)"
     )
+    # Exit 0 even with empty extractions — those are legitimate.
+    # Exit 2 only on hard LLM/network failures.
     return 0 if failed == 0 else 2
 
 

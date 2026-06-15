@@ -16,6 +16,54 @@ if _PKG_ROOT not in sys.path:
 from extractors.base import extract_byline, MAX_AUTHOR_LEN  # noqa: E402
 from extractors._slug import make_slug  # noqa: E402
 
+# Patterns that indicate a junk card. These come from real-world
+# dead feeds (domain-for-sale pages, raw RSS passthroughs, etc.)
+# that the AKIRA cascade still receives. We saw 50+ of these in
+# production — each one consumed 5s of LM Studio time during
+# entity extraction and produced zero useful entities.
+_GARBAGE_TITLE_PATTERNS = [
+    r"^\?Feed=Rss",                       # raw RSS query string
+    r"^https?://",                         # title is just a URL
+    r"^Buy now for \$",                    # domain sale page
+    r"^.{0,40}\.com is for sale",         # domain sale page
+    r"^.{0,40}\.com\.ar is for sale",
+    r"^Make an Offer",                    # domain sale
+    r"^Domain Name For Sale",             # domain sale
+    r"^Premium Domain",                   # domain sale
+    r"^This domain",                      # domain sale
+    r"^Welcome to",                        # parked domain
+    r"^.{0,80} (for sale|precio negociable)",  # ES/EN sale
+]
+_GARBAGE_RE_TITLE = re.compile("|".join(_GARBAGE_TITLE_PATTERNS), re.IGNORECASE)
+# Summary looks like raw XML or HTML. Joined into one pattern
+# because re.compile() only accepts a single pattern string.
+_GARBAGE_SUMMARY_PATTERNS = [
+    r"^<\?xml",                            # XML declaration
+    r"^<!DOCTYPE",                         # HTML doctype
+    r"<rss[> ]",                           # raw RSS root
+    r"<feed[> ]",                          # Atom root
+    r"<html[> ]",                          # raw HTML
+]
+_GARBAGE_RE_SUMMARY = re.compile("|".join(_GARBAGE_SUMMARY_PATTERNS), re.IGNORECASE)
+
+
+def _is_garbage_card(title: str, summary: str) -> bool:
+    """Return True if this card is junk that shouldn't enter the DB.
+
+    Junk categories we filter:
+      1. Domain-for-sale / parked-domain pages
+      2. Raw RSS/Atom XML leaked into the summary
+      3. Title is just a URL or query string
+      4. Empty title or summary under 30 chars
+    """
+    if not title or len(title) < 5:
+        return True
+    if _GARBAGE_RE_TITLE.search(title):
+        return True
+    if summary and _GARBAGE_RE_SUMMARY.match(summary):
+        return True
+    return False
+
 def _parse_date(value):
     if not value:
         return None
@@ -218,6 +266,20 @@ async def process_sources():
                 stats["sources_with_items"] += 1
                 stats["items"] += len(items)
                 for item in items:
+                    # Filter out garbage cards before they reach
+                    # the DB. These are real-world patterns we
+                    # saw on M5/192.168.31.37:1234 with hundreds
+                    # of dead feeds (domain-for-sale pages,
+                    # ?Feed=Rss passthroughs, raw XML summaries,
+                    # empty titles). Each one was wasting an
+                    # entity-extraction call (5s) and
+                    # cluttering the search index. Skip them
+                    # at the source.
+                    title = (item.get("title") or "").strip()
+                    summary = (item.get("summary") or "").strip()
+                    if _is_garbage_card(title, summary):
+                        stats["garbage_filtered"] = stats.get("garbage_filtered", 0) + 1
+                        continue
                     article_id = str(uuid.uuid5(uuid.NAMESPACE_URL, item.get("url", "")))
                     # Byline / author (S3.7). The cascade's RSS
                     # feed usually exposes the author; if not,
@@ -306,4 +368,4 @@ async def process_sources():
 asyncio.run(process_sources())
 
 elapsed = time.monotonic() - stats["start"]
-print(f"Done: {stats['sources_with_items']}/{len(sources)} sources | {stats['items']} articles | {stats['errors']} errors | {elapsed:.0f}s")
+print(f"Done: {stats['sources_with_items']}/{len(sources)} sources | {stats['items']} articles | {stats.get('garbage_filtered', 0)} garbage filtered | {stats['errors']} errors | {elapsed:.0f}s")
