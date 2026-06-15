@@ -13,6 +13,11 @@
 set -e
 cd "$(dirname "$0")/.."
 
+# launchd runs with a minimal PATH that doesn't include
+# homebrew. The sync step needs `npx` (and indirectly
+# `node`) on PATH. Add the common locations explicitly.
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
 # Activate AKIRA venv
 source .venv/bin/activate
 
