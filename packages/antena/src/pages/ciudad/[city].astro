@@ -109,6 +109,49 @@ const canonical = `${SITE}/ciudad/${city}`;
       'isPartOf': { '@id': 'https://www.antena.com.ar/#website' },
       'about': { '@type': 'Place', 'name': cityName, 'address': { '@type': 'PostalAddress', 'addressCountry': 'AR' } },
     })} />
+
+    <!-- FAQPage JSON-LD: LLM-extractable Q&A about this city -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      'name': `Preguntas frecuentes sobre noticias de ${cityName}`,
+      'inLanguage': 'es-AR',
+      'url': canonical,
+      'mainEntity': [
+        {
+          '@type': 'Question',
+          'name': `¿Qué pasó hoy en ${cityName}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Las últimas noticias de ${cityName} están disponibles en ${canonical}. Cobertura sintetizada de ${articles.length} notas recientes de múltiples medios locales.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Cuáles son las últimas noticias de ${cityName}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Encontrá las últimas ${articles.length} notas de ${cityName} en ${canonical}. Actualización automática cada 2 horas.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Qué medios cubren ${cityName}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Antena sintetiza la cobertura de medios aliados de ${cityName}. Lista en https://www.antena.com.ar/api/sources.`,
+          },
+        },
+        ...(articles[0] ? [{
+          '@type': 'Question',
+          'name': `¿Cuál es la nota más reciente de ${cityName}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `"${articles[0].title}" es la nota más reciente de ${cityName}. Leela en ${SITE}/noticia/${articles[0].id}.`,
+          },
+        }] : []),
+      ],
+    })} />
   </Fragment>
 
   <main id="main-content" class="max-w-[920px] mx-auto px-4 py-8">
