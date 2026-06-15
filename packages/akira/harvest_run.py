@@ -14,6 +14,7 @@ _PKG_ROOT = os.path.dirname(os.path.abspath(__file__))
 if _PKG_ROOT not in sys.path:
     sys.path.insert(0, _PKG_ROOT)
 from extractors.base import extract_byline, MAX_AUTHOR_LEN  # noqa: E402
+from extractors._slug import make_slug  # noqa: E402
 
 def _parse_date(value):
     if not value:
@@ -28,6 +29,30 @@ def _parse_date(value):
         except Exception:
             pass
     return None
+
+
+def _get_existing_slugs_for_date(conn, slug_date: str) -> set[str]:
+    """Return the set of slugs already used on a given slug_date. Used to
+    resolve collisions before INSERT (Phase 2 Task 24)."""
+    rows = conn.execute(
+        "SELECT slug FROM news_cards WHERE slug_date = ? AND slug != ''",
+        (slug_date,),
+    ).fetchall()
+    return {r[0] for r in rows}
+
+
+def _resolve_slug_collision(base_slug: str, existing: set[str], article_id: str) -> str:
+    """Append the first 6 chars of the article id (then -2, -3, …) until
+    the candidate is unique within `existing`. The candidate is also added
+    to `existing` in-place so subsequent calls in the same batch see it."""
+    suffix = (article_id or "x")[:6].lower()
+    candidate = f"{base_slug}-{suffix}"
+    if candidate not in existing:
+        return candidate
+    i = 2
+    while f"{base_slug}-{suffix}-{i}" in existing:
+        i += 1
+    return f"{base_slug}-{suffix}-{i}"
 
 AKIRA_DB = "/Users/omatic/proyectos/news/packages/akira/data/akira.db"
 AKIRA_API = os.getenv("AKIRA_API_URL", "http://localhost:5100/extract")
@@ -215,11 +240,24 @@ async def process_sources():
                     # source homepage) so re-extraction jobs
                     # have the exact link to re-fetch.
                     article_url = item.get("url", "")[:500] or None
+                    # SEO slug + slug_date (Phase 2 Task 24). The
+                    # canonical URL on Antena is
+                    # `/noticia/{slug_date}/{slug}`. We compute the
+                    # slug from the title and resolve collisions
+                    # against any existing cards on the same date
+                    # so the (slug_date, slug) unique index never
+                    # trips the harvester mid-batch.
+                    published_iso = _parse_date(item.get("published_at")) or datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+                    slug_date = published_iso[:10]
+                    existing_slugs = _get_existing_slugs_for_date(conn2, slug_date)
+                    slug = make_slug(item.get("title", ""))
+                    if slug in existing_slugs:
+                        slug = _resolve_slug_collision(slug, existing_slugs, article_id)
                     # bias_score and category left NULL — AKIRA cascade will enrich them
                     conn2.execute("""
                         INSERT OR IGNORE INTO news_cards
-                        (id, location_id, title, summary, body, image_url, source_url, article_url, source_ids, bias_score, published_at, created_at, category, author)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?)
+                        (id, location_id, title, summary, body, image_url, source_url, article_url, source_ids, bias_score, published_at, created_at, category, author, slug, slug_date)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?, ?, ?)
                     """, (
                         article_id, location_id,
                         item.get("title", "")[:500],
@@ -229,8 +267,10 @@ async def process_sources():
                         item.get("url", "")[:500],
                         article_url,
                         str(source_id),
-                        _parse_date(item.get("published_at")) or datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                        published_iso,
                         author,
+                        slug,
+                        slug_date,
                     ))
                 # Track the per-source yield.
                 items_count = len(items) if items else 0
