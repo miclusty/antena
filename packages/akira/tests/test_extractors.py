@@ -52,6 +52,9 @@ def test_goose_detector():
 
 
 def test_wordpress_detector():
+    # can_extract is optimistic: any URL with a host
+    # is a candidate. The extractor itself decides
+    # whether the WP API is reachable.
     assert WordPressExtractor.can_extract("https://example.com/wp-json") == True
     assert WordPressExtractor.can_extract("https://example.com/wp-admin") == True
     assert (
@@ -60,7 +63,10 @@ def test_wordpress_detector():
         )
         == True
     )
-    assert WordPressExtractor.can_extract("https://example.com/article") == False
+    # Article without HTML hint — still optimistically True
+    assert WordPressExtractor.can_extract("https://example.com/article") == True
+    # Empty host → False
+    assert WordPressExtractor.can_extract("not-a-url") == False
 
 
 def test_sitemap_detector():

@@ -42,7 +42,29 @@ class WordPressExtractor(BaseExtractor):
     def can_extract(cls, url: str, html: Optional[str] = None) -> bool:
         if html:
             return "wp-json" in html or "WordPress" in html
-        return "/wp-" in url
+        # The WP API sits on every WordPress site at
+        # /wp-json/wp/v2/posts — try it whenever the
+        # URL points to a host (any path) and we're not
+        # already looking at a non-WordPress feed. The
+        # extractor itself decides what to do when the
+        # API isn't reachable.
+        if "wp-json" in url:
+            return True
+        from urllib.parse import urlparse
+        try:
+            host = urlparse(url).netloc
+        except Exception:
+            return False
+        if not host:
+            return False
+        # Don't try WP for paths that are clearly RSS/Atom
+        path = (urlparse(url).path or "").lower()
+        if path.endswith((".rss", ".xml", "/rss", "/feed", "/atom")):
+            # The extractor derives the right base URL by
+            # stripping the feed suffix, so it can still
+            # try the WP API on the host root.
+            return True
+        return True  # optimistic: try WP whenever we have a host
 
     async def extract(
         self,
@@ -51,7 +73,29 @@ class WordPressExtractor(BaseExtractor):
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
     ) -> List[ExtractedItem]:
-        api_url = url.rstrip("/") + "/wp-json/wp/v2/posts"
+        # If the URL points at a feed (RSS/Atom), the WP
+        # API is on the host's root, not on the feed path.
+        # Reconstruct the site origin by stripping the
+        # feed suffix. Falls back to the URL as-is when
+        # the URL already looks like a wp-json path.
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        path = parsed.path or ""
+        feed_suffixes = (
+            "/rss", "/rss/", "/feed", "/feed/", "/atom.xml",
+            "/wp-rss.php", "/index.rss",
+        )
+        if any(path.endswith(s) for s in feed_suffixes) or path.endswith(".xml"):
+            origin = f"{parsed.scheme}://{parsed.netloc}"
+            api_url = origin + "/wp-json/wp/v2/posts"
+        elif "wp-json" in path:
+            api_url = url
+        else:
+            # URL doesn't end in a feed suffix. Assume
+            # the WP API sits at the path's root.
+            base_path = "/".join(p for p in path.split("/") if p and "rss" not in p.lower() and "feed" not in p.lower())
+            base_path = ("/" + base_path) if base_path else ""
+            api_url = f"{parsed.scheme}://{parsed.netloc}{base_path}/wp-json/wp/v2/posts"
         params = {"per_page": 20, "_embed": "true"}
         headers = {"User-Agent": get_user_agent()}
         hard_timeout = timeout * 1.5
