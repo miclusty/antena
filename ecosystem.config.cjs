@@ -3,8 +3,8 @@ module.exports = {
     {
       name: 'akira',
       cwd: './packages/akira',
-      script: 'python3',
-      args: '-m uvicorn main:app --host 0.0.0.0 --port 5000',
+      script: './.venv/bin/uvicorn',
+      args: 'main:app --host 0.0.0.0 --port 5000',
       interpreter: 'none',
       instances: 1,
       autorestart: true,
