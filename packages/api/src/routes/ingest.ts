@@ -5,9 +5,8 @@ import { insertNewsCard, insertSource } from "../lib/d1";
 import { invalidateFeedCache } from "../lib/kv";
 
 export const ingestRoutes = new Hono<{ Bindings: Env }>();
-ingestRoutes.use("*", authMiddleware);
 
-ingestRoutes.post("/ingest", async (c) => {
+ingestRoutes.post("/ingest", authMiddleware, async (c) => {
   let body: IngestRequest;
   try { body = await c.req.json(); } catch { return c.json({ error: "Invalid JSON" }, 400); }
   if (!body.id || !body.title || !body.location_id) {
@@ -21,7 +20,7 @@ ingestRoutes.post("/ingest", async (c) => {
   return c.json({ status: "ok", id: body.id }, 201);
 });
 
-ingestRoutes.post("/sources", async (c) => {
+ingestRoutes.post("/sources", authMiddleware, async (c) => {
   let body: { name: string; url: string; location_id?: number };
   try { body = await c.req.json(); } catch { return c.json({ error: "Invalid JSON" }, 400); }
   if (!body.name || !body.url) return c.json({ error: "Missing name or url" }, 400);

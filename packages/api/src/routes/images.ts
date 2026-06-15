@@ -4,9 +4,8 @@ import { authMiddleware } from "../middleware/auth";
 import { uploadImage, generateImageKey } from "../lib/r2";
 
 export const imagesRoutes = new Hono<{ Bindings: Env }>();
-imagesRoutes.use("*", authMiddleware);
 
-imagesRoutes.post("/upload", async (c) => {
+imagesRoutes.post("/upload", authMiddleware, async (c) => {
   const formData = await c.req.formData();
   const file = formData.get("image") as File | null;
   const newsId = formData.get("news_id") as string | null;
@@ -19,7 +18,7 @@ imagesRoutes.post("/upload", async (c) => {
   return c.json({ url, key }, 201);
 });
 
-imagesRoutes.post("/upload-base64", async (c) => {
+imagesRoutes.post("/upload-base64", authMiddleware, async (c) => {
   const body = await c.req.json<{ news_id: string; data: string; content_type: string }>();
   if (!body.news_id || !body.data) return c.json({ error: "Missing news_id or data" }, 400);
   const ext = body.content_type.includes("webp") ? "webp" : body.content_type.includes("avif") ? "avif" : "jpg";
