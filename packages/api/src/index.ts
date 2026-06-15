@@ -17,6 +17,7 @@ import { extractUnifiedRoutes } from "./routes/extract-unified";
 import { healthRoutes } from "./routes/health";
 import { synthesisRoutes } from "./routes/synthesis";
 import { followsRoutes } from "./routes/follows";
+import llmCite from "./routes/llm/cite";
 import { handleRefreshCron } from "./crons/refresh";
 import { handleImagePipeline } from "./queues/image-pipeline";
 
@@ -65,6 +66,7 @@ app.route("/api/extract", extractUnifiedRoutes);
 app.route("/health", healthRoutes);
 app.route("/api/synthesis", synthesisRoutes);
 app.route("/api", followsRoutes);
+app.route("/", llmCite);
 app.route("/", sitemapRoutes);
 
 // Simple health endpoint
