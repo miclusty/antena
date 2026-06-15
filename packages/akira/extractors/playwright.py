@@ -40,7 +40,15 @@ class PlaywrightExtractor(BaseExtractor):
 
         try:
             if use_pool:
-                async with self._browser_pool.acquire() as browser:
+                # self._browser_pool.acquire() is async and
+                # returns a _BrowserContext (an async context
+                # manager). Await it first to get the context
+                # manager, then use it.
+                ctx = await self._browser_pool.acquire()
+                async with ctx as browser:
+                    if browser is None:
+                        # Pool couldn't give us a browser
+                        return []
                     page = await browser.new_page()
                     page.set_default_timeout(timeout * 1000)
                     await page.goto(url, wait_until="domcontentloaded")
