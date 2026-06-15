@@ -85,12 +85,22 @@ step "4/8 extract_entities.py" \
 step "5/8 build_kb.py" \
     "python scripts/build_kb.py"
 
-# Step 7: cluster (uses embeddings to dedup stories)
-step "6/8 cluster_all_cards.py" \
+# Step 7: re-cluster ALL cards with semantic embeddings
+# Replaces the broken lexical-only clusterer (which grouped
+# 40% of cards into 11-20 article over-clusters). Threshold
+# 0.75 keeps true semantic duplicates and lets the Mundial
+# article (e.g.) be its own singleton.
+step "6.5/9 recluster_all_semantic.py" \
+    "python scripts/recluster_all_semantic.py --threshold 0.75"
+
+# Step 8: cluster (kept for incremental ingest of new cards
+# without embeddings yet — runs the lexical pass to catch
+# any cards that haven't been embedded)
+step "7/9 cluster_all_cards.py" \
     "python scripts/cluster_all_cards.py --batch-size 500"
 
-# Step 8: sync to D1
-step "7/8 sync_to_d1_remote.py" \
+# Step 9: sync to D1
+step "8/9 sync_to_d1_remote.py" \
     "python scripts/sync_to_d1_remote.py --limit 1000 --tables news_cards --config ../api/wrangler.toml"
 
 log "=== Pipeline complete ==="
