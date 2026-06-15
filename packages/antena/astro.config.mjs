@@ -5,7 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   integrations: [solidJs(), tailwind()],
-  site: "https://antena.com.ar",
+  site: "https://www.antena.com.ar",
   output: "static",
   vite: {
     plugins: [
