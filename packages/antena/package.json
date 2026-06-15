@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "tsx ../api/src/lib/redirects-generator.ts production",
     "build": "astro build",
     "preview": "astro preview",
     "test": "vitest run",
@@ -35,6 +36,7 @@
     "happy-dom": "^15.11.7",
     "idb": "^8.0.3",
     "playwright": "^1.59.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.0",
     "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-solid": "^2.11.11",
