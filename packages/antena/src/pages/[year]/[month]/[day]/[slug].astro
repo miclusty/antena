@@ -1,0 +1,229 @@
+---
+// Canonical article page at /<year>/<month>/<day>/<slug>.
+// Replaces /noticia/<id> as the primary SEO surface.
+//
+// At build time, getStaticPaths pulls 500 (id, slug, slug_date)
+// tuples from the sitemap-batch endpoint, then fetches each
+// article in full from the canonical API. The legacy /noticia/<id>
+// page is now a 301 redirect to this URL.
+//
+// Phase 3 Task 33. Locked decision (AGENTS.md): the canonical
+// URL host is `https://www.antena.com.ar` (with www).
+
+import Layout from '../../../../layouts/Layout.astro';
+import SeoHead from '../../../../components/SeoHead.astro';
+
+export const prerender = true;
+
+interface SsrArticle {
+  id: string;
+  title: string;
+  summary: string;
+  body?: string | null;
+  image_url: string | null;
+  source_name: string | null;
+  source_url?: string | null;
+  author?: string | null;
+  category: string | null;
+  location_name: string | null;
+  published_at: string;
+  slug: string;
+  slug_date: string;
+  sources?: { name: string; url: string }[];
+}
+
+const SITE = 'https://www.antena.com.ar';
+
+export async function getStaticPaths() {
+  const fromEnv = import.meta.env.PUBLIC_API_BASE;
+  const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+    ? 'https://akira-api.miclusty.workers.dev'
+    : fromEnv;
+  const paths: {
+    params: { year: string; month: string; day: string; slug: string };
+    props: { article: SsrArticle };
+  }[] = [];
+  try {
+    const res = await fetch(`${apiBase}/api/news/sitemap-batch?limit=500&offset=0`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (res.ok) {
+      const data = await res.json() as { items: { id: string; slug: string; slug_date: string }[] };
+      for (const item of data.items ?? []) {
+        const [year, month, day] = item.slug_date.split('-');
+        const articleRes = await fetch(
+          `${apiBase}/api/news/${year}/${month}/${day}/${item.slug}`,
+          { headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' } },
+        );
+        if (articleRes.ok) {
+          const articleData = await articleRes.json() as { news: SsrArticle };
+          paths.push({
+            params: { year, month, day, slug: item.slug },
+            props: { article: articleData.news },
+          });
+        }
+      }
+    }
+  } catch {}
+  return paths;
+}
+
+const { article } = Astro.props as { article: SsrArticle };
+const { year, month, day, slug } = Astro.params as { year: string; month: string; day: string; slug: string };
+const url = `${SITE}/${year}/${month}/${day}/${slug}`;
+const title = article.title;
+const description = (article.summary ?? '').replace(/<[^>]+>/g, '').slice(0, 200) || 'Noticia en Antena';
+const image = article.image_url || `${SITE}/og-default.webp`;
+const author = article.author || article.source_name || 'Antena';
+const publishedAt = article.published_at;
+const markdownUrl = `${url}.md`;
+
+const slugify = (s: string) => s
+  .toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+---
+<Layout>
+  <Fragment slot="head">
+    <SeoHead
+      title={title}
+      description={description}
+      canonical={url}
+      ogType="article"
+      ogImage={image}
+      ogImageAlt={title}
+      ogImageWidth={1200}
+      ogImageHeight={630}
+      article={{
+        publishedTime: publishedAt,
+        author,
+        section: article.category || 'General',
+        tags: article.location_name ? [article.location_name] : undefined,
+      }}
+      jsonLd={[
+        {
+          '@context': 'https://schema.org',
+          '@type': 'NewsArticle',
+          'headline': title,
+          'description': description,
+          'image': [image],
+          'datePublished': publishedAt,
+          'dateModified': publishedAt,
+          'author': [{
+            '@type': 'Person',
+            'name': author,
+            'url': `${SITE}/autor/${encodeURIComponent(author)}`,
+          }],
+          'publisher': {
+            '@type': 'Organization',
+            '@id': `${SITE}#organization`,
+            'name': 'Antena',
+            'logo': {
+              '@type': 'ImageObject',
+              'url': `${SITE}/icons/icon.svg`,
+              'width': 512,
+              'height': 512,
+            },
+          },
+          'mainEntityOfPage': { '@type': 'WebPage', '@id': url },
+          'articleSection': article.category || 'General',
+          'inLanguage': 'es-AR',
+          'isAccessibleForFree': true,
+          'speakable': {
+            '@type': 'SpeakableSpecification',
+            'xpath': ['/html/head/title', '/html/body//article/h1', '/html/body//article/p[1]'],
+          },
+          ...(article.source_url ? { 'url': article.source_url } : {}),
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          'itemListElement': [
+            { '@type': 'ListItem', 'position': 1, 'name': 'Inicio', 'item': SITE },
+            ...(article.category ? [{ '@type': 'ListItem', 'position': 2, 'name': article.category, 'item': `${SITE}/categoria/${slugify(article.category)}` }] : []),
+            ...(article.location_name ? [{ '@type': 'ListItem', 'position': 3, 'name': article.location_name, 'item': `${SITE}/ciudad/${slugify(article.location_name)}` }] : []),
+            { '@type': 'ListItem', 'position': 99, 'name': title, 'item': url },
+          ],
+        },
+      ]}
+    />
+  </Fragment>
+
+  <main id="main-content" class="max-w-[680px] mx-auto px-4 py-8">
+    <nav aria-label="Breadcrumb" class="mb-6">
+      <ol class="flex items-center gap-1.5 text-xs flex-wrap" style={{ color: 'var(--text-tertiary)' }}>
+        <li><a href="/" class="hover:underline" style={{ color: 'var(--accent)' }}>Inicio</a></li>
+        {article.category && (
+          <>
+            <li aria-hidden="true">›</li>
+            <li><a href={`/categoria/${slugify(article.category)}`} class="hover:underline" style={{ color: 'var(--accent)' }}>{article.category}</a></li>
+          </>
+        )}
+        {article.location_name && (
+          <>
+            <li aria-hidden="true">›</li>
+            <li><a href={`/ciudad/${slugify(article.location_name)}`} class="hover:underline" style={{ color: 'var(--accent)' }}>{article.location_name}</a></li>
+          </>
+        )}
+        <li aria-hidden="true">›</li>
+        <li class="truncate max-w-[200px]" style={{ color: 'var(--text-secondary)' }} aria-current="page">{title}</li>
+      </ol>
+    </nav>
+    <article class="mt-6">
+      <header>
+        <p class="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>
+          {article.category || 'General'}
+          {article.location_name && <> · {article.location_name}</>}
+        </p>
+        <h1 class="text-[28px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+          {title}
+        </h1>
+        <p class="mt-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+          Por <span style={{ color: 'var(--text-secondary)' }}>{author}</span>
+          {' · '}
+          <time datetime={publishedAt}>
+            {new Date(publishedAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </time>
+        </p>
+      </header>
+
+      {article.image_url && (
+        <figure class="mt-6">
+          <img
+            src={`https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=1200&q=75&fmt=webp&fit=cover`}
+            srcset={`
+              https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=600&q=70&fmt=webp&fit=cover 600w,
+              https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=1200&q=75&fmt=webp&fit=cover 1200w,
+              https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(article.image_url)}&w=1800&q=78&fmt=webp&fit=cover 1800w
+            `}
+            sizes="(max-width: 768px) 100vw, 920px"
+            alt={title}
+            width="1200"
+            height="630"
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            class="w-full h-auto rounded-xl"
+          />
+        </figure>
+      )}
+
+      <p class="mt-6 text-lg leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+        {article.summary}
+      </p>
+
+      {article.body && (
+        <div class="mt-4 text-base leading-relaxed prose" style={{ color: 'var(--text-secondary)' }}>
+          {article.body}
+        </div>
+      )}
+
+      <p class="mt-8 text-sm">
+        <a href={url} class="font-semibold" style={{ color: 'var(--accent)' }}>Leer en Antena →</a>
+        {' · '}
+        <a href={markdownUrl} class="text-sm underline" style={{ color: 'var(--accent)' }}>📄 Ver como markdown</a>
+      </p>
+    </article>
+  </main>
+</Layout>
