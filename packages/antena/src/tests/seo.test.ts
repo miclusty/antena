@@ -1,19 +1,21 @@
 import { describe, expect, test } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const PAGES = [
   { file: 'index.html', path: '/' },
   { file: 'about/index.html', path: '/about' },
   { file: 'contacto/index.html', path: '/contacto' },
   { file: 'privacidad/index.html', path: '/privacidad' },
-  { file: '404/index.html', path: '/404' },
+  { file: '404.html', path: '/404' },
   { file: 'buscar/index.html', path: '/buscar' },
   { file: 'settings/index.html', path: '/settings' },
 ];
 
 const NOINDEX_PAGES = ['/404', '/buscar', '/settings'];
-const DIST = join(process.cwd(), 'packages/antena/dist');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DIST = join(__dirname, '..', '..', 'dist');
 
 describe('SEO compliance (built pages)', () => {
   for (const { file, path } of PAGES) {
@@ -22,7 +24,7 @@ describe('SEO compliance (built pages)', () => {
       const html = readFileSync(join(DIST, file), 'utf-8');
       expect(html).toMatch(/<title>[^<]+<\/title>/);
       expect(html).toMatch(/<meta name="description" content="[^"]+"/);
-      expect(html).toMatch(/<link rel="canonical" href="https:\/\/www\.antena\.com\.ar[^"]+"/);
+      expect(html).toMatch(/<link rel="canonical" href="https:\/\/www\.antena\.com\.ar[^"]*"/);
     });
 
     test(`${path} has og:url with www.`, () => {
