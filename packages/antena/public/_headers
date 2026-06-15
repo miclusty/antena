@@ -38,3 +38,12 @@
 
 /*.css
   Cache-Control: public, max-age=31536000, immutable
+
+# ── Override Cloudflare Pages auto-noindex on dynamic routes ──
+# Cloudflare Pages sets `X-Robots-Tag: noindex` on all dynamic
+# routes by default (because they could 404 or be drafts).
+# Our /<year>/<month>/<day>/<slug> pages are real, canonical,
+# indexable articles — opt them in explicitly.
+/:year/:month/:day/:slug/*
+  X-Robots-Tag: index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1
+  Cache-Control: public, max-age=3600, s-maxage=86400
