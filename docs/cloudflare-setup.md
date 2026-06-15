@@ -1,136 +1,99 @@
-# Cloudflare Setup
+# Cloudflare Setup — Antena
 
-One-time commands to provision all the Cloudflare services Antena/AKIRA depend on. Run **once per environment** (staging, production) after authenticating with `wrangler login`.
+> Referencia operativa para configurar credenciales Cloudflare en dev/staging/production.
+> **NUNCA** commitear tokens ni secret keys a este archivo. Usar `wrangler secret put` o password manager.
 
-## 1. D1 (news_cards, sources, locations, …)
+## Account
 
-```bash
-wrangler d1 create antena
-wrangler d1 create antena-staging  # for staging
-# Copy the database_id from the output into wrangler.toml (or wrangler.staging.toml)
-```
+| Variable | Valor |
+|----------|-------|
+| `CLOUDFLARE_ACCOUNT_ID` | `aec9ebbec62970f96aa639feaabdc9f5` |
 
-Apply migrations:
+## Servicios usados por Antena
 
-```bash
-wrangler d1 migrations apply DB --remote
-wrangler d1 migrations apply DB --remote --env=staging
-```
+| Servicio | Binding | Proyecto |
+|----------|---------|----------|
+| Pages | `antena` | Frontend estático (Astro) |
+| Pages | `antena-staging` | Staging |
+| Workers | `akira-api` | API backend (Hono) |
+| D1 | `antena` | DB (news_cards, sources, locations, master_articles, clusters) |
+| R2 | `antena-images` | Imágenes de noticias |
+| KV | `CACHE` | Edge cache + redirects legacy map |
+| Vectorize | `news_embeddings` | Embeddings semánticos |
+| Analytics Engine | `feed_events` | Telemetría de feed + SEO health |
+| Queues | `image-pipeline` | Ingesta async de imágenes a R2 |
 
-## 2. KV (edge cache for hot reads)
+## Variables de entorno requeridas
 
-```bash
-wrangler kv namespace create CACHE
-wrangler kv namespace create CACHE --env=staging
-# Copy the id from the output into wrangler.toml
-```
-
-## 3. R2 (image storage)
-
-```bash
-wrangler r2 bucket create antena-images
-wrangler r2 bucket create antena-images-staging
-```
-
-## 4. Vectorize (semantic search)
+### Backend (API worker)
 
 ```bash
-wrangler vectorize create news_embeddings --dimensions=384 --metric=cosine
-wrangler vectorize create news_embeddings_staging --dimensions=384 --metric=cosine
+# Token de API con permisos: D1, Workers, R2, KV, Vectorize, Analytics Engine, Queues
+wrangler secret put CLOUDFLARE_API_TOKEN
+wrangler secret put CLOUDFLARE_ACCOUNT_ID
 ```
 
-## 5. Analytics Engine (read events, dwell time, scroll depth)
+### R2 (image upload, S3-compatible)
 
 ```bash
-wrangler analytics-engine create feed_events
-wrangler analytics-engine create feed_events_staging
-# No ID needed; just the name (goes into wrangler.toml [[analytics_engine_datasets]])
+wrangler secret put R2_ACCESS_KEY_ID
+wrangler secret put R2_SECRET_ACCESS_KEY
 ```
 
-## 6. Queues (async image pipeline)
+### AKIRA (Python extractor)
 
 ```bash
-wrangler queues create image-pipeline
-wrangler queues create image-pipeline-staging
+# .env en packages/akira/.env (gitignored)
+AKIRA_API=https://akira-api.miclusty.workers.dev
+AKIRA_DB=packages/akira/data/akira.db
+MINIMAX_API_KEY=<ask user>
 ```
 
-## 7. Workers AI (embeddings, future)
-
-Already available on every Worker — no setup needed. Reference in code:
-
-```ts
-const model = env.AI.run("@cf/baai/bge-small-en-v1.5", { text: ["…"] });
-```
-
-## 8. Cron Triggers
-
-Configured in `wrangler.toml` under `[triggers]`. No separate provisioning — deploys the schedule with the Worker.
-
-```toml
-[triggers]
-crons = ["0 */2 * * *"]  # every 2 hours
-```
-
-## Full sequence (copy-paste, fill in IDs afterwards)
+### SEO Monitor (cron Discord alerts)
 
 ```bash
-# Authenticate
-wrangler login
-
-# D1
-wrangler d1 create antena
-wrangler d1 create antena-staging
-
-# KV
-wrangler kv namespace create CACHE
-wrangler kv namespace create CACHE --env=staging
-
-# R2
-wrangler r2 bucket create antena-images
-wrangler r2 bucket create antena-images-staging
-
-# Vectorize
-wrangler vectorize create news_embeddings --dimensions=384 --metric=cosine
-wrangler vectorize create news_embeddings_staging --dimensions=384 --metric=cosine
-
-# Analytics Engine
-wrangler analytics-engine create feed_events
-wrangler analytics-engine create feed_events_staging
-
-# Queues
-wrangler queues create image-pipeline
-wrangler queues create image-pipeline-staging
-
-# Apply migrations (after pasting the database_id into wrangler.toml)
-wrangler d1 migrations apply DB --remote
-wrangler d1 migrations apply DB --remote --env=staging
+wrangler secret put DISCORD_WEBHOOK_URL
 ```
 
-After provisioning, replace every `REPLACE_WITH_REAL_ID` placeholder in `wrangler.toml`, `wrangler.staging.toml`, and `wrangler.production.toml` with the IDs printed by the commands above.
+## Cómo rotar credenciales
 
-## Verifying bindings
+1. Crear nuevo token en https://dash.cloudflare.com/profile/api-tokens
+2. Aplicar: `echo "<new_token>" | wrangler secret put CLOUDFLARE_API_TOKEN`
+3. Verificar: `wrangler secret list`
+4. Borrar token viejo desde el dashboard
+
+## Comandos de referencia
 
 ```bash
-wrangler dev
+# Listar secrets actuales (no muestra valores)
+wrangler secret list
+
+# Aplicar migration D1 a prod
+wrangler d1 migrations apply DB --env=production --remote
+
+# Backfill SQL (genera script local, corre contra prod D1)
+cd packages/akira && source .venv/bin/activate
+python -c "..." > /tmp/backfill.sql
+split -l 1000 /tmp/backfill.sql /tmp/batch_
+for f in /tmp/batch_*; do wrangler d1 execute DB --env=production --remote --file="$f"; done
+
+# Deploy Pages
+cd packages/antena && pnpm build
+wrangler pages deploy ./dist --project-name=antena --branch=main
+
+# Deploy worker
+cd packages/api && wrangler deploy --env=production
+
+# Restart AKIRA
+pm2 restart akira
 ```
 
-The dev server should start with all 9 bindings visible in the startup banner. Test each:
+## Account ID es público
 
-- `curl http://localhost:8787/api/news/feed` → reads from D1
-- `curl http://localhost:8787/api/search?q=foo` → hits Vectorize (empty index is fine)
-- `curl -X POST -H "Content-Type: application/json" -d '{"type":"smoke"}' http://localhost:8787/api/track` → fires Analytics Engine
-- `curl http://localhost:8787/__cron/refresh` → runs the cron handler synchronously
+El Account ID (`aec9ebbec62970f96aa639feaabdc9f5`) no es secreto — es un identificador visible en URLs de la API Cloudflare, en zonas DNS, etc. Se puede commitear.
 
-## Costs
-
-Everything in this list is on the **Workers Paid plan free tier** for low traffic. As of 2026:
-
-- D1: 5 GB storage, 5 billion rows read/day included
-- KV: 100k reads/day, 1k writes/day included
-- R2: 10 GB-month storage, 10 million Class A ops/month included
-- Vectorize: 30 million queried vector dimensions/month included
-- Analytics Engine: 100k events/day included
-- Queues: 1 million operations/month included
-- Workers: 100k requests/day included on the Paid plan
-
-Total free tier is comfortable up to ~100k MAU. Beyond that, costs scale linearly and stay well under a managed Postgres + Redis setup.
+**Lo que SÍ es secreto y nunca va en este archivo:**
+- API tokens
+- R2 access keys (Access Key ID + Secret Access Key)
+- Discord webhook URLs
+- API keys de terceros (MiniMax, etc.)
