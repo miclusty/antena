@@ -1,6 +1,7 @@
 ---
 import '../lib/design-tokens.css';
 import '../styles/animations.css';
+import SeoHead from '../components/SeoHead.astro';
 
 interface Props {
   title?: string;
@@ -10,50 +11,30 @@ interface Props {
 
 const { title, description, canonical } = Astro.props as Props;
 const SITE = 'https://www.antena.com.ar';
-const pageTitle = title ? `${title} — Antena` : 'Antena — Sintonizá tu realidad';
-const pageDescription = description ?? 'Antena — Noticias sintetizadas de múltiples fuentes de cada localidad argentina. Mobile-first, sin tracking, 100% en español.';
-const pageCanonical = canonical ?? SITE;
 ---
 <!doctype html>
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" id="theme-color" content="#0F1117" />
-    <title>{pageTitle}</title>
-    <meta name="description" content={pageDescription} />
-    <link rel="canonical" href={pageCanonical} />
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="Antena — Noticias HiperLocales de Argentina" />
-    <meta property="og:description" content="Síntesis de noticias de múltiples fuentes de cada localidad argentina. Mobile-first, sin tracking, 100% en español." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://www.antena.com.ar" />
-    <meta property="og:image" content="https://www.antena.com.ar/og-default.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:locale" content="es_AR" />
-    <meta property="og:site_name" content="Antena" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Antena — Noticias HiperLocales de Argentina" />
-    <meta name="twitter:description" content="Síntesis de noticias de múltiples fuentes de cada localidad argentina." />
-    <meta name="twitter:image" content="https://www.antena.com.ar/og-default.png" />
-    <meta name="twitter:site" content="@antena_ar" />
-
-    <!-- hreflang: single locale (es-AR), no alternates yet -->
-    <link rel="alternate" hreflang="es-AR" href="https://www.antena.com.ar" />
-    <link rel="alternate" hreflang="x-default" href="https://www.antena.com.ar" />
+    <slot name="head">
+      <SeoHead
+        title={title ?? 'Sintonizá tu realidad'}
+        description={description ?? 'Antena — Noticias sintetizadas de múltiples fuentes de cada localidad argentina. Mobile-first, sin tracking, 100% en español.'}
+        canonical={canonical ?? SITE}
+      />
+    </slot>
 
     <!-- RSS / Atom discovery -->
     <link rel="alternate" type="application/rss+xml" title="Antena — Feed RSS" href="/rss.xml" />
-    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap-index.xml" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
 
     <!-- Structured data: WebSite (gives Google a sitelinks search box) -->
     <script type="application/ld+json" set:html={JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'WebSite',
+      '@id': 'https://www.antena.com.ar/#website',
       'name': 'Antena',
       'alternateName': 'Antena — Noticias HiperLocales',
       'url': 'https://www.antena.com.ar',
