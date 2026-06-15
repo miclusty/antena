@@ -88,3 +88,6 @@ __pycache__/
 
 # AKIRA/API runtime cache (not source)
 packages/api/.redirects-cache.json
+
+# AKIRA pipeline runtime reports (clustering baselines, harvest stats, etc.)
+packages/akira/.reports/
