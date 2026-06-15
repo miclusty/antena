@@ -59,12 +59,18 @@ export default function NewsletterSignup() {
   };
 
   return (
-    <Show when={open()}>
-      <section
-        class="rounded-2xl border p-4 mb-4 mx-4"
-        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
-        aria-label="Suscribite al newsletter"
-      >
+    // Always render the <section> with a reserved min-height so the
+    // banner appearing on hydration (client-side) doesn't push the
+    // rest of the feed down — that was the source of the 0.094 CLS
+    // score. When closed, the content is hidden but the box reserves
+    // its space via `aria-hidden` and the same min-height.
+    <section
+      class="rounded-2xl border p-4 mb-4 mx-4 min-h-[180px]"
+      style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+      aria-label="Suscribite al newsletter"
+      aria-hidden={!open()}
+    >
+      <Show when={open()}>
         <header class="flex items-start gap-3 mb-3">
           <MaterialIcon name="mail" size="xl" class="text-2xl shrink-0" style={{ color: 'var(--accent)' }} aria-hidden="true" />
           <div class="flex-1 min-w-0">
@@ -101,12 +107,12 @@ export default function NewsletterSignup() {
             type="submit"
             disabled={submitting()}
             class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-            style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+            style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
           >
             {submitting() ? '…' : 'Suscribirme'}
           </button>
         </form>
-      </section>
-    </Show>
+      </Show>
+    </section>
   );
 }

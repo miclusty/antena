@@ -90,12 +90,20 @@ const SITE = 'https://www.antena.com.ar';
     <link rel="preconnect" href="https://akira-api.miclusty.workers.dev" />
     <link rel="dns-prefetch" href="https://antena-images.r2.dev" />
 
-    <!-- Material Symbols (icons). Self-hosted via
-         @fontsource would be faster, but the Google CDN
-         is acceptable with display=swap. Kept only as the
-         icon font — text uses system fonts. -->
+    <!-- Material Symbols (icons). The media="print" + onload trick
+         makes the CSS non-render-blocking (it loads in the background
+         and applies when ready), saving ~750ms on initial render.
+         The <noscript> fallback covers users with JS off. -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght@20,300;20,400;24,300;24,400&display=swap" />
+    </noscript>
 
     <style>
       /* ─── Reset & Base ─── */
