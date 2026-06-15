@@ -354,12 +354,30 @@ async def process_sources():
                 # Track the per-source yield.
                 items_count = len(items) if items else 0
                 conn2.execute("""
-                    UPDATE sources SET fetch_count=fetch_count+1, news_count=news_count+?, last_fetch=datetime("now"), last_success=datetime("now"), error_count=0
+                    UPDATE sources SET fetch_count=fetch_count+1, news_count=news_count+?,
+                                       last_fetch=datetime("now"), last_success=datetime("now"),
+                                       last_harvest_at=datetime("now"),
+                                       error_count=0
                     WHERE id=?
                 """, (items_count, source_id,))
             else:
+                # items=[] is NOT an error. A healthy RSS feed with no
+                # new articles in the last 2h is the most common case
+                # — most outlets publish <1 article per 2h. The OLD
+                # code incremented error_count here, which after 5
+                # such "errors" excluded the source from the harvest
+                # via the WHERE clause filter (`error_count < 5`).
+                # That's why 636/680 sources had last_harvest_at =
+                # '1970-01-01' (never successfully checked) and
+                # news_count=0 (punished for not publishing).
+                # Fix: update last_harvest_at, reset error_count, do
+                # NOT increment. A real extraction error is captured
+                # in the if `isinstance(res, Exception)` branch above
+                # (which DOES increment error_count).
                 conn2.execute("""
-                    UPDATE sources SET fetch_count=fetch_count+1, last_fetch=datetime("now"), error_count=error_count+1
+                    UPDATE sources SET fetch_count=fetch_count+1,
+                                       last_fetch=datetime("now"), last_success=datetime("now"),
+                                       last_harvest_at=datetime("now")
                     WHERE id=?
                 """, (source_id,))
         conn2.commit()
