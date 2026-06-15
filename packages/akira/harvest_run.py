@@ -137,14 +137,20 @@ def categorize(text):
     return max(scores, key=scores.get)
 
 conn = sqlite3.connect(AKIRA_DB)
+# Use consecutive_failures from source_health as the
+# active-failure signal rather than the historical
+# sources.error_count, which is cumulative. A source
+# with 5 historical errors but 0 recent failures is
+# healthy; a source with 0 historical errors but 5
+# recent failures is genuinely broken.
 sources = conn.execute("""
     SELECT s.id, s.name, s.url, s.location_id, s.rss_url
     FROM sources s
     JOIN source_health h ON s.id = h.source_id
     WHERE s.is_active = 1
     AND h.is_circuit_open = 0
-    AND h.consecutive_failures < 5
-    AND s.error_count < 5
+    AND COALESCE(h.consecutive_failures, 0) < 5
+    AND COALESCE(s.error_count, 0) < 5
 """).fetchall()
 conn.close()
 
