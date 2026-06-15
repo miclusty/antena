@@ -86,12 +86,14 @@ step "5/8 build_kb.py" \
     "python scripts/build_kb.py"
 
 # Step 7: re-cluster ALL cards with semantic embeddings
-# Replaces the broken lexical-only clusterer (which grouped
-# 40% of cards into 11-20 article over-clusters). Threshold
-# 0.75 keeps true semantic duplicates and lets the Mundial
-# article (e.g.) be its own singleton.
+# Uses HDBSCAN density-based clustering on cosine similarity.
+# Replaces the broken lexical-only clusterer. Produces:
+# - Genuine per-event clusters (3-5 cards, multi-source coverage)
+# - Outliers as singletons (the right outcome for one-off news)
+# - Genuine topical clusters (regional, vertical — e.g. all
+#   'San Pedro de Jujuy' or all 'inflación')
 step "6.5/9 recluster_all_semantic.py" \
-    "python scripts/recluster_all_semantic.py --threshold 0.75"
+    "python scripts/recluster_all_semantic.py --min-cluster 3 --min-samples 2"
 
 # Step 8: cluster (kept for incremental ingest of new cards
 # without embeddings yet — runs the lexical pass to catch
@@ -99,8 +101,17 @@ step "6.5/9 recluster_all_semantic.py" \
 step "7/9 cluster_all_cards.py" \
     "python scripts/cluster_all_cards.py --batch-size 500"
 
-# Step 9: sync to D1
-step "8/9 sync_to_d1_remote.py" \
+# Step 9: synthesize 3-perspective master articles via RAG.
+# Uses qwen3.5-4b on LM Studio (M4 + M5, 2-node load balanced).
+# --skip-existing means re-runs only synthesize clusters that
+# don't yet have all 3 perspectives (the next pipeline cycle
+# picks up where this one left off — completes in ~4-5h for
+# 901 clusters at ~18s/cluster with 2 workers).
+step "8.5/10 rag_synthesize.py" \
+    "python scripts/rag_synthesize.py --workers 2 --skip-existing"
+
+# Step 10: sync to D1
+step "9/10 sync_to_d1_remote.py" \
     "python scripts/sync_to_d1_remote.py --limit 1000 --tables news_cards --config ../api/wrangler.toml"
 
 log "=== Pipeline complete ==="
