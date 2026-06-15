@@ -439,18 +439,21 @@ Itera `news_cards` donde `slug IS NULL`:
 
 ### 4.6 Cloudflare Pages redirects
 
-**Generado dinámicamente en build:** `packages/api/src/lib/redirects-generator.ts`
+**Generador:** `packages/api/src/lib/redirects-generator.ts` (TypeScript)
 
-Output: `packages/antena/public/_redirects` con:
+**Build hook:** `packages/antena/package.json` script `prebuild` ejecuta `tsx packages/api/src/lib/redirects-generator.ts` y escribe a `packages/antena/public/_redirects` antes de `astro build`.
+
+**Output (sample):**
 ```
 /noticia/<uuid-1>  /2026/06/15/dolar-blue-hoy-jueves  301!
 /noticia/<uuid-2>  /2026/06/14/noticia-x  301!
 ...
 ```
 
-(Puede ser 500-2000 líneas si hay 500+ notas. Cloudflare Pages acepta hasta 2000 redirect rules, las demás en worker.)
-
-Si excede 2000: las primeras 2000 en `_redirects`, las demás las maneja el worker en `functions/_middleware.ts` con un KV lookup.
+**Limit:** Cloudflare Pages acepta hasta 2000 redirect rules en `_redirects`. Si excede 2000:
+- Las primeras 2000 (ordenadas por tráfico) en `_redirects`
+- Las demás las maneja el worker en `packages/api/src/middleware/redirects.ts` con KV lookup
+- TTL KV: 24h, auto-refresh cuando se publica nota nueva
 
 ### 4.7 R2 image filenames
 
@@ -608,6 +611,7 @@ URLs testeadas (smoke set):
 
 ### `packages/antena/`
 
+- `package.json` — agregar script `prebuild` que ejecuta `redirects-generator.ts`
 - `astro.config.mjs` — fix #1, #11
 - `src/layouts/Layout.astro` — fix #2, #3, #6, #7; simplifica head meta
 - `src/components/SeoHead.astro` — **NUEVO** (Sección 2)
@@ -646,6 +650,7 @@ URLs testeadas (smoke set):
 - `src/routes/news/sitemap-batch.ts` — **NUEVO** (Sección 4.4)
 - `src/lib/redirects-generator.ts` — **NUEVO** (genera _redirects)
 - `src/lib/seo-redirects-cache.ts` — **NUEVO** (Sección 5.4)
+- `src/middleware/redirects.ts` — **NUEVO** (Sección 4.6, KV lookup para redirects >2000)
 - `tests/seo-routes.test.ts` — **NUEVO**
 
 ### `packages/akira/`
