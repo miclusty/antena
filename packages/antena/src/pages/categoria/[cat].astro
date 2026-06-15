@@ -90,7 +90,9 @@ const canonical = `${SITE}/categoria/${cat}`;
         'item': {
           '@type': 'NewsArticle',
           'headline': a.title,
-          'url': `${SITE}/noticia/${a.id}`,
+          'url': a.slug && a.slug_date
+            ? `${SITE}/${a.slug_date.split('-').join('/')}/${a.slug}`
+            : `${SITE}/noticia/${a.id}`,
           'datePublished': a.published_at,
         },
       })),
