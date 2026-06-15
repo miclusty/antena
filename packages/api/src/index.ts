@@ -54,6 +54,25 @@ app.use("*", cors({
   credentials: true,
 }));
 app.use("*", logger());
+
+// Apex → www 301. The Pages _redirects rule for
+// https://antena.com.ar/* doesn't fire because Pages is
+// bound to the apex zone and serves content directly. By
+// binding the worker to antena.com.ar/* via wrangler.toml
+// routes, we intercept every apex request at the edge and
+// 301 to www. This canonicalizes the host before any
+// processing happens.
+app.use("*", async (c, next) => {
+  const url = new URL(c.req.url);
+  if (url.hostname === "antena.com.ar") {
+    return c.redirect(
+      `https://www.antena.com.ar${url.pathname}${url.search}`,
+      301,
+    );
+  }
+  await next();
+});
+
 // Phase 3 Task 32: legacy /noticia/<uuid> → canonical slug URL
 // for the long tail (>2000 rules) that doesn't fit in
 // _redirects. Mounted before all /api routes so it short-

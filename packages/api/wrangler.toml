@@ -15,6 +15,12 @@ workers_dev = true
 routes = [
   { pattern = "www.antena.com.ar/noticia/*", zone_name = "antena.com.ar" },
   { pattern = "www.antena.com.ar/noticia",  zone_name = "antena.com.ar" },
+  # Apex → www 301. Intercepts every request to antena.com.ar
+  # (the bare domain) and 301s it to www.antena.com.ar/<path>.
+  # Necessary because the Pages _redirects file can't redirect
+  # from one host to another when Pages is bound to that host.
+  { pattern = "antena.com.ar/*", zone_name = "antena.com.ar" },
+  { pattern = "antena.com.ar",   zone_name = "antena.com.ar" },
 ]
 
 # Production bindings. Local dev uses wrangler dev with
