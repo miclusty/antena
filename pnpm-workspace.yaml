@@ -1,6 +1,12 @@
 packages:
   - "packages/*"
 
+allowBuilds:
+  better-sqlite3: set this to true or false
+  esbuild: set this to true or false
+  sharp: set this to true or false
+  workerd: set this to true or false
+
 # pnpm 11 reads allowedBuildScripts from pnpm-workspace.yaml. This
 # is the new home for the old pnpm.onlyBuiltDependencies key
 # (which pnpm 11 ignores if set in package.json).
