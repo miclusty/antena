@@ -1,0 +1,12 @@
+-- 0006_article_url.sql
+--
+-- Add article_url column to news_cards. The card
+-- already had source_url (the medium's homepage) but
+-- not the URL of the specific article. The harvest
+-- layer already knows the per-article URL — it was
+-- just being used as the source_url. Going forward,
+-- source_url stays the homepage and article_url
+-- stores the canonical article link. Existing rows
+-- keep source_url as-is; we don't backfill article_url
+-- from RSS data (we'd need to re-parse the feeds).
+ALTER TABLE news_cards ADD COLUMN article_url TEXT;

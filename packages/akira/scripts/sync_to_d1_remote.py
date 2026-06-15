@@ -119,7 +119,7 @@ def read_news_cards(akira: sqlite3.Connection, limit: int) -> tuple[list[str], l
         f"""SELECT id, location_id, title, summary, image_url, bias_score,
                    is_gacetilla, cluster_id, category, source_ids,
                    published_at, created_at, quality_score, gacetilla_confidence,
-                   body
+                   body, article_url
             FROM news_cards
             ORDER BY created_at DESC
             LIMIT ?""",
@@ -127,9 +127,16 @@ def read_news_cards(akira: sqlite3.Connection, limit: int) -> tuple[list[str], l
     ).fetchall()
     norm = []
     for r in rows:
+        # Indexes in the SELECT above:
+        #   0 id, 1 location_id, 2 title, 3 summary, 4 image_url,
+        #   5 bias_score, 6 is_gacetilla, 7 cluster_id, 8 category,
+        #   9 source_ids, 10 published_at, 11 created_at,
+        #   12 quality_score, 13 gacetilla_confidence,
+        #   14 body, 15 article_url
         norm.append((
             r[0], r[1], r[2], r[3], r[14], r[4],
-            None, None, None, r[8],
+            None, None, None, r[8],    # source_url, source_name, source_id (set by UPDATE pass), category
+            r[15],                       # article_url (NEW, from local SQLite)
             r[5], r[6], r[13], None, r[12],
             r[7], r[10], r[11],
         ))
@@ -137,6 +144,7 @@ def read_news_cards(akira: sqlite3.Connection, limit: int) -> tuple[list[str], l
         "news_cards",
         ["id", "location_id", "title", "summary", "body", "image_url",
          "source_url", "source_name", "source_id", "category",
+         "article_url",
          "bias_score", "is_gacetilla", "gacetilla_confidence",
          "sources_count", "quality_score", "cluster_id",
          "published_at", "created_at"],

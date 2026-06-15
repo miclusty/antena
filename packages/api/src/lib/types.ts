@@ -18,12 +18,18 @@ export interface NewsCard {
   summary_html?: string;
   body?: string | null;
   image_url: string | null;
+  // Homepage of the medium (e.g. https://www.example.com).
+  // The home base — same for all cards from this source.
+  source_url?: string | null;
+  // Specific article URL (e.g. https://www.example.com/news/2026/foo).
+  // Distinct from source_url; used by re-extraction jobs
+  // to re-fetch the exact article when the cascade improves.
+  article_url?: string | null;
   bias_score: number | null;
   is_gacetilla: number;
   cluster_id: string | null;
   category: string | null;
   source_ids: string | null;
-  source_url?: string | null;
   source_id?: number | null;
   source_name?: string | null;
   sources_count?: number;

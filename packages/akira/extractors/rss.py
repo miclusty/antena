@@ -150,11 +150,37 @@ class RSSExtractor(BaseExtractor):
                             image_url = enc.get("href")
                             break
 
+                # Prefer content:encoded (the full article
+                # body in many WordPress/Medium feeds) over
+                # <description> (which is just the teaser).
+                # The previous code only read `summary`, which
+                # capped cards at ~200-400 chars of plain text
+                # even when the feed had the full article.
+                body_html = (
+                    entry.get("content", [{}])[0].get("value", "")
+                    if entry.get("content")
+                    else ""
+                )
+                teaser_html = entry.get("summary", "")
+                # If content:encoded is meaningfully longer
+                # than the teaser, use it as the body and let
+                # the teaser stand as the summary. Otherwise
+                # the body is just a duplicate of the summary.
+                body = body_html if len(body_html) > len(teaser_html) * 1.5 else ""
+                # summary = the longest available text,
+                # truncated to 1200 chars. Most feeds use
+                # HTML in this field; we don't strip here
+                # because the API layer (sanitizeCard) does
+                # that at delivery time.
+                summary = body_html if len(body_html) > len(teaser_html) else teaser_html
+                summary = summary[:1200]
+
                 items.append(
                     ExtractedItem(
                         title=entry.get("title", ""),
                         url=entry_url,
-                        summary=entry.get("summary", "")[:1200],
+                        summary=summary,
+                        body=body[:8000] if body else None,
                         published_at=entry.get("published", ""),
                         image_url=image_url,
                         source=url,

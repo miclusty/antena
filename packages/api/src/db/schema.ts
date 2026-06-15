@@ -222,6 +222,11 @@ export const newsCards = sqliteTable(
     body: text("body"),
     imageUrl: text("image_url"),
     sourceUrl: text("source_url"),
+    // The specific article URL (e.g. https://example.com/news/2026/foo-bar).
+    // Distinct from sourceUrl (the medium's homepage, e.g. https://example.com).
+    // Used by re-extraction scripts to re-fetch the article and rebuild
+    // summary/body when the cascade improves.
+    articleUrl: text("article_url"),
     sourceName: text("source_name"),
     sourceId: integer("source_id"),
     category: text("category"),

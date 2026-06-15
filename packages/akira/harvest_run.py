@@ -199,17 +199,35 @@ async def process_sources():
                     author = (item.get("author") or "").strip()[:MAX_AUTHOR_LEN]
                     if not author and item.get("html"):
                         author = extract_byline(item["html"])
+                    # Persist the article body when the
+                    # extractor (newspaper/jina/playwright/
+                    # content:encoded RSS) has one. The
+                    # article page reads this instead of the
+                    # truncated summary. The body column is
+                    # added in the next migration.
+                    body = item.get("body") or item.get("text") or None
+                    if body:
+                        body = body[:8000]
+                    # article_url = the per-item URL from the
+                    # RSS feed (e.g. https://example.com/news/foo).
+                    # Stored separately from source_url (which
+                    # the sync layer will overwrite with the
+                    # source homepage) so re-extraction jobs
+                    # have the exact link to re-fetch.
+                    article_url = item.get("url", "")[:500] or None
                     # bias_score and category left NULL — AKIRA cascade will enrich them
                     conn2.execute("""
                         INSERT OR IGNORE INTO news_cards
-                        (id, location_id, title, summary, image_url, source_url, source_ids, bias_score, published_at, created_at, category, author)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?)
+                        (id, location_id, title, summary, body, image_url, source_url, article_url, source_ids, bias_score, published_at, created_at, category, author)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?)
                     """, (
                         article_id, location_id,
                         item.get("title", "")[:500],
                         item.get("summary", "")[:1000],
+                        body,
                         item.get("image_url"),
                         item.get("url", "")[:500],
+                        article_url,
                         str(source_id),
                         _parse_date(item.get("published_at")) or datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
                         author,

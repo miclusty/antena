@@ -66,6 +66,7 @@ class NewspaperExtractor(BaseExtractor):
                     image_url=article.top_image,
                     source=url,
                     text=article.text[:3000] if article.text else None,
+                    body=article.text[:8000] if article.text else None,
                 )
             ]
         except Exception as e:

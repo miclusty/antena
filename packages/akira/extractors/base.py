@@ -113,6 +113,13 @@ class ExtractedItem:
     image_url: Optional[str] = None
     source: str = ""
     text: Optional[str] = None
+    # Full article body, in the upstream HTML/text format.
+    # The previous code stored the body inline in `text`
+    # but it was never persisted to D1, so the article
+    # detail page rendered the truncated summary. Now
+    # we expose `body` as a first-class field so the
+    # harvest and sync layers can persist it.
+    body: Optional[str] = None
     method: str = ""
     # Byline / author (S3.7). Free-text. Empty string means
     # "no byline available" — distinct from "we didn't try".
