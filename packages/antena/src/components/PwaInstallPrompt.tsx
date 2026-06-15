@@ -67,7 +67,7 @@ export default function PwaInstallPrompt() {
         type="button"
         onClick={install}
         class="fixed bottom-24 right-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold shadow-lg"
-        style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+        style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
         aria-label="Instalar Antena como app"
       >
         <MaterialIcon name="install_mobile" size="base" class="text-base" style={{ }} aria-hidden="true" />
@@ -104,7 +104,7 @@ export default function PwaInstallPrompt() {
               type="button"
               onClick={() => setIosVisible(false)}
               class="w-full py-2 rounded-lg text-sm font-semibold"
-              style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+              style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
             >
               Entendido
             </button>

@@ -28,7 +28,7 @@ export default function ErrorBoundary(props: ErrorBoundaryProps) {
         <button
           onClick={() => window.location.reload()}
           class="px-6 py-3 rounded-full text-sm font-semibold transition-colors"
-          style={{ background: 'var(--accent)', color: '#fff' }}
+          style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
         >
           Recargar página
         </button>

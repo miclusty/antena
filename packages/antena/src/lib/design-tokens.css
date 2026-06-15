@@ -22,7 +22,7 @@
   /* ── Text ── */
   --text-primary:   #1A1A1A;
   --text-secondary: #6B6760;
-  --text-tertiary:  #9C9890;
+  --text-tertiary:  #6F6B63;  /* was #9C9890 — 2.64:1 contrast on #F7F5F2, failed AA. Now ~4.9:1. */
   --text-inverse:   #F7F5F2;
 
   /* ── Aliases (compatibility) ── */
@@ -36,6 +36,12 @@
   --accent-subtle: rgba(255, 77, 90, 0.06);
   --accent-ring:   rgba(255, 77, 90, 0.32);
   --accent-glow:   0 0 0 3px rgba(255, 77, 90, 0.18);
+  /* ── Foreground for text on --accent backgrounds ─────────
+     White on #FF4D5A only hits 3.25:1 (fails WCAG AA 4.5:1).
+     Dark text on the bright accent hits ~5.8:1 (passes). Use
+     this token for the text color of any element whose bg is
+     --accent (buttons, badges, etc). */
+  --accent-fg:     #0F1117;
 
   /* ── Semantic ── */
   --success:  #10B981;
@@ -140,7 +146,7 @@
 
   --text-primary:   #E8E6E3;
   --text-secondary: #8A8D97;
-  --text-tertiary: #5C5F6A;
+  --text-tertiary:  #8A8D97;  /* was #5C5F6A — 2.96:1 contrast on #0F1117, failed AA. Now 5.7:1. */
   --text-inverse:   #0F1117;
 
   /* ── Aliases (compatibility) ── */

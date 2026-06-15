@@ -143,28 +143,33 @@ def sync_news_cards(akira: sqlite3.Connection, d1: sqlite3.Connection, limit: in
     #   cluster_id, category, source_ids, published_at, created_at,
     #   quality_score, gacetilla_confidence, neutral_summary, bias_reasoning,
     #   synced, synced_at, sync_error, body, source_url, author
-    # D1 news_cards columns (from migrations/0000+0005):
+    # D1 news_cards columns (from migrations/0000+0005+0006+0007):
     #   id, location_id, title, summary, body, image_url, source_url,
     #   source_name, source_id, category, bias_score, is_gacetilla,
     #   gacetilla_confidence, sources_count, quality_score, cluster_id,
     #   published_at, created_at, useful_yes, useful_no, is_reported,
-    #   author
+    #   author, slug, slug_date
+    # BUGFIX: previous version only listed 19 columns in the INSERT
+    # OR REPLACE, leaving slug/slug_date out. D1's NOT NULL DEFAULT ''
+    # constraint then reset BOTH columns to '' on every sync, wiping
+    # the SEO canonical URLs we just spent an hour building. Include
+    # slug + slug_date in the column list and SELECT from local SQLite.
     rows = akira.execute(
         f"""SELECT id, location_id, title, summary, image_url, bias_score,
                    is_gacetilla, cluster_id, category, source_ids,
                    published_at, created_at, quality_score, gacetilla_confidence,
-                   body, author
+                   body, author, slug, slug_date
             FROM news_cards
             ORDER BY created_at DESC
             LIMIT ?""",
         (limit,),
     ).fetchall()
-    # Re-order to match D1's expected 19 columns.
+    # Re-order to match D1's expected 21 columns.
     # AKIRA idx → D1 col:
     #   0 id, 1 location_id, 2 title, 3 summary, 14 body, 4 image_url,
     #   12 quality_score, 8 category, 5 bias_score, 6 is_gacetilla,
     #   13 gacetilla_conf, 7 cluster_id, 10 published_at, 11 created_at
-    #   15 author
+    #   15 author, 16 slug, 17 slug_date
     # (source_url, source_name, source_id, sources_count filled in by
     # resolve_source_meta() below)
     norm = []
@@ -174,6 +179,7 @@ def sync_news_cards(akira: sqlite3.Connection, d1: sqlite3.Connection, limit: in
             None, None, None, r[8],                 # source_url, source_name, source_id, category
             r[5], r[6], r[13], None, r[12],        # bias, is_gacetilla, gacetilla_conf, sources_count, quality
             r[7], r[10], r[11], r[15],            # cluster_id, published_at, created_at, author
+            r[16] or "", r[17] or "",             # slug, slug_date (NOT NULL DEFAULT '')
         ))
     d1.executemany(
         """INSERT OR REPLACE INTO news_cards
@@ -181,8 +187,9 @@ def sync_news_cards(akira: sqlite3.Connection, d1: sqlite3.Connection, limit: in
             source_url, source_name, source_id, category,
             bias_score, is_gacetilla, gacetilla_confidence,
             sources_count, quality_score, cluster_id,
-            published_at, created_at, author)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            published_at, created_at, author,
+            slug, slug_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         norm,
     )
     return len(norm)

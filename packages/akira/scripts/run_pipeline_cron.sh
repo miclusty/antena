@@ -6,16 +6,10 @@
 #   2. harvest_run.py — fetch all 680 active sources, insert into SQLite
 #   3. enrich_body_parallel.py — fetch article body with trafilatura
 #   4. embed_cards.py — vectorize cards (nomic embed via LM Studio M5)
-#   5. cluster_all_cards.py — re-cluster cards (cosine on embeddings)
-#   6. sync_to_d1_remote.py — push to D1 production
-#
-# Entity extraction (extract_entities.py) is OMITTED from the
-# cron run. Qwen 3.5-4B on LM Studio runs in "thinking" mode
-# (~20s/req for 200 cards = 18 min), and that flag is
-# hardcoded in this model — there's no API parameter to
-# disable it. Entity extraction is a manual task; run
-# `python scripts/extract_entities.py` from a shell
-# when you have time to spare.
+#   5. extract_entities.py — LLM-extract entities (qwen3.5-4b on M5)
+#   6. build_kb.py — entity co-occurrence graph
+#   7. cluster_all_cards.py — re-cluster cards (cosine on embeddings)
+#   8. sync_to_d1_remote.py — push to D1 production
 #
 # Designed to be invoked by launchd (every 6h) or manually.
 # Logs to /tmp/akira-pipeline.log
@@ -72,27 +66,31 @@ UPDATE sources SET error_count = 0 WHERE is_active = 1;
 EOF
 
 # Step 2: harvest (RSS + WordPress via AKIRA cascade)
-step "1/6 harvest_run.py" \
+step "1/8 harvest_run.py" \
     "python harvest_run.py"
 
 # Step 3: enrich body with trafilatura (parallel)
-step "2/6 enrich_body_parallel.py" \
+step "2/8 enrich_body_parallel.py" \
     "python scripts/enrich_body_parallel.py --since-hours 1 --workers 10"
 
-# Step 4: embed (nomic embed via LM Studio M5 — fast, ~30 cards/sec)
-step "3/6 embed_cards.py" \
+# Step 4: embed (nomic embed via LM Studio M5)
+step "3/8 embed_cards.py" \
     "python scripts/embed_cards.py --limit 500"
 
-# Step 5: cluster (uses embeddings to dedup stories)
-step "4/6 cluster_all_cards.py" \
+# Step 5: entity extraction (qwen3.5-4b via M5, thinking disabled)
+step "4/8 extract_entities.py" \
+    "python scripts/extract_entities.py --workers 4 --limit 500"
+
+# Step 6: KB graph
+step "5/8 build_kb.py" \
+    "python scripts/build_kb.py"
+
+# Step 7: cluster (uses embeddings to dedup stories)
+step "6/8 cluster_all_cards.py" \
     "python scripts/cluster_all_cards.py --batch-size 500"
 
-# Step 6: sync to D1
-step "5/6 sync_to_d1_remote.py" \
+# Step 8: sync to D1
+step "7/8 sync_to_d1_remote.py" \
     "python scripts/sync_to_d1_remote.py --limit 1000 --tables news_cards --config ../api/wrangler.toml"
-
-# (manual) entity extraction: skip in cron. See script comment.
-# (manual) KB build: depends on entities
-# (manual) RAG synthesize: depends on KB
 
 log "=== Pipeline complete ==="

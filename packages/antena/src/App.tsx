@@ -27,7 +27,6 @@ import { useFollows } from './lib/follows';
 import FeaturedStory from './components/feed/FeaturedStory';
 import TrendingSection from './components/feed/TrendingSection';
 import BlindspotSection from './components/feed/BlindspotSection';
-import MapSection from './components/MapSection';
 import CitySelector from './components/common/CitySelector';
 import SourceLogo from './components/common/SourceLogo';
 import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, fetchTrending, fetchCities, fetchFeaturedStory, fetchBlindspot, fetchVote, fetchRepost, type FeedResponse, type ApiNewsCard } from './lib/api';
@@ -478,7 +477,7 @@ export default function App() {
       <ToastContainer />
       <PwaInstallPrompt />
 
-      <div id="main-content" class="min-h-screen bg-bg-base">
+      <div class="min-h-screen bg-bg-base">
 
         <Header
           activeCategory={activeCategory()}
@@ -553,7 +552,7 @@ export default function App() {
           {leftSidebar}
 
           {/* ── Center column ── */}
-          <main class="flex-1 min-w-0 max-w-[640px] xl:max-w-[960px] border-r border-border-base">
+          <section aria-label="Feed de noticias" class="flex-1 min-w-0 max-w-[640px] xl:max-w-[960px] border-r border-border-base">
 
             {/* ── Feed view ── */}
             <Show when={currentView() === 'feed'}>
@@ -685,15 +684,13 @@ export default function App() {
                       onItemClick={(item) => handleNewsClick(item)}
                     />
 
-                    {/* Map: where the news is happening in the last 24h */}
-                    <MapSection
-                      onPointClick={(id) => {
-                        const full = mappedNews().find(n => n.id === id);
-                        if (full) handleNewsClick(full);
-                       }}
-                     />
+                    {/* Map: removed in this iteration — wasn't adding value yet,
+                        keeping the slot here for a future geo-density viz
+                        built on real data. See MapView/MapSection for the
+                        parked components. */}
 
                     <NewsletterSignup />
+
 
                     <PersonalizationBanner
                       showCityHint={!activeLocation() || activeLocation() === ''}
@@ -896,7 +893,7 @@ export default function App() {
               <ReadLaterView onBack={() => handleViewChange('feed')} onNewsClick={handleNewsClick} />
             </Show>
 
-          </main>
+          </section>
 
           {rightSidebar}
         </div>
