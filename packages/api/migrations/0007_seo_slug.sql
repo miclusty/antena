@@ -14,5 +14,8 @@
 --                         need the date partition.
 ALTER TABLE news_cards ADD COLUMN slug TEXT NOT NULL DEFAULT '';
 ALTER TABLE news_cards ADD COLUMN slug_date TEXT NOT NULL DEFAULT '';
-CREATE UNIQUE INDEX idx_news_slug ON news_cards (slug_date, slug);
+-- Partial unique index: empty slugs are transient (will be backfilled) and
+-- would otherwise collide on the ('', '') pair. Once backfilled, all slugs
+-- are real and the uniqueness constraint fires as expected.
+CREATE UNIQUE INDEX idx_news_slug ON news_cards (slug_date, slug) WHERE slug != '';
 CREATE INDEX idx_news_slug_lookup ON news_cards (slug);
