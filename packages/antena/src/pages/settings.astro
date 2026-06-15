@@ -1,13 +1,18 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import SeoHead from '../components/SeoHead.astro';
 import SettingsView from '../components/settings/SettingsView';
 import OnboardingView from '../components/onboarding/OnboardingView';
 ---
-<Layout
-  title="Configuración"
-  description="Personalizá Antena: tema, tamaño de fuente, modo de lectura, modo mate, calidad de imagen. 100% local, sin tracking."
-  canonical="https://www.antena.com.ar/settings"
->
+<Layout>
+  <Fragment slot="head">
+    <SeoHead
+      title="Configuración"
+      description="Personalizá Antena: tema, tamaño de fuente, modo de lectura, modo mate, calidad de imagen. 100% local, sin tracking."
+      canonical="https://www.antena.com.ar/settings"
+      noindex={true}
+    />
+  </Fragment>
   <SettingsView client:load />
   <OnboardingView client:only="solid-js" />
 </Layout>
