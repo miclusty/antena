@@ -211,22 +211,37 @@ newsRoutes.get("/:id", async (c) => {
   }
   const { id } = parsed.data;
 
-  return withCache(async () => {
-    const news = await getNewsById(c.env.DB, id);
-    if (!news) {
-      return c.json({ error: "Not found" }, 404);
-    }
-    // Phase 3 Task 28: if the card has a slug, redirect to the
-    // canonical /<y>/<m>/<d>/<slug> URL. We 301 (permanent) so
-    // crawlers and the redirect cache converge on the new URL
-    // and we stop indexing the UUID. Locked decision (AGENTS.md):
-    // the canonical host is https://www.antena.com.ar (with www).
-    if (news.slug && news.slug_date) {
-      const [y, m, d] = news.slug_date.split("-");
-      return c.redirect(`https://www.antena.com.ar/${y}/${m}/${d}/${news.slug}`, 301);
-    }
-    return c.json(news);
-  }, { ttl: 300, swr: 3600 })(c.req.raw);
+  // No withCache: this endpoint has two response shapes (JSON for
+  // API clients, 301 redirect for HTML clients) and the cache key
+  // doesn't vary on Accept. If we cache the JSON response, the
+  // next HTML request gets the stale JSON instead of the 301.
+  // Performance is fine without cache — getNewsById is a single
+  // indexed D1 lookup (~5ms).
+  const news = await getNewsById(c.env.DB, id);
+  if (!news) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  // Phase 3 Task 28: if the card has a slug, redirect to the
+  // canonical /<y>/<m>/<d>/<slug> URL. We 301 (permanent) so
+  // crawlers and the redirect cache converge on the new URL
+  // and we stop indexing the UUID. Locked decision (AGENTS.md):
+  // the canonical host is https://www.antena.com.ar (with www).
+  //
+  // BUT: only 301 when the client looks like a browser/crawler
+  // (Accept: text/html). The frontend's fetch() hits this same
+  // endpoint and expects JSON — a 301 to a different origin
+  // (workers.dev → www.antena.com.ar) would make the browser
+  // follow cross-origin, get HTML, then `await res.json()` would
+  // throw "string did not match expected pattern" because the
+  // body is HTML, not JSON. So: 301 only for HTML clients,
+  // JSON for everyone else.
+  const accept = c.req.header("accept") || "";
+  const isHtmlClient = accept.includes("text/html");
+  if (news.slug && news.slug_date && isHtmlClient) {
+    const [y, m, d] = news.slug_date.split("-");
+    return c.redirect(`https://www.antena.com.ar/${y}/${m}/${d}/${news.slug}`, 301);
+  }
+  return c.json(news);
 });
 
 // ─── Engagement: votes + reposts ────────────────────────────────
