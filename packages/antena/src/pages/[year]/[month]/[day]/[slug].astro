@@ -43,28 +43,65 @@ export async function getStaticPaths() {
     params: { year: string; month: string; day: string; slug: string };
     props: { article: SsrArticle };
   }[] = [];
+  // Try sitemap-batch first (purpose-built for this). Fall back
+  // to /api/news/feed which already returns slug + slug_date since
+  // the Phase 2 worker deploy. This makes the build robust to
+  // either endpoint being unavailable.
+  let items: { id: string; slug: string | null; slug_date: string | null }[] = [];
   try {
-    const res = await fetch(`${apiBase}/api/news/sitemap-batch?limit=500&offset=0`, {
+    const batchRes = await fetch(`${apiBase}/api/news/sitemap-batch?limit=100&offset=0`, {
       headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
     });
-    if (res.ok) {
-      const data = await res.json() as { items: { id: string; slug: string; slug_date: string }[] };
-      for (const item of data.items ?? []) {
-        const [year, month, day] = item.slug_date.split('-');
-        const articleRes = await fetch(
-          `${apiBase}/api/news/${year}/${month}/${day}/${item.slug}`,
-          { headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' } },
-        );
-        if (articleRes.ok) {
-          const articleData = await articleRes.json() as { news: SsrArticle };
-          paths.push({
-            params: { year, month, day, slug: item.slug },
-            props: { article: articleData.news },
-          });
-        }
+    if (batchRes.ok) {
+      const data = await batchRes.json() as { items: typeof items };
+      items = data.items ?? [];
+    } else {
+      const feedRes = await fetch(`${apiBase}/api/news/feed?limit=100&offset=0`, {
+        headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+      });
+      if (feedRes.ok) {
+        const data = await feedRes.json() as { news: { id: string; slug: string | null; slug_date: string | null }[] };
+        items = (data.news ?? []).map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          slug_date: a.slug_date,
+        }));
       }
     }
   } catch {}
+  for (const item of items) {
+    if (!item.slug || !item.slug_date) continue;
+    const [year, month, day] = item.slug_date.split('-');
+    try {
+      // Try canonical endpoint first, then fall back to legacy
+      // /api/news/<id> (which is the one currently working in prod
+      // until the canonical route is fully deployed).
+      let article: SsrArticle | null = null;
+      const canonicalRes = await fetch(
+        `${apiBase}/api/news/${year}/${month}/${day}/${item.slug}`,
+        { headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' } },
+      );
+      if (canonicalRes.ok) {
+        const data = await canonicalRes.json() as { news: SsrArticle };
+        article = data.news;
+      } else {
+        const legacyRes = await fetch(
+          `${apiBase}/api/news/${item.id}`,
+          { headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' } },
+        );
+        if (legacyRes.ok) {
+          const data = await legacyRes.json() as { news: SsrArticle } | SsrArticle;
+          article = (data as { news: SsrArticle }).news ?? (data as SsrArticle);
+        }
+      }
+      if (article) {
+        paths.push({
+          params: { year, month, day, slug: item.slug },
+          props: { article },
+        });
+      }
+    } catch {}
+  }
   return paths;
 }
 
