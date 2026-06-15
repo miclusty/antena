@@ -214,6 +214,12 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     sourcesCount: sourceCount,
     imageUrl: card.image_url || undefined,
     publishedAt: card.published_at || card.created_at,
+    // Canonical URL pieces (migration 0007). When both
+    // are present the frontend builds /<slug_date>/<slug>/
+    // (slashes, not dashes) instead of the legacy
+    // ?view=article&id=<uuid> form.
+    slug: card.slug ?? null,
+    slugDate: card.slug_date ?? null,
     voces: computeVoices([{ bias_score: card.bias_score }]),
     propagation: [],
     upvotes: card.upvotes ?? 0,

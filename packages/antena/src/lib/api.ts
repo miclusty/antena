@@ -71,6 +71,11 @@ export interface ApiNewsCard {
   // mapper strips a sanitized version for the plain-text
   // summary and keeps the original here for HTML rendering.
   body_html?: string;
+  // Canonical URL pieces (migration 0007). When both are
+  // present, the canonical URL is /<slug_date>/<slug>/
+  // (slashes, not dashes — see AGENTS.md).
+  slug?: string | null;
+  slug_date?: string | null;
 }
 
 export interface MasterArticle {

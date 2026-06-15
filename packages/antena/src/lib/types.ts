@@ -55,6 +55,11 @@ export interface NewsItem {
   myUseful?: 0 | 1;
   // Byline / author (S3.7). Empty string means "no byline".
   author?: string;
+  // Canonical URL pieces. When present, build the
+  // canonical /<slug_date>/<slug>/ URL instead of the
+  // legacy ?view=article&id=<uuid>.
+  slug?: string | null;
+  slugDate?: string | null;
   // Raw HTML body (S3.3). The TOC + scroll-to-heading
   // rendering uses this; the plain `body` is the
   // HTML-stripped fallback for places that don't render

@@ -25,14 +25,29 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
   const [sentinelRef, passed] = createScrollProgress(0.6);
 
   // Pre-compute the source labels for the CTA copy
-  const topSources = createMemo(() =>
-    props.otherSources
-      .slice(0, 3)
-      .map((a) => a.source)
-  );
-  const overflow = createMemo(() =>
-    Math.max(0, props.otherSources.length - 3)
-  );
+  const topSources = createMemo(() => {
+    // Dedupe by source name. Without this, a cluster of 3
+    // articles from the same outlet (e.g. the same wire story
+    // syndicated 3×) would render as
+    // "diariolujan.ar · diariolujan.ar · diariolujan.ar".
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const a of props.otherSources) {
+      if (out.length >= 3) break;
+      const key = a.source.toLowerCase().trim();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(a.source);
+    }
+    return out;
+  });
+  const overflow = createMemo(() => {
+    // Count unique sources, not raw article count, so the "+N"
+    // matches the deduped headline above.
+    const seen = new Set<string>();
+    for (const a of props.otherSources) seen.add(a.source.toLowerCase().trim());
+    return Math.max(0, seen.size - 3);
+  });
 
   // Fire a one-time analytics event when the CTA becomes visible
   let tracked = false;

@@ -40,7 +40,7 @@ const BreakingView = lazy(() => import('./components/feed/BreakingView'));
 const MobileDrawer = lazy(() => import('./components/menu/MobileDrawer'));
 const OnboardingView = lazy(() => import('./components/onboarding/OnboardingView').then(m => ({ default: m.default })));
 import { mapNewsCard } from './lib/mappers';
-import { parseURLState, updateURL, clearURL } from './lib/urlState';
+import { parseURLState, updateURL, clearURL, pushPath, articleCanonicalPath } from './lib/urlState';
 import { resolveCustomTabSelection } from './lib/feed-controls';
 import { readDensity, writeDensity, type Density } from './lib/preferences';
 import { readFontScale, readDataSaver } from './lib/preferences';
@@ -265,7 +265,10 @@ export default function App() {
   const handleNewsClick = async (news: NewsItem) => {
     saveScrollPos();
     await loadArticleFromId(news.id);
-    updateURL({ view: 'article', id: news.id });
+    // Push the canonical /<y>/<m>/<d>/<slug>/ path when we have
+    // slug pieces. Falls back to the legacy ?view=article&id=<uuid>
+    // form for cards that haven't been backfilled yet (articleCanonicalPath).
+    pushPath(articleCanonicalPath(news.slug, news.slugDate, news.id));
   };
 
   const handleBack = () => {
