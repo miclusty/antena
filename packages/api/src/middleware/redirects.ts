@@ -67,7 +67,10 @@ async function loadRedirectMap(env: Env): Promise<Map<string, string>> {
 export const legacyRedirectMiddleware = (): MiddlewareHandler<{ Bindings: Env }> => {
   return async (c, next) => {
     const url = new URL(c.req.url);
-    const match = url.pathname.match(/^\/noticia\/([0-9a-f-]{36})$/);
+    // Cloudflare Pages appends a trailing slash for directory-style
+    // requests before they reach the worker, so accept both
+    // /noticia/<uuid> and /noticia/<uuid>/.
+    const match = url.pathname.match(/^\/noticia\/([0-9a-f-]{36})\/?$/);
     if (!match) {
       return next();
     }

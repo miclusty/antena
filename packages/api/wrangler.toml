@@ -2,6 +2,20 @@ name = "akira-api"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Phase 3 Task 32: route the legacy /noticia/<uuid> path to this
+# worker (which has the 11K overflow redirects in KV) BEFORE
+# Cloudflare Pages sees the request. The worker's
+# legacyRedirectMiddleware returns 301 to the canonical slug
+# URL, so the request never reaches Pages.
+# Only /noticia/* is routed — the rest of www.antena.com.ar
+# (homepage, /buscar, /ciudad/*, /categoria/*, /<year>/<month>/*)
+# continues to be served by Pages.
+routes = [
+  { pattern = "www.antena.com.ar/noticia/*", zone_name = "antena.com.ar" },
+  { pattern = "www.antena.com.ar/noticia",  zone_name = "antena.com.ar" },
+]
 
 # Production bindings. Local dev uses wrangler dev with
 # --local flag, which uses Miniflare's sqlite/R2/KV
