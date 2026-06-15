@@ -25,20 +25,37 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     print(f"Connecting to {DB_PATH}")
 
-    # 1) Fix double-slash RSS URLs (//rss, //feed)
-    broken = conn.execute(
-        """
-        SELECT id, name, rss_url FROM sources
-        WHERE is_active = 1 AND rss_url LIKE '%//rss%'
-    """
+    # 1) Fix double-slash URLs (//rss, //feed, //wp-json, //v2/posts)
+    #    These are typos in the registered URL that return
+    #    404 even though the source is alive. Normalize any
+    #    run of slashes after the protocol to a single slash,
+    #    and collapse repeated slashes anywhere in the path.
+    def fix_url(url: str) -> str:
+        if not url:
+            return url
+        # Collapse // that appears right after the host
+        fixed = re.sub(r"(://[^/]+)//+", r"\1/", url)
+        # Collapse remaining // runs in the path
+        if "://" in fixed:
+            proto, rest = fixed.split("://", 1)
+            rest = re.sub(r"/+", "/", rest)
+            fixed = proto + "://" + rest
+        return fixed
+
+    active_sources = conn.execute(
+        "SELECT id, rss_url, wp_api_url FROM sources WHERE is_active = 1"
     ).fetchall()
-    print(f"\n[fix] Found {len(broken)} sources with //rss URL")
-    for sid, name, rss in broken:
-        # Normalize: //rss -> /rss, //feed -> /feed
-        fixed = re.sub(r"//+(rss|feed)", r"/\1", rss)
-        if fixed != rss:
-            conn.execute("UPDATE sources SET rss_url = ? WHERE id = ?", (fixed, sid))
-            print(f"  {name[:40]:<40} {rss}  →  {fixed}")
+    fixed_count = 0
+    for sid, rss, wp in active_sources:
+        new_rss = fix_url(rss)
+        new_wp = fix_url(wp)
+        if new_rss != rss or new_wp != wp:
+            conn.execute(
+                "UPDATE sources SET rss_url = ?, wp_api_url = ? WHERE id = ?",
+                (new_rss, new_wp, sid),
+            )
+            fixed_count += 1
+    print(f"\n[fix] Normalized {fixed_count} URLs with double slashes")
     conn.commit()
 
     # 2) Deactivate sources with 5+ consecutive errors
