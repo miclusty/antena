@@ -57,7 +57,7 @@ app.get('/api/llm/cite', async (c) => {
   const row = await c.env.DB.prepare(
     `SELECT nc.id, nc.title, nc.summary, nc.body, nc.image_url, nc.source_name, nc.source_url,
             nc.author, nc.category, l.name as location_name, l.province as location_province,
-            nc.published_at, nc.cluster_id, nc.created_at
+            nc.published_at, nc.slug, nc.slug_date, nc.cluster_id, nc.created_at
      FROM news_cards nc
      LEFT JOIN locations l ON l.id = nc.location_id
      WHERE nc.id = ?`,

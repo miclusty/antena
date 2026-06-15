@@ -67,6 +67,20 @@ describe("/api/llm/cite", () => {
     expect(body.canonical_url).toContain("https://www.antena.com.ar/2026/06/10/cordoba-elige-intendente-2026");
   });
 
+  it("uses stored slug (not title-derived) in canonical_url — regression: bug was SELECT without slug col", async () => {
+    // Insert a card whose title would produce a DIFFERENT slug than the stored one
+    await env.DB.exec(
+      "INSERT INTO news_cards (id, location_id, title, summary, source_id, source_name, category, cluster_id, slug, slug_date, published_at) " +
+      "VALUES ('def-456', 1, 'Córdoba: elecciones 2026', 'Resumen', 1, 'La Nación', 'politica', 'c-2', 'custom-stored-slug', '2026-06-12', '2026-06-12T10:00:00Z')",
+    );
+    const res = await SELF.fetch("http://example.com/api/llm/cite?id=def-456");
+    const body = (await res.json()) as { canonical_url: string };
+    // canonical_url should use the STORED slug 'custom-stored-slug',
+    // not a title-derived one like 'cordoba-elecciones-2026'.
+    expect(body.canonical_url).toContain("/2026/06/12/custom-stored-slug");
+    expect(body.canonical_url).not.toContain("cordoba-elecciones");
+  });
+
   it("returns 400 when id is missing", async () => {
     const res = await SELF.fetch("http://example.com/api/llm/cite");
     expect(res.status).toBe(400);
