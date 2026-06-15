@@ -130,8 +130,8 @@ describe("/api/news/feed", () => {
     expect(body.news.every(n => n.category === "politica")).toBe(true);
   });
 
-  it("returns 400 on invalid limit (> 100)", async () => {
-    const res = await SELF.fetch("http://example.com/api/news/feed?limit=200");
+  it("returns 400 on invalid limit (> 500)", async () => {
+    const res = await SELF.fetch("http://example.com/api/news/feed?limit=600");
     expect(res.status).toBe(400);
     const body = (await res.json()) as { error: string };
     expect(body.error).toBe("Invalid request");

@@ -94,7 +94,10 @@ async function runCheck(check: Check): Promise<CheckResult> {
     }
     if ("expect" in check && check.expect) {
       const extracted = check.extract?.(body) ?? "";
-      pass = pass && extracted === check.expect;
+      // Tolerant equality: extracted === expected OR
+      // differs only by trailing slash (canonical URLs are valid with or without it).
+      const norm = (s: string) => s.replace(/\/+$/, "");
+      pass = pass && norm(extracted) === norm(check.expect);
       detail = `${res.status}, extracted=${extracted}`;
     }
 

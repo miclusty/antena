@@ -44,6 +44,7 @@ interface NewsCardRow {
   author: string | null;
   category: string | null;
   location_name: string | null;
+  location_province: string | null;
   published_at: string;
   slug: string;
   slug_date: string;
@@ -73,10 +74,13 @@ newsCanonicalRoutes.get("/:year/:month/:day/:slug", async (c) => {
 
   return withCache(async () => {
     const row = await c.env.DB.prepare(
-      `SELECT id, title, summary, body, image_url, source_name, source_url,
-              author, category, location_name, published_at, slug, slug_date,
-              cluster_id, source_id, bias_score
-       FROM news_cards WHERE slug_date = ? AND slug = ?`,
+      `SELECT nc.id, nc.title, nc.summary, nc.body, nc.image_url, nc.source_name, nc.source_url,
+              nc.author, nc.category, l.name as location_name, l.province as location_province,
+              nc.published_at, nc.slug, nc.slug_date,
+              nc.cluster_id, nc.source_id, nc.bias_score
+       FROM news_cards nc
+       LEFT JOIN locations l ON l.id = nc.location_id
+       WHERE nc.slug_date = ? AND nc.slug = ?`,
     )
       .bind(slug_date, slug)
       .first<NewsCardRow>();
@@ -111,6 +115,7 @@ newsCanonicalRoutes.get("/:year/:month/:day/:slug", async (c) => {
         author: row.author,
         category: row.category,
         location_name: row.location_name,
+        location_province: row.location_province,
         published_at: row.published_at,
         slug: row.slug,
         slug_date: row.slug_date,

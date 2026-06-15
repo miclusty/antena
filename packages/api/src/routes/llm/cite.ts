@@ -12,6 +12,7 @@ interface NewsCardRow {
   author: string | null;
   category: string | null;
   location_name: string | null;
+  location_province: string | null;
   published_at: string;
   slug: string | null;
   slug_date: string | null;
@@ -54,10 +55,12 @@ app.get('/api/llm/cite', async (c) => {
   }
 
   const row = await c.env.DB.prepare(
-    `SELECT id, title, summary, body, image_url, source_name, source_url,
-            author, category, location_name, published_at, cluster_id,
-            created_at
-     FROM news_cards WHERE id = ?`
+    `SELECT nc.id, nc.title, nc.summary, nc.body, nc.image_url, nc.source_name, nc.source_url,
+            nc.author, nc.category, l.name as location_name, l.province as location_province,
+            nc.published_at, nc.cluster_id, nc.created_at
+     FROM news_cards nc
+     LEFT JOIN locations l ON l.id = nc.location_id
+     WHERE nc.id = ?`,
   ).bind(id).first<NewsCardRow>();
 
   if (!row) {
@@ -94,6 +97,7 @@ app.get('/api/llm/cite', async (c) => {
     author: row.author ?? row.source_name ?? 'Antena',
     category: row.category ?? 'General',
     location: row.location_name ?? 'Argentina',
+    location_province: row.location_province ?? null,
     published_at: row.published_at,
     image_url: row.image_url,
     sources: sources.results ?? [],
