@@ -65,8 +65,18 @@ export default function NewsletterSignup() {
     // score. When closed, the content is hidden but the box reserves
     // its space via `aria-hidden` and the same min-height.
     <section
-      class="rounded-2xl border p-4 mb-4 mx-4 min-h-[180px]"
-      style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+      class="rounded-2xl border p-4 mb-4 mx-4"
+      style={{
+        background: 'var(--bg-elevated)',
+        'border-color': 'var(--border-base)',
+        // Always reserve the full height so the section appearing
+        // on hydration doesn't push the rest of the feed down.
+        // 220px fits header (~60) + 12mb + form (~40) + 32 padding
+        // comfortably with a 76px buffer for font-scale up to 1.25.
+        'min-height': '220px',
+        'max-height': '220px',
+        overflow: 'hidden',
+      }}
       aria-label="Suscribite al newsletter"
       aria-hidden={!open()}
     >
