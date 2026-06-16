@@ -282,6 +282,26 @@ PROVINCIAL_MEDIA = [
     ("Radio La Red Comodoro", "radio", "https://www.laredcomodoro.com.ar", None),
     ("Diario El Patagónico", "diario", "https://www.elpatagonico.com", "https://www.elpatagonico.com/feed/"),
     ("Diario Crónica Comodoro", "diario", "https://www.cronicacomodororivadavia.com.ar", None),
+
+    # ── Catamarca (más específicos) ──────────────────────────
+    ("Radio Valle Viejo", "radio", "https://www.radiovalleviejo.com.ar", None, ["Catamarca"]),
+    ("Radio FM 102.5 Catamarca", "radio", "https://www.radiofm1025.com.ar", None, ["Catamarca"]),
+    ("Radio La Unión Catamarca", "radio", "https://www.radiolaunion.com", None, ["Catamarca"]),
+    ("Diario La Unión de Catamarca", "diario", "https://www.diariolaunion.com.ar", None, ["Catamarca"]),
+    ("FM Quality Catamarca", "radio", "https://www.fmquality.com.ar", None, ["Catamarca"]),
+    ("Radio HC 90.1 Catamarca", "radio", "https://www.radiohc.com.ar", None, ["Catamarca"]),
+    ("Catamarca Actual", "diario", "https://www.catamarcaactual.com.ar", None, ["Catamarca"]),
+    ("Radio Esquiú", "radio", "https://www.radioesquiu.com", None, ["Catamarca"]),
+
+    # ── La Pampa (más específicos) ──────────────────────────
+    ("Radio LU33 Pampeana", "radio", "https://www.lu33am.com.ar", None, ["La Pampa"]),
+    ("Radio Informante", "radio", "https://www.radioinformante.com.ar", None, ["La Pampa"]),
+    ("Radio Cable Santa Rosa", "radio", "https://www.radiocablesantarosa.com.ar", None, ["La Pampa"]),
+    ("El Oeste Pampeano", "diario", "https://www.eloestepampeano.com.ar", None, ["La Pampa"]),
+    ("Radio Realicó", "radio", "https://www.radiorealico.com", None, ["La Pampa"]),
+    ("La Reforma La Pampa", "diario", "https://www.lareforma.com.ar", None, ["La Pampa"]),
+    ("La Chispa La Pampa", "diario", "https://www.lachispa.com.ar", None, ["La Pampa"]),
+    ("Diario Textual La Pampa", "diario", "https://www.textualnoticias.com.ar", None, ["La Pampa"]),
 ]
 
 
