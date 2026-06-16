@@ -33,6 +33,7 @@ import logging
 import os
 import sqlite3
 import sys
+from typing import Optional
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -344,8 +345,20 @@ def main() -> int:
         if provinces:
             tags += f"|provinces={','.join(provinces)}"
 
+        # For provincial entries, set the province so indirect
+        # coverage (province-based) works correctly. For
+        # national entries (no provinces), keep province NULL.
+        actual_province: Optional[str] = None
+        actual_city: str
+        if provinces:
+            actual_province = provinces[0]
+            actual_city = provinces[0]
+        else:
+            actual_city = "Argentina"
+            actual_province = None
+
         if args.dry_run:
-            print(f"  + {name} ({mtype}) | {website} | {provinces}")
+            print(f"  + {name} ({mtype}) | {website} | prov={actual_province}")
             inserted += 1
             continue
 
@@ -353,8 +366,8 @@ def main() -> int:
             conn,
             name=name,
             type=mtype,
-            city="Argentina" if not provinces else provinces[0],
-            province=None,
+            city=actual_city,
+            province=actual_province,
             codgl=None,
             website=website,
             stream_url=None,
@@ -364,9 +377,33 @@ def main() -> int:
         if ok:
             inserted += 1
             known.add(netloc)
-            LOGGER.info("  + %s | %s", name, website)
+            LOGGER.info("  + %s | prov=%s", name, actual_province)
         else:
             skipped += 1
+
+        # For national entries, also update ALL other provinces'
+        # tagged provinces so the indirect-coverage count works
+        # for those provinces. We do this by inserting additional
+        # rows for each province in the list.
+        if provinces and len(provinces) > 1 and not args.dry_run:
+            for extra_province in provinces[1:]:
+                try:
+                    ok2 = coverage.import_radio(
+                        conn,
+                        name=name,
+                        type=mtype,
+                        city=extra_province,
+                        province=extra_province,
+                        codgl=None,
+                        website=website,
+                        stream_url=None,
+                        tags=tags,
+                        source="curated-provincial",
+                    )
+                    if ok2:
+                        inserted += 1
+                except Exception as e:
+                    LOGGER.debug("multi-prov insert: %s", e)
 
     if not args.dry_run:
         conn.commit()
