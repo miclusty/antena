@@ -3,8 +3,6 @@ import type { Env } from "../lib/types";
 
 import { getAkiraBaseUrl } from "../lib/akira-url";
 
-const AKIRA_BASE = getAkiraBaseUrl() ?? "";
-
 // Helper: 200 with synthesis=null when AKIRA isn't
 // configured. Lets the frontend skip silently and
 // keeps the Network tab clean. The 404 we used to
@@ -18,9 +16,10 @@ export const synthesisRoutes = new Hono<{ Bindings: Env }>();
 
 synthesisRoutes.get("/master/:cluster_id", async (c) => {
   const cluster_id = c.req.param("cluster_id");
-  if (!AKIRA_BASE) return notConfigured(c);
+  const akiraBase = getAkiraBaseUrl(c.env);
+  if (!akiraBase) return notConfigured(c);
   try {
-    const res = await fetch(`${AKIRA_BASE}/synthesis/master/${cluster_id}`);
+    const res = await fetch(`${akiraBase}/synthesis/master/${cluster_id}`);
     if (!res.ok) {
       // AKIRA reachable but the master article for
       // this cluster doesn't exist yet (or 5xx).
@@ -42,9 +41,10 @@ synthesisRoutes.get("/master/:cluster_id", async (c) => {
 });
 
 synthesisRoutes.get("/stats", async (c) => {
-  if (!AKIRA_BASE) return c.json({ available: false, reason: "not_configured" }, 200);
+  const akiraBase = getAkiraBaseUrl(c.env);
+  if (!akiraBase) return c.json({ available: false, reason: "not_configured" }, 200);
   try {
-    const res = await fetch(`${AKIRA_BASE}/synthesis/stats`);
+    const res = await fetch(`${akiraBase}/synthesis/stats`);
     if (!res.ok) return c.json({ available: false, reason: "akira_error" }, 502);
     const data: Record<string, unknown> = await res.json();
     return c.json({ available: true, ...data });

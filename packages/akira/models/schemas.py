@@ -157,15 +157,15 @@ class BatchSynthesisResult(BaseModel):
 
 
 class MasterArticle(BaseModel):
-    id: str
+    id: Optional[str] = None
     cluster_id: str
     title: str
     summary: str
     sources_count: int
-    bias_min: float
-    bias_max: float
-    bias_avg: float
-    created_at: str
+    bias_min: Optional[float] = None
+    bias_max: Optional[float] = None
+    bias_avg: Optional[float] = None
+    created_at: Optional[str] = None
     # 3-perspective RAG output. Each perspective has its own
     # title + summary. The `neutral_*` fields duplicate the
     # top-level title/summary so callers that want a single

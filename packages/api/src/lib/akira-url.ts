@@ -1,31 +1,16 @@
 /**
  * AKIRA base URL helper.
  *
- * AKIRA (the Python extractor/scraper) runs only on the user's local
- * machine — it's NOT deployed to Cloudflare. In production builds,
- * `process.env.AKIRA_URL` is not set, so this returns `null` and
- * callers should gracefully skip any AKIRA-dependent operation
- * (synthesis, extract.py fallback, etc.).
+ * AKIRA (the Python extractor/scraper) is exposed via a tunnel
+ * (e.g. https://*.trycloudflare.com) or a deployed instance.
+ * The URL is read from the request context env (c.env.AKIRA_URL)
+ * which is set via `[vars]` in wrangler.toml.
  *
- * In local dev, set `AKIRA_URL=http://localhost:5000` in
- * `packages/antena/.env` and the helper returns the URL.
+ * Returns null when AKIRA isn't configured, so callers can
+ * gracefully skip AKIRA-dependent operations.
  */
-export function getAkiraBaseUrl(): string | null {
-  // process.env.AKIRA_URL is set per-environment in wrangler.toml
-  // (or in the .env file for the frontend).
-  const url =
-    typeof process !== "undefined" && process.env
-      ? process.env.AKIRA_URL
-      : undefined;
-  if (url) return url;
-
-  // In dev, default to localhost:5000 (the Python uvicorn default port).
-  if (
-    typeof import.meta !== "undefined" &&
-    (import.meta as { env?: Record<string, string> }).env?.DEV
-  ) {
-    return "http://localhost:5000";
-  }
+export function getAkiraBaseUrl(env?: { AKIRA_URL?: string }): string | null {
+  if (env?.AKIRA_URL) return env.AKIRA_URL;
   return null;
 }
 
@@ -38,7 +23,28 @@ export async function tryFetchAkira(
   init?: RequestInit,
   timeoutMs = 5000
 ): Promise<Response | null> {
-  const base = getAkiraBaseUrl();
+  // Note: tryFetchAkira without env requires AKIRA_URL to be in
+  // globalThis. Use tryFetchAkiraWithEnv if you have a request context.
+  const base = (globalThis as { AKIRA_URL?: string }).AKIRA_URL;
+  if (!base) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const res = await fetch(`${base}${path}`, { ...init, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch {
+    return null;
+  }
+}
+
+export async function tryFetchAkiraWithEnv(
+  path: string,
+  env: { AKIRA_URL?: string },
+  init?: RequestInit,
+  timeoutMs = 5000
+): Promise<Response | null> {
+  const base = getAkiraBaseUrl(env);
   if (!base) return null;
   try {
     const controller = new AbortController();
