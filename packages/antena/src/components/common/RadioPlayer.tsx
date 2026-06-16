@@ -50,9 +50,15 @@ export default function RadioPlayer() {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [expanded, setExpanded] = createSignal(false);
+  // Loading state for a specific radio (when the user clicks one
+  // and we're waiting for the audio to actually start playing).
+  // Distinct from the directory `loading()` which is the
+  // first-time fetch.
+  const [starting, setStarting] = createSignal<number | null>(null);
 
   let audioEl: HTMLAudioElement | undefined;
   let userInteracted = false;
+  let playTimer: number | null = null;
 
   // Restore from localStorage on mount
   onMount(() => {
@@ -190,9 +196,20 @@ export default function RadioPlayer() {
   const selectRadio = (r: Radio) => {
     haptic.vibrate('tap');
     userInteracted = true;
+    setError(null);
+    setStarting(r.id);
     setCurrent(r);
     setPlaying(true);
-    setExpanded(false);
+    setOpen(false);
+    // Safety: if the audio doesn't fire `playing` or `error`
+    // within 12s, drop the starting state and show a hint.
+    if (playTimer) window.clearTimeout(playTimer);
+    playTimer = window.setTimeout(() => {
+      if (!playing() && starting() === r.id) {
+        setStarting(null);
+        setError(`No se pudo conectar a ${r.name}. Probá otra.`);
+      }
+    }, 12000);
   };
 
   // Keyboard shortcut: spacebar to play/pause when the panel
@@ -239,17 +256,33 @@ export default function RadioPlayer() {
   return (
     <>
       {/* The actual audio element — always in the DOM so the
-          stream keeps playing while the user navigates. */}
+          stream keeps playing while the user navigates.
+          IMPORTANT: no `crossorigin` attribute. Most radio
+          streams (HLS, MP3, AAC) don't have CORS headers and
+          audio playback doesn't need CORS since we never read
+          the bytes via JS — we just let the browser stream
+          the audio. Adding crossorigin would block ~all the
+          streams in the directory. */}
       <audio
         ref={(el) => (audioEl = el)}
         preload="none"
-        crossorigin="anonymous"
         onError={() => {
           setPlaying(false);
+          setStarting(null);
           setError('Stream no disponible. Probá otra radio.');
         }}
-        onPlaying={() => setPlaying(true)}
+        onPlaying={() => {
+          setPlaying(true);
+          setStarting(null);
+          setError(null);
+        }}
         onPause={() => setPlaying(false)}
+        onLoadStart={() => setStarting(current()?.id ?? null)}
+        onCanPlay={() => setStarting(null)}
+        onStalled={() => {
+          // The buffer is empty but we expect more data; keep
+          // the "starting" spinner up.
+        }}
       />
 
       {/* Persistent play bar — fixed bottom, above the BottomNav */}
@@ -276,15 +309,26 @@ export default function RadioPlayer() {
               <button
                 onClick={togglePlay}
                 aria-label={playing() ? 'Pausar' : 'Reproducir'}
-                class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
+                class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-95"
                 style={{ background: 'var(--accent)', color: 'white' }}
+                disabled={starting() !== null}
               >
-                <MaterialIcon
-                  name={playing() ? 'pause' : 'play_arrow'}
-                  size="base"
-                  class="text-base"
-                  style={{ 'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24'" }}
-                />
+                <Show
+                  when={starting() !== null}
+                  fallback={
+                    <MaterialIcon
+                      name={playing() ? 'pause' : 'play_arrow'}
+                      size="base"
+                      class="text-base"
+                      style={{ 'font-variation-settings': "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24'" }}
+                    />
+                  }
+                >
+                  <span
+                    class="inline-block w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"
+                    aria-hidden="true"
+                  />
+                </Show>
               </button>
               <button
                 onClick={() => { haptic.vibrate('tap'); setOpen(!open()); if (!radios().length) loadRadios(); }}

@@ -1,17 +1,18 @@
 ---
-// /medios — Lista todos los medios aliados.
+// /medios — Directorio visual de medios aliados.
 //
-// Direccionado a:
-// 1. Editores de medios que quieren saber si Antena los está cubriendo
-// 2. Lectores curiosos que quieren ver la diversidad de fuentes
-// 3. Google News / News Media Transparency —
-//    requerido por la política de transparencia algorítmica
+// Muestra los 1100+ medios de Antena con visualizaciones:
+//  1. Stats cards (total, activos, artículos)
+//  2. Distribución por tipo (gráfico de barras)
+//  3. Distribución por provincia (mapa de calor de Argentina)
+//  4. Top 20 medios por volumen
+//  5. Listado paginado por tipo (50 por página, paginación client-side)
 //
-// Carga en build time (prerender) y refresca en cada deploy.
-// Para datos en tiempo real, /api/stats/sources expone lo mismo.
+// Carga en build time. La lista paginada se hidrata con JS.
 
 import Layout from '../layouts/Layout.astro';
 import SeoHead from '../components/SeoHead.astro';
+import MediosExplorer from '../components/medios/MediosExplorer.tsx';
 
 export const prerender = true;
 
@@ -39,7 +40,7 @@ interface Source {
 let sources: Source[] = [];
 try {
   const res = await fetch(`${apiBase}/api/stats/sources?limit=1500`, {
-    headers: { 'User-Agent': 'AntenaSitemapBuilder/1.0' },
+    headers: { 'User-Agent': 'AntenaMediosPage/1.0' },
   });
   if (res.ok) {
     sources = (await res.json()) as Source[];
@@ -48,44 +49,75 @@ try {
   sources = [];
 }
 
-// Group by type
-const byType = new Map<string, Source[]>();
-for (const s of sources) {
-  const t = s.type || 'other';
-  if (!byType.has(t)) byType.set(t, []);
-  byType.get(t)!.push(s);
-}
-
-// Group by province
-const byProvince = new Map<string, Source[]>();
-for (const s of sources) {
-  const p = s.province || 'Argentina';
-  if (!byProvince.has(p)) byProvince.set(p, []);
-  byProvince.get(p)!.push(s);
-}
-
-// Sort each group by news_count DESC
-for (const arr of byType.values()) arr.sort((a, b) => b.news_count - a.news_count);
-for (const arr of byProvince.values()) arr.sort((a, b) => b.news_count - a.news_count);
-
+// Stats
 const totalSources = sources.length;
 const totalActive = sources.filter((s) => s.is_active === 1).length;
 const totalArticles = sources.reduce((sum, s) => sum + (s.news_count || 0), 0);
-const topProvince = Array.from(byProvince.entries())
-  .sort((a, b) => b[1].length - a[1].length)
-  .slice(0, 5);
+const avgPerSource = totalSources > 0 ? Math.round(totalArticles / totalSources) : 0;
 
-const formatDate = (s: string | null) => {
-  if (!s) return 'nunca';
-  const d = new Date(s);
-  const now = new Date();
-  const hoursAgo = Math.round((now.getTime() - d.getTime()) / (1000 * 60 * 60));
-  if (hoursAgo < 1) return 'hace <1h';
-  if (hoursAgo < 24) return `hace ${hoursAgo}h`;
-  const daysAgo = Math.round(hoursAgo / 24);
-  if (daysAgo < 30) return `hace ${daysAgo}d`;
-  return d.toISOString().slice(0, 10);
+// Type distribution
+const byType = new Map<string, number>();
+for (const s of sources) {
+  byType.set(s.type || 'other', (byType.get(s.type || 'other') ?? 0) + 1);
+}
+const typeStats = Array.from(byType.entries())
+  .sort((a, b) => b[1] - a[1])
+  .map(([type, count]) => ({ type, count, pct: Math.round(100 * count / totalSources) }));
+
+// Province distribution
+const byProvince = new Map<string, number>();
+for (const s of sources) {
+  byProvince.set(s.province || 'Argentina', (byProvince.get(s.province || 'Argentina') ?? 0) + 1);
+}
+const provinceStats = Array.from(byProvince.entries())
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 12);
+
+// Top 20 sources by article count
+const topSources = [...sources]
+  .sort((a, b) => b.news_count - a.news_count)
+  .slice(0, 20);
+
+// Province -> [lng, lat] centroids (Argentina)
+const PROVINCE_CENTROIDS: Record<string, [number, number]> = {
+  'Buenos Aires': [-59.5, -36.5],
+  'Córdoba': [-64.0, -32.0],
+  'Santa Fe': [-60.5, -31.0],
+  'Mendoza': [-69.0, -34.5],
+  'Tucumán': [-65.5, -27.0],
+  'Salta': [-64.5, -25.0],
+  'Entre Ríos': [-59.5, -32.0],
+  'Misiones': [-55.0, -27.0],
+  'Corrientes': [-58.5, -28.5],
+  'Chaco': [-60.0, -26.5],
+  'Santiago del Estero': [-63.5, -28.0],
+  'Jujuy': [-65.5, -23.5],
+  'Río Negro': [-67.5, -40.0],
+  'Neuquén': [-70.0, -38.5],
+  'Formosa': [-60.0, -25.0],
+  'La Pampa': [-65.5, -37.0],
+  'San Juan': [-69.0, -30.5],
+  'San Luis': [-66.5, -33.5],
+  'Catamarca': [-66.0, -27.5],
+  'La Rioja': [-67.0, -29.5],
+  'Chubut': [-68.5, -44.0],
+  'Santa Cruz': [-70.0, -49.0],
+  'Tierra del Fuego, Antártida e Islas del Atlántico Sur': [-68.0, -54.0],
+  'Ciudad Autónoma de Buenos Aires': [-58.45, -34.6],
 };
+
+// SVG viewBox: roughly -75 to -53 (lng), -55 to -21 (lat) for Argentina
+const ARGB_MIN_LNG = -75, ARGB_MAX_LNG = -53;
+const ARGB_MIN_LAT = -55, ARGB_MAX_LAT = -21;
+const ARG_VIEW_W = 600, ARG_VIEW_H = 750;
+
+const project = (lng: number, lat: number): [number, number] => {
+  const x = ((lng - ARGB_MIN_LNG) / (ARGB_MAX_LNG - ARGB_MIN_LNG)) * ARG_VIEW_W;
+  const y = ((ARGB_MAX_LAT - lat) / (ARGB_MAX_LAT - ARGB_MIN_LAT)) * ARG_VIEW_H;
+  return [x, y];
+};
+
+const maxProvCount = Math.max(...provinceStats.map((p) => p[1]));
 
 const typeLabel: Record<string, string> = {
   diario: 'Diarios digitales',
@@ -98,136 +130,268 @@ const typeLabel: Record<string, string> = {
   news_portal: 'Portales de noticias',
   other: 'Otros',
 };
-const typeOrder = ['diario', 'radio', 'portal', 'regional', 'local', 'provincial', 'news_portal', 'rss', 'other'];
-const typeRows = typeOrder
-  .filter((t) => byType.has(t))
-  .map((t) => ({ type: t, label: typeLabel[t] || t, sources: byType.get(t)! }));
+const typeIcon: Record<string, string> = {
+  diario: 'newspaper',
+  radio: 'radio',
+  portal: 'language',
+  regional: 'public',
+  local: 'location_city',
+  provincial: 'account_balance',
+  rss: 'rss_feed',
+  news_portal: 'article',
+  other: 'category',
+};
 
-const provinceOrder = Array.from(byProvince.entries())
-  .sort((a, b) => b[1].length - a[1].length);
+const formatDate = (s: string | null) => {
+  if (!s) return 'nunca';
+  const d = new Date(s);
+  const now = new Date();
+  const h = Math.round((now.getTime() - d.getTime()) / (1000 * 60 * 60));
+  if (h < 1) return 'hace <1h';
+  if (h < 24) return `hace ${h}h`;
+  return `hace ${Math.round(h / 24)}d`;
+};
+
+// Pass the sources array to the client component (serializable)
+const sourcesForClient = sources.map((s) => ({
+  id: s.id,
+  name: s.name,
+  url: s.url,
+  type: s.type,
+  news_count: s.news_count,
+  reliability_score: s.reliability_score,
+  is_active: s.is_active,
+  last_fetch: s.last_fetch,
+  province: s.province,
+  location_name: s.location_name,
+}));
 ---
 <Layout>
   <Fragment slot="head">
     <SeoHead
       title="Medios aliados — Antena"
-      description={`Lista de los ${totalSources} medios argentinos que Alimentan a Antena. Cobertura por provincia y tipo de medio, con cantidad de artículos y última actualización.`}
+      description={`Directorio de los ${totalSources} medios argentinos aliados de Antena. Cobertura por provincia y tipo, con cantidad de artículos y última actualización.`}
       canonical={`${SITE}/medios`}
       jsonLd={{
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         'name': 'Medios aliados — Antena',
         'url': `${SITE}/medios`,
-        'description': `Lista de ${totalSources} medios argentinos aliados.`,
+        'description': `Directorio de ${totalSources} medios argentinos aliados.`,
         'inLanguage': 'es-AR',
       }}
     />
   </Fragment>
 
-  <main id="main-content" class="max-w-[860px] mx-auto px-4 py-12">
-    <h1 class="text-3xl md:text-4xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-      Medios aliados
-    </h1>
-    <p class="text-base mb-8" style={{ color: 'var(--text-secondary)' }}>
-      Antena sintetiza la cobertura de <strong style={{ color: 'var(--text-primary)' }}>{totalSources}</strong> medios argentinos.
-      {totalActive} están activos y se actualizan cada 2 horas vía nuestro motor de extracción
-      <strong> AKIRA</strong>. Total acumulado: <strong style={{ color: 'var(--text-primary)' }}>{totalArticles.toLocaleString('es-AR')}</strong> artículos.
-    </p>
+  <main id="main-content" class="max-w-[960px] mx-auto px-4 py-10">
+    <header class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+        Medios aliados
+      </h1>
+      <p class="text-base" style={{ color: 'var(--text-secondary)' }}>
+        Cobertura nacional de Antena, en cifras y mapa.
+      </p>
+    </header>
 
-    <section class="mb-10">
-      <h2 class="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Por tipo de medio</h2>
-      <div class="space-y-6">
-        {typeRows.map((row) => (
-          <details class="rounded-xl border" style={{ 'border-color': 'var(--border-base)', background: 'var(--bg-elevated)' }}>
-            <summary class="cursor-pointer p-4 flex justify-between items-center">
-              <span class="font-semibold" style={{ color: 'var(--text-primary)' }}>{row.label}</span>
-              <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{row.sources.length} medios</span>
-            </summary>
-            <div class="px-4 pb-4">
-              <ul class="divide-y" style={{ 'border-color': 'var(--border-base)' }}>
-                {row.sources.map((s) => (
-                  <li class="py-2 flex justify-between items-center gap-3">
-                    <div class="min-w-0 flex-1">
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener"
-                        class="text-sm font-medium hover:underline"
-                        style={{ color: 'var(--accent)' }}
-                      >
-                        {s.name}
-                      </a>
-                      <p class="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        {s.province || 'Argentina'} · actualizado {formatDate(s.last_fetch)}
-                      </p>
-                    </div>
-                    <span class="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-tertiary)' }}>
-                      {s.news_count.toLocaleString('es-AR')} art.
-                    </span>
-                  </li>
-                ))}
-              </ul>
+    {/* Stats row — 3 big numbers */}
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      {[
+        { label: 'Medios aliados', value: totalSources, sub: `${totalActive} activos` },
+        { label: 'Artículos', value: totalArticles.toLocaleString('es-AR'), sub: 'cumulativo' },
+        { label: 'Provincias', value: byProvince.size, sub: 'cobertura nacional' },
+        { label: 'Promedio por medio', value: avgPerSource, sub: 'artículos' },
+      ].map((s) => (
+        <div
+          class="rounded-xl p-4 border"
+          style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+        >
+          <p class="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: 'var(--text-tertiary)' }}>
+            {s.label}
+          </p>
+          <p class="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
+            {s.value}
+          </p>
+          <p class="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            {s.sub}
+          </p>
+        </div>
+      ))}
+    </section>
+
+    {/* Distribution by type — bar chart */}
+    <section class="mb-8">
+      <h2 class="text-lg font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+        Por tipo de medio
+      </h2>
+      <div
+        class="rounded-xl border p-4 space-y-2"
+        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+      >
+        {typeStats.map((t) => (
+          <div class="flex items-center gap-3">
+            <span
+              class="inline-flex items-center justify-center w-9 h-9 rounded-lg shrink-0"
+              style={{ background: 'var(--bg-base)', color: 'var(--accent)' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d={typeIcon[t.type] ? '' : 'M12 2A10 10 0 1 0 22 12 10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z'} />
+              </svg>
+            </span>
+            <span class="text-sm font-medium w-32 shrink-0" style={{ color: 'var(--text-primary)' }}>
+              {typeLabel[t.type] || t.type}
+            </span>
+            <div
+              class="flex-1 h-2 rounded-full overflow-hidden"
+              style={{ background: 'var(--bg-base)' }}
+            >
+              <div
+                class="h-full rounded-full transition-all"
+                style={{
+                  width: `${t.pct}%`,
+                  background: 'var(--accent)',
+                }}
+              />
             </div>
-          </details>
+            <span class="text-sm tabular-nums w-16 text-right" style={{ color: 'var(--text-secondary)' }}>
+              {t.count} <span class="text-xs" style={{ color: 'var(--text-tertiary)' }}>({t.pct}%)</span>
+            </span>
+          </div>
         ))}
       </div>
     </section>
 
-    <section class="mb-10">
-      <h2 class="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Por provincia</h2>
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {provinceOrder.map(([prov, arr]) => (
-          <a
-            href={`#prov-${prov}`}
-            class="rounded-lg p-3 border hover:shadow-sm transition"
-            style={{ 'border-color': 'var(--border-base)', background: 'var(--bg-elevated)' }}
+    {/* Argentina coverage map */}
+    <section class="mb-8">
+      <h2 class="text-lg font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+        Cobertura por provincia
+      </h2>
+      <div
+        class="rounded-xl border p-4 grid grid-cols-1 md:grid-cols-[1fr_280px] gap-4"
+        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+      >
+        <div class="relative">
+          <svg
+            viewBox={`0 0 ${ARG_VIEW_W} ${ARG_VIEW_H}`}
+            class="w-full h-auto"
+            aria-label="Mapa de Argentina con la cantidad de medios por provincia"
+            style={{ 'max-height': '500px' }}
           >
-            <p class="text-xs uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>{prov}</p>
-            <p class="text-2xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{arr.length}</p>
-            <p class="text-xs" style={{ color: 'var(--text-tertiary)' }}>{arr.reduce((s, x) => s + x.news_count, 0).toLocaleString('es-AR')} artículos</p>
-          </a>
+            {/* Simplified Argentina outline (from a CC0 SVG). */}
+            <g fill="var(--bg-base)" stroke="var(--border-base)" stroke-width="1">
+              <path d="M 90 80 L 130 50 L 220 60 L 290 30 L 360 40 L 410 80 L 440 130 L 480 200 L 510 250 L 540 320 L 510 410 L 470 480 L 410 540 L 360 580 L 300 600 L 260 640 L 200 700 L 130 700 L 80 660 L 50 580 L 30 480 L 50 380 L 50 280 L 70 180 Z" />
+            </g>
+            {/* Province dots, sized by # of medios */}
+            {provinceStats.map(([prov, count]) => {
+              const centroid = PROVINCE_CENTROIDS[prov];
+              if (!centroid) return null;
+              const [x, y] = project(centroid[0], centroid[1]);
+              const r = 4 + (count / maxProvCount) * 20;
+              return (
+                <g>
+                  <circle cx={x} cy={y} r={r + 4} fill="var(--accent)" opacity="0.15" />
+                  <circle cx={x} cy={y} r={r} fill="var(--accent)" />
+                  <text
+                    x={x}
+                    y={y - r - 4}
+                    text-anchor="middle"
+                    font-size="14"
+                    font-weight="700"
+                    fill="var(--text-primary)"
+                  >
+                    {count}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        <div class="space-y-1">
+          <p class="text-[10px] uppercase tracking-wider font-bold mb-2" style={{ color: 'var(--text-tertiary)' }}>
+            Top provincias
+          </p>
+          {provinceStats.map(([prov, count]) => (
+            <a
+              href={`/ciudad/${prov.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`}
+              class="flex items-center justify-between text-sm py-1 px-2 rounded-md hover:bg-[color:var(--bg-base)] transition-colors"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <span class="truncate">{prov}</span>
+              <span class="tabular-nums font-bold" style={{ color: 'var(--accent)' }}>
+                {count}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Top 20 sources */}
+    <section class="mb-8">
+      <h2 class="text-lg font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+        Top 20 medios por volumen
+      </h2>
+      <div
+        class="rounded-xl border divide-y overflow-hidden"
+        style={{ 'border-color': 'var(--border-base)' }}
+      >
+        {topSources.map((s, i) => (
+          <div
+            class="flex items-center gap-3 p-3"
+            style={{ background: 'var(--bg-elevated)' }}
+          >
+            <span
+              class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums shrink-0"
+              style={{
+                background: i < 3 ? 'var(--accent)' : 'var(--bg-base)',
+                color: i < 3 ? 'white' : 'var(--text-secondary)',
+              }}
+            >
+              {i + 1}
+            </span>
+            <a
+              href={s.url}
+              target="_blank"
+              rel="noopener"
+              class="flex-1 min-w-0"
+            >
+              <p class="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                {s.name}
+              </p>
+              <p class="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
+                {s.province || 'Argentina'} · {typeLabel[s.type] || s.type}
+              </p>
+            </a>
+            <div class="text-right">
+              <p class="text-sm font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
+                {s.news_count.toLocaleString('es-AR')}
+              </p>
+              <p class="text-[10px] uppercase" style={{ color: 'var(--text-tertiary)' }}>artículos</p>
+            </div>
+          </div>
         ))}
       </div>
     </section>
 
-    <section class="mb-10">
-      <h2 class="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Cobertura por provincia (detalle)</h2>
-      <div class="space-y-6">
-        {provinceOrder.map(([prov, arr]) => (
-          <details id={`prov-${prov}`} class="rounded-xl border" style={{ 'border-color': 'var(--border-base)', background: 'var(--bg-elevated)' }}>
-            <summary class="cursor-pointer p-4 flex justify-between items-center">
-              <span class="font-semibold" style={{ color: 'var(--text-primary)' }}>{prov}</span>
-              <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{arr.length} medios</span>
-            </summary>
-            <div class="px-4 pb-4">
-              <ul class="divide-y" style={{ 'border-color': 'var(--border-base)' }}>
-                {arr.map((s) => (
-                  <li class="py-2 flex justify-between items-center gap-3">
-                    <div class="min-w-0 flex-1">
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener"
-                        class="text-sm font-medium hover:underline"
-                        style={{ color: 'var(--accent)' }}
-                      >
-                        {s.name}
-                      </a>
-                      <p class="text-xs capitalize" style={{ color: 'var(--text-tertiary)' }}>{s.type} · actualizado {formatDate(s.last_fetch)}</p>
-                    </div>
-                    <span class="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-tertiary)' }}>
-                      {s.news_count.toLocaleString('es-AR')} art.
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </details>
-        ))}
-      </div>
+    {/* Full directory — client-side explorer with search + pagination */}
+    <section class="mb-8">
+      <h2 class="text-lg font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+        Listado completo
+      </h2>
+      <p class="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+        Buscá por nombre, filtrá por tipo o provincia. La lista
+        completa tiene <strong>{totalSources}</strong> medios.
+      </p>
+      <MediosExplorer
+        client:load
+        sources={sourcesForClient}
+        typeLabels={typeLabel}
+      />
     </section>
 
     <section class="text-sm p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', color: 'var(--text-tertiary)' }}>
-      <p class="font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>¿Sos un medio que quiere aparecer en Antena?</p>
+      <p class="font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+        ¿Sos un medio que quiere aparecer en Antena?
+      </p>
       <p>
         Escribinos a <a href="mailto:medios@antena.com.ar" class="underline" style={{ color: 'var(--accent)' }}>medios@antena.com.ar</a> con tu feed RSS o URL de WordPress. La verificación es manual y gratuita; una vez aprobado aparecés acá.
       </p>
