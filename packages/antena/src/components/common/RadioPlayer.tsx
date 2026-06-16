@@ -130,25 +130,47 @@ export default function RadioPlayer() {
     }
   };
 
-  // Play / pause handling
+  // Effect 1: keep audio.src in sync with the selected radio.
+  // We only touch src when the URL actually changes — calling
+  // `load()` on every effect run resets the stream and
+  // interrupts playback, which was a real bug ("click play,
+  // click pause" did nothing because the src kept getting
+  // reloaded before the play() promise resolved).
+  createEffect(() => {
+    const c = current();
+    if (!audioEl) return;
+    const newSrc = c?.stream_url ?? '';
+    if (audioEl.src !== newSrc) {
+      if (newSrc) {
+        audioEl.src = newSrc;
+        audioEl.load();
+      } else {
+        audioEl.removeAttribute('src');
+      }
+    }
+  });
+
+  // Effect 2: play / pause based on the playing() signal.
+  // We trust playing() as the source of truth; the actual
+  // audio element state follows.
   createEffect(() => {
     const c = current();
     const isPlaying = playing();
     if (!audioEl) return;
-    if (c?.stream_url) {
-      // Update src if it changed
-      if (audioEl.src !== c.stream_url) {
-        audioEl.src = c.stream_url;
-        audioEl.load();
-      }
-      if (isPlaying && userInteracted) {
-        audioEl.play().catch(() => setPlaying(false));
-      } else {
-        audioEl.pause();
+    if (!c?.stream_url) {
+      audioEl.pause();
+      return;
+    }
+    if (isPlaying && userInteracted) {
+      const p = audioEl.play();
+      if (p && typeof p.then === 'function') {
+        p.catch((e) => {
+          console.warn('radio play failed', e);
+          setPlaying(false);
+        });
       }
     } else {
       audioEl.pause();
-      audioEl.removeAttribute('src');
     }
   });
 
@@ -160,7 +182,9 @@ export default function RadioPlayer() {
   const togglePlay = () => {
     haptic.vibrate('tap');
     userInteracted = true;
-    setPlaying(!playing());
+    // Flip the state. The play/pause effect reads from this
+    // signal and calls the matching audio element method.
+    setPlaying((p) => !p);
   };
 
   const selectRadio = (r: Radio) => {
@@ -170,6 +194,23 @@ export default function RadioPlayer() {
     setPlaying(true);
     setExpanded(false);
   };
+
+  // Keyboard shortcut: spacebar to play/pause when the panel
+  // is open. Disabled elsewhere to avoid hijacking scroll.
+  const onKey = (e: KeyboardEvent) => {
+    if (open() && (e.code === 'Space' || e.key === ' ')) {
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      e.preventDefault();
+      togglePlay();
+    }
+  };
+  createEffect(() => {
+    if (open()) {
+      window.addEventListener('keydown', onKey);
+      onCleanup(() => window.removeEventListener('keydown', onKey));
+    }
+  });
 
   const filtered = createMemo(() => {
     const q = search().toLowerCase().trim();

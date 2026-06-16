@@ -295,9 +295,12 @@ export default function LeftSidebar(props: LeftSidebarProps) {
                   </div>
                 )}
               </For>
-              <button class="w-full text-left text-[13px] xl:text-[14px] text-accent font-semibold px-2.5 py-1.5 hover:underline">
+              <a
+                href="/medios/"
+                class="block w-full text-left text-[13px] xl:text-[14px] text-accent font-semibold px-2.5 py-1.5 hover:underline"
+              >
                 Ver todos ({props.stats.active_sources}) →
-              </button>
+              </a>
             </div>
           </nav>
         </Show>
