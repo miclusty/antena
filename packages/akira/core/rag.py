@@ -435,11 +435,13 @@ class RAGEngine:
         lm_client: Optional[LMStudioClient] = None,
         top_k: int = TOP_K_NEIGHBORS,
         top_n_entities: int = TOP_N_ENTITIES,
+        model: Optional[str] = None,
     ) -> None:
         self.db_path = db_path
         self.lm = lm_client or LMStudioClient()
         self.top_k = top_k
         self.top_n_entities = top_n_entities
+        self.model = model or RAG_MODEL
 
     # ─── Public API ──────────────────────────────────────────
 
@@ -497,7 +499,7 @@ class RAGEngine:
         messages = ctx.to_prompt()
         t0 = time.monotonic()
         try:
-            raw = self.lm.chat(messages, model=RAG_MODEL, max_tokens=2000, temperature=0.2)
+            raw = self.lm.chat(messages, model=self.model, max_tokens=2000, temperature=0.2)
         except LMStudioError as e:
             logger.error(f"synth_failed cluster={cluster_id} reason=lm_studio error={e}")
             return None
@@ -514,7 +516,7 @@ class RAGEngine:
             pro_gov_summary=parsed["pro_gov"]["resumen"],
             anti_gov_title=parsed["anti_gov"]["titulo"],
             anti_gov_summary=parsed["anti_gov"]["resumen"],
-            model=RAG_MODEL,
+            model=self.model,
             prompt_tokens=self._estimate_tokens(messages),
             completion_tokens=len(raw.split()),
             latency_ms=latency_ms,
@@ -607,7 +609,7 @@ class RAGEngine:
             ]
             try:
                 raw = self.lm.chat(
-                    messages, model=RAG_MODEL, max_tokens=800, temperature=0.2
+                    messages, model=self.model, max_tokens=800, temperature=0.2
                 )
             except LMStudioError as e:
                 logger.warning(f"synth3p_lm_failed perspective={perspective} err={e}")
@@ -711,7 +713,7 @@ class RAGEngine:
             pro_gov_summary=results["pro_gov"]["resumen"],  # type: ignore[index]
             anti_gov_title=results["anti_gov"]["titulo"],  # type: ignore[index]
             anti_gov_summary=results["anti_gov"]["resumen"],  # type: ignore[index]
-            model=RAG_MODEL,
+            model=self.model,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             latency_ms=latency_ms,

@@ -7,6 +7,8 @@ import { withCache } from "../lib/cache";
  *
  * Returns id+slug+slug_date for Astro's `getStaticPaths()` to
  * prerender `/<year>/<month>/<day>/<slug>` pages at build time.
+ * Also returns location_name + location_province so per-province
+ * sitemaps can be built without a second round-trip.
  *
  * Phase 3 Task 26. AKIRA populates `slug` and `slug_date` (Task 25);
  * the canonical article URL is `/<y>/<m>/<d>/<slug>`.
@@ -16,6 +18,8 @@ interface SitemapItem {
   slug: string;
   slug_date: string;
   published_at: string;
+  location_name: string | null;
+  location_province: string | null;
 }
 
 export const sitemapBatchRoutes = new Hono<{ Bindings: Env }>();
@@ -26,10 +30,12 @@ sitemapBatchRoutes.get("/sitemap-batch", async (c) => {
 
   return withCache(async () => {
     const result = await c.env.DB.prepare(
-      `SELECT id, slug, slug_date, published_at
-       FROM news_cards
-       WHERE slug != '' AND slug_date != ''
-       ORDER BY published_at DESC
+      `SELECT nc.id, nc.slug, nc.slug_date, nc.published_at,
+              l.name as location_name, l.province as location_province
+       FROM news_cards nc
+       LEFT JOIN locations l ON nc.location_id = l.id
+       WHERE nc.slug != '' AND nc.slug_date != ''
+       ORDER BY nc.published_at DESC
        LIMIT ? OFFSET ?`,
     )
       .bind(limit, offset)

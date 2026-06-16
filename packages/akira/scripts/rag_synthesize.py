@@ -200,9 +200,20 @@ def commit_perspectives(
 def process_cluster(
     engine: RAGEngine, cluster_id: str
 ) -> Optional[SynthesizedPerspectives]:
-    """Synthesize one cluster. Returns None on failure (logged)."""
+    """Synthesize one cluster with 3 parallel perspective calls.
+
+    Uses synthesize_3pass instead of synthesize because the
+    3-pass version produces more diverse perspectives (each
+    gets its own LLM call with a perspective-specific system
+    prompt). With 2-node LM Studio load balancing, the 3
+    parallel calls land on whichever node is faster. 3-pass
+    is 3x the LLM calls per cluster but the wall-clock per
+    cluster is the SAME (parallel) and the quality is
+    noticeably better (the 1-pass LLM tends to write the
+    same text with 1-2 word changes across perspectives).
+    """
     try:
-        return engine.synthesize(cluster_id)
+        return engine.synthesize_3pass(cluster_id, concurrency=3)
     except Exception as e:  # noqa: BLE001
         logger.exception(f"synth_unexpected cluster={cluster_id} error={e}")
         return None
@@ -229,7 +240,7 @@ def main() -> int:
         logger.error(f"LM Studio unreachable: {e}")
         return 1
 
-    engine = RAGEngine(db_path=args.db, lm_client=lm_client)
+    engine = RAGEngine(db_path=args.db, lm_client=lm_client, model=args.model)
 
     # Make sure master_articles has the perspective_type column.
     with sqlite3.connect(args.db) as conn:

@@ -19,6 +19,7 @@ import { synthesisRoutes } from "./routes/synthesis";
 import { followsRoutes } from "./routes/follows";
 import llmCite from "./routes/llm/cite";
 import { sitemapBatchRoutes } from "./routes/news-sitemap-batch";
+import { provinceSitemapRoutes } from "./routes/sitemap-province";
 import { newsCanonicalRoutes } from "./routes/news-canonical";
 import { legacyRedirectMiddleware } from "./middleware/redirects";
 import { handleRefreshCron } from "./crons/refresh";
@@ -97,6 +98,7 @@ app.route("/api", followsRoutes);
 app.route("/", llmCite);
 app.route("/", sitemapRoutes);
 app.route("/api/news", sitemapBatchRoutes);
+app.route("/api", provinceSitemapRoutes);
 app.route("/api/news", newsCanonicalRoutes);
 
 // Simple health endpoint

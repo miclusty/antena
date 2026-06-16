@@ -191,6 +191,22 @@ const slugify = (s: string) => s
             '@type': 'SpeakableSpecification',
             'xpath': ['/html/head/title', '/html/body//article/h1', '/html/body//article/p[1]'],
           },
+          // contentLocation tells Google News / Discover that
+          // this article is about a specific place. Helps with
+          // "news from <city>" queries and local SERP ranking.
+          // Schema.org/Place accepts name + PostalAddress; the
+          // addressCountry must be an ISO 3166-1 alpha-2 code.
+          ...(article.location_name ? {
+            'contentLocation': {
+              '@type': 'Place',
+              'name': article.location_name,
+              'address': {
+                '@type': 'PostalAddress',
+                'addressLocality': article.location_name,
+                'addressCountry': 'AR',
+              },
+            },
+          } : {}),
           ...(article.source_url ? { 'url': article.source_url } : {}),
         },
         {
