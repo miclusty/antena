@@ -184,7 +184,17 @@ def categorize(text):
         return "generales"
     return max(scores, key=scores.get)
 
-conn = sqlite3.connect(AKIRA_DB)
+conn = sqlite3.connect(AKIRA_DB, timeout=300)
+conn.execute("PRAGMA journal_mode=WAL")
+conn.execute("PRAGMA busy_timeout=120000")
+# Reset dedup state so re-runs pick up everything (matches the
+# run_pipeline_cron.sh behavior). Otherwise seen_urls from a
+# prior run blocks all new items.
+conn.execute("DELETE FROM seen_urls")
+conn.execute("UPDATE sources SET last_harvest_at = '1970-01-01' WHERE is_active = 1")
+conn.execute("UPDATE source_health SET consecutive_failures = 0, is_circuit_open = 0")
+conn.commit()
+print("Reset seen_urls + last_harvest_at + circuit breakers", flush=True)
 # Use consecutive_failures from source_health as the
 # active-failure signal rather than the historical
 # sources.error_count, which is cumulative. A source
@@ -256,7 +266,8 @@ async def process_sources():
                 task = extract_with_fallback(session, source_id, name, extract_url, location_id, rss_url)
                 tasks.append(task)
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        conn2 = sqlite3.connect(AKIRA_DB)
+        conn2 = sqlite3.connect(AKIRA_DB, timeout=300)
+        conn2.execute("PRAGMA busy_timeout=120000")
         for res in results:
             if isinstance(res, Exception):
                 stats["errors"] += 1

@@ -161,7 +161,13 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
   const bias = mapBias(card.bias_score);
   const sourceCount = card.sources_count || (card.source_ids ? card.source_ids.split(',').filter(Boolean).length : 1);
   const isGacetillaFlag = card.is_gacetilla === 1;
-  const signalLevel = computeSignalLevel(card.source_ids, card.quality_score, isGacetillaFlag);
+  // signalLevel is computed from sources_count (D1 has this) OR source_ids
+  // (local DB). Fallback chain: source_ids > sources_count > 1.
+  const signalSourceIds = card.source_ids
+    || (card.sources_count && card.sources_count > 1
+        ? Array.from({ length: card.sources_count }, (_, i) => `s${i}`).join(',')
+        : null);
+  const signalLevel = computeSignalLevel(signalSourceIds, card.quality_score, isGacetillaFlag);
 
   let sourceName = 'Fuente';
   if (card.source_names && card.source_names.length > 0) {

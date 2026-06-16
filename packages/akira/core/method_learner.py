@@ -40,7 +40,9 @@ class MethodLearner:
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
         # Connect and initialize schema
-        self.db = sqlite3.connect(db_path)
+        self.db = sqlite3.connect(db_path, timeout=300)
+        self.db.execute("PRAGMA journal_mode=WAL")
+        self.db.execute("PRAGMA busy_timeout=120000")
         try:
             self.db.row_factory = sqlite3.Row
             self._init_schema()
