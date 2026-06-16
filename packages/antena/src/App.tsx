@@ -181,7 +181,13 @@ export default function App() {
           // exclusive — the API treats foryou=true as a different sort,
           // not an extra filter.
           following: activeFeedTab() === "following",
-          foryou: activeFeedTab() === "foryou",
+          // Use foryou (RANDOM() tie-breaker) for all tabs so the
+          // feed shows variety across sources instead of 20
+          // cards from the same source that published most
+          // recently. Pure chronological order on 1500 cards
+          // means the same 2-3 sources dominate every page
+          // load.
+          foryou: true,
           ...buildFeedFilterParams(filterState()),
         });
         return result as FeedResponse;

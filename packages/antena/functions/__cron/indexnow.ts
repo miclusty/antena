@@ -19,14 +19,18 @@
 // not part of the public surface.
 
 import type { PagesFunction } from "@cloudflare/workers-types";
-import type { PagesEnv } from "../../../lib/cloudflare";
+
+interface PagesEnvLite {
+  PUBLIC_API_BASE?: string;
+  API_BASE?: string;
+}
 
 const RECENT_LIMIT = 50;
 const SHARED_SECRET = "antena-indexnow-secret-rotate-me";
 
-export const onRequestGet = handleIndexNow as unknown as PagesFunction<PagesEnv>;
+export const onRequestGet = handleIndexNow as unknown as PagesFunction<PagesEnvLite>;
 
-async function handleIndexNow(ctx: { request: Request; env: PagesEnv }): Promise<Response> {
+async function handleIndexNow(ctx: { request: Request; env: PagesEnvLite }): Promise<Response> {
   const url = new URL(ctx.request.url);
   if (url.searchParams.get("key") !== SHARED_SECRET) {
     return new Response("Forbidden", { status: 403 });
@@ -35,23 +39,32 @@ async function handleIndexNow(ctx: { request: Request; env: PagesEnv }): Promise
   const apiBase = ctx.env.PUBLIC_API_BASE || "https://akira-api.miclusty.workers.dev";
   const origin = new URL(ctx.request.url).origin;
 
-  // Fetch the most recent article IDs from the feed.
-  let ids: string[] = [];
+  // Fetch the most recent article IDs from the feed. We need
+  // slug + slug_date so we can build the canonical URL
+  // (/{YYYY}/{MM}/{DD}/{slug}), which is what Google and
+  // IndexNow expect. /noticia/{uuid} 301-redirects to it but
+  // IndexNow prefers the final URL.
+  type FeedItem = { id: string; slug: string; slug_date: string };
+  let items: FeedItem[] = [];
   try {
     const res = await fetch(`${apiBase}/api/news/feed?limit=${RECENT_LIMIT}&offset=0`);
     if (res.ok) {
-      const data = (await res.json()) as { news: { id: string; published_at: string | null }[] };
-      ids = data.news.map((n) => n.id);
+      const data = (await res.json()) as { news: FeedItem[] };
+      items = (data.news ?? []).filter((n) => n.slug && n.slug_date);
     }
   } catch (e) {
     return new Response(`Feed fetch failed: ${e}`, { status: 502 });
   }
 
+  const ids = items.map((n) => n.id);
+  const urls = items.map((n) => {
+    const [y, m, d] = n.slug_date.split('-');
+    return y && m && d ? `${origin}/${y}/${m}/${d}/${n.slug}` : `${origin}/noticia/${n.id}`;
+  });
+
   if (ids.length === 0) {
     return new Response("No articles to ping", { status: 200 });
   }
-
-  const urls = ids.map((id) => `${origin}/noticia/${id}`);
 
   // ── IndexNow ──────────────────────────────────────────
   let indexNowOk = 0;
@@ -89,6 +102,9 @@ async function handleIndexNow(ctx: { request: Request; env: PagesEnv }): Promise
       articles: urls.length,
       indexNow: indexNowOk,
       googlePing,
+      apiBase,
+      origin,
+      firstUrl: urls[0] ?? null,
       timestamp: new Date().toISOString(),
     }, null, 2),
     { headers: { "Content-Type": "application/json" } },
