@@ -33,7 +33,9 @@ from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import urllib.error
+import urllib.parse
 import urllib.request
+from http.client import RemoteDisconnected
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -86,17 +88,25 @@ def parse_args() -> argparse.Namespace:
 
 
 def http_get(url: str, timeout: float = 10.0) -> Optional[bytes]:
-    """GET a URL with a polite user agent. Returns body or None."""
+    """GET a URL with a polite user agent. Returns body or None.
+
+    Resilient to RemoteDisconnected, broken pipes, and other
+    transient errors with a single retry after 0.5s. Small
+    municipal sites often close connections mid-stream.
+    """
     req = urllib.request.Request(url, headers=DEFAULT_HEADERS)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            ct = resp.headers.get("Content-Type", "")
-            if resp.status != 200:
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if resp.status != 200:
+                    return None
+                return resp.read()
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError,
+                ConnectionError, RemoteDisconnected) as e:
+            if attempt == 1:
+                LOGGER.debug("http_get %s err=%s", url, e)
                 return None
-            return resp.read()
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
-        LOGGER.debug("http_get %s err=%s", url, e)
-        return None
+            time.sleep(0.5)
 
 
 def looks_like_rss(body: bytes) -> bool:

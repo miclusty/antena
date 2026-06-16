@@ -168,6 +168,119 @@ PROVINCIAL_MEDIA = [
     # ── Tierra del Fuego ────────────────────────────────────
     ("El Sureño", "diario", "https://www.elsureno.com.ar", "https://www.elsureno.com.ar/feed/"),
     ("Diario del Fin del Mundo", "diario", "https://www.eldiariodelfindelmundo.com", None),
+
+    # ── CABA (CABA-specific) ────────────────────────────────────
+    ("Página/12", "diario", "https://www.pagina12.com.ar", "https://www.pagina12.com.ar/feed"),
+    ("Tiempo Argentino", "diario", "https://www.tiempoargentino.com", "https://www.tiempoargentino.com/feed/"),
+    ("Miradas al Sur", "diario", "https://www.miradasalsur.com.ar", None),
+    ("Noticias Urbanas", "diario", "https://www.noticiasurbanas.com.ar", "https://www.noticiasurbanas.com.ar/feed"),
+    ("EnOrsai", "diario", "https://www.enorsai.com.ar", None),
+    ("Línea Capital", "diario", "https://www.lineacapital.com.ar", None),
+    ("Revista Noticias", "diario", "https://www.revistanoticias.com.ar", None),
+    ("Radio La Pizarra", "radio", "https://www.lapizarra.com.ar", None),
+
+    # ── Buenos Aires (provincia — más allá de GBA) ────────────
+    ("La Mañana de Necochea", "diario", "https://www.lamañananecochea.com.ar", None),
+    ("Diario El Sur de Bahía Blanca", "diario", "https://www.diarioelsur.com", "https://www.diarioelsur.com/rss/"),
+    ("El Eco de Tandil", "diario", "https://www.eleco.com.ar", "https://www.eleco.com.ar/feed/"),
+    ("Diario La Mañana de Bolívar", "diario", "https://www.lamañanadebolivar.com", None),
+    ("El Diario de La Costa", "diario", "https://www.eldiariodelacosta.com", None),
+    ("La Voz del Pueblo de Tres Arroyos", "diario", "https://www.lavozdelpueblo.com.ar", None),
+    ("El Popular de Olavarría", "diario", "https://www.elpopular.com.ar", "https://www.elpopular.com.ar/feed/"),
+    ("Nueva Era de Pehuajó", "diario", "https://www.nuevaera.com.ar", None),
+    ("Diario El Tiempo de Azul", "diario", "https://www.diarioeltiempo.com.ar", None),
+    ("La Mañana de Mar del Plata", "diario", "https://www.lamañana.com.ar", "https://www.lamañana.com.ar/feed"),
+    ("El Atlántico de Mar del Plata", "diario", "https://www.elatlantico.com.ar", None),
+    ("Radio LU2 de Bahía Blanca", "radio", "https://www.lu2.com.ar", None),
+    ("Radio La Brújula de Tres Arroyos", "radio", "https://www.labrujula24.com.ar", None),
+    ("Radio del Mar de Necochea", "radio", "https://www.radiodelmar.com.ar", None),
+
+    # ── Córdoba (más allá de Cadena 3 y La Voz) ──────────────
+    ("Radio Mitre Córdoba", "radio", "https://radiomitre.cienradios.com/mitre-cordoba", "https://radiomitre.cienradios.com/feed/"),
+    ("Radio La Red Córdoba", "radio", "https://radiolaredcba.com.ar", None),
+    ("Radio Universidad Nacional Córdoba", "radio", "https://radiouniversidad.unc.edu.ar", None),
+    ("Radio Villa María", "radio", "https://www.villamariavivo.com.ar", None),
+    ("Diario de Río Cuarto", "diario", "https://www.eldiariodecba.com.ar", None),
+    ("Radio Río Cuarto", "radio", "https://www.radiorc.com.ar", None),
+    ("El Diario del Centro del País", "diario", "https://www.eldiariocba.com.ar", "https://www.eldiariocba.com.ar/feed/"),
+    ("La Mañana de Córdoba", "diario", "https://www.lamañanacba.com.ar", None),
+    ("Diario Alfil", "diario", "https://diarioalfil.com.ar", None),
+    ("Diario La Mañana de Río Tercero", "diario", "https://www.lamañanart.com.ar", None),
+
+    # ── Santa Fe (más allá de La Capital y El Litoral) ────────
+    ("Radio Mitre Rosario", "radio", "https://radiomitre.cienradios.com/mitre-rosario", "https://radiomitre.cienradios.com/feed/"),
+    ("Radio La Red Rosario", "radio", "https://www.laredrosario.com", None),
+    ("Diario La Región", "diario", "https://www.diariolaregion.com.ar", None),
+    ("El Sur de Santa Fe", "diario", "https://www.elsur.com.ar", None),
+    ("Diario de Rafaela", "diario", "https://www.diarioderafaela.com.ar", None),
+    ("Diario Castellanos de Rafaela", "diario", "https://www.diariocastellanos.com.ar", None),
+    ("Radio La Red Venado Tuerto", "radio", "https://www.laredvenadotuerto.com", None),
+    ("Diario de Reconquista", "diario", "https://www.diariodereconquista.com.ar", None),
+
+    # ── Mendoza (más allá de MDZ y Los Andes) ─────────────────
+    ("Radio Mitre Mendoza", "radio", "https://radiomitre.cienradios.com/mitre-mendoza", "https://radiomitre.cienradios.com/feed/"),
+    ("Diario Mendoza", "diario", "https://www.diariomendoza.com.ar", None),
+    ("El Cuyano", "diario", "https://www.elcuyano.com.ar", None),
+    ("Radio Nihuil", "radio", "https://www.radionihuil.com.ar", None),
+    ("Diario San Rafael", "diario", "https://www.diariosanrafael.com.ar", None),
+    ("El Sureño Mendoza", "diario", "https://www.elsureno.com.ar", None),
+
+    # ── Tucumán (más allá de La Gaceta) ─────────────────────
+    ("Radio Mitre Tucumán", "radio", "https://radiomitre.cienradios.com/mitre-tucuman", "https://radiomitre.cienradios.com/feed/"),
+    ("LV12 Radio Tucumán", "radio", "https://www.lv12.com", None),
+    ("Radio Universidad Tucumán", "radio", "https://www.radiount.edu.ar", None),
+    ("El Siglo de Tucumán", "diario", "https://www.elsigloweb.com", None),
+
+    # ── Salta (más allá de El Tribuno) ────────────────────────
+    ("Radio Mitre Salta", "radio", "https://radiomitre.cienradios.com/mitre-salta", "https://radiomitre.cienradios.com/feed/"),
+    ("Radio Nacional Salta", "radio", "https://www.radionacional.com.ar", "https://www.radionacional.com.ar/feed/"),
+    ("Diario HOY de Salta", "diario", "https://www.hoysalta.com.ar", None),
+    ("El Expreso de Salta", "diario", "https://www.expreso.com.ar", None),
+
+    # ── Entre Ríos ───────────────────────────────────────────
+    ("Radio La Red Paraná", "radio", "https://www.laredparana.com.ar", None),
+    ("Radio Paraná", "radio", "https://www.radioparana.com.ar", None),
+    ("La Calle Concordia", "diario", "https://www.lacalle.com.ar", None),
+
+    # ── Misiones ─────────────────────────────────────────────
+    ("Radio Mitre Misiones", "radio", "https://radiomitre.cienradios.com/mitre-misiones", "https://radiomitre.cienradios.com/feed/"),
+    ("Diario El Territorio Posadas", "diario", "https://www.elterritorio.com.ar", "https://www.elterritorio.com.ar/rss/"),
+    ("Radio LT17 Posadas", "radio", "https://www.lt17.com", None),
+    ("Misiones OnLine", "diario", "https://www.misionesonline.net", "https://www.misionesonline.net/feed/"),
+    ("Noticias del 6", "diario", "https://www.noticiasdel6.com", None),
+
+    # ── Chaco ────────────────────────────────────────────────
+    ("Radio Mitre Chaco", "radio", "https://radiomitre.cienradios.com/mitre-chaco", "https://radiomitre.cienradios.com/feed/"),
+    ("Radio La Red Resistencia", "radio", "https://www.resistencialavoz.com.ar", None),
+    ("Diario Norte Resistencia", "diario", "https://www.diarionorte.com", None),
+    ("Radio La Voz del Chaco", "radio", "https://www.lavozdelchaco.com.ar", None),
+
+    # ── Corrientes ──────────────────────────────────────────
+    ("Radio Mitre Corrientes", "radio", "https://radiomitre.cienradios.com/mitre-corrientes", "https://radiomitre.cienradios.com/feed/"),
+    ("Diario El Litoral Corrientes", "diario", "https://www.ellitoral.com.ar", "https://www.ellitoral.com.ar/feed/"),
+    ("La República Corrientes", "diario", "https://www.republica.com.ar", "https://www.republica.com.ar/feed/"),
+    ("Radio Dos Corrientes", "radio", "https://www.radiodos.com.ar", None),
+
+    # ── Jujuy ────────────────────────────────────────────────
+    ("Radio Mitre Jujuy", "radio", "https://radiomitre.cienradios.com/mitre-jujuy", "https://radiomitre.cienradios.com/feed/"),
+    ("Radio City Jujuy", "radio", "https://www.radiocityjujuy.com.ar", None),
+    ("Diario Jujuy al Momento", "diario", "https://www.jujuyalmomento.com", None),
+
+    # ── Neuquén ─────────────────────────────────────────────
+    ("Radio La Red Neuquén", "radio", "https://www.laredneuquen.com.ar", None),
+    ("Diario Andino", "diario", "https://www.diarioandino.com.ar", None),
+    ("El Diario del Centro Neuquén", "diario", "https://www.eldiariodelcentro.com.ar", None),
+    ("Radio Nacional Neuquén", "radio", "https://www.radionacional.com.ar", "https://www.radionacional.com.ar/feed/"),
+
+    # ── Río Negro ────────────────────────────────────────────
+    ("Radio La Red Bariloche", "radio", "https://www.laredbariloche.com", None),
+    ("El Cordillerano", "diario", "https://www.elcordillerano.com.ar", None),
+    ("Bariloche 2000", "diario", "https://www.bariloche2000.com", None),
+
+    # ── Chubut ───────────────────────────────────────────────
+    ("Radio La Red Comodoro", "radio", "https://www.laredcomodoro.com.ar", None),
+    ("Diario El Patagónico", "diario", "https://www.elpatagonico.com", "https://www.elpatagonico.com/feed/"),
+    ("Diario Crónica Comodoro", "diario", "https://www.cronicacomodororivadavia.com.ar", None),
 ]
 
 
