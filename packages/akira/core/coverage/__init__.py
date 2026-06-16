@@ -232,6 +232,11 @@ def get_connection(db_path: str = DEFAULT_DB) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path, timeout=30)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    # Wait up to 30s for the write lock instead of failing
+    # immediately. The other long-running scripts (rag_synthesize,
+    # link_to_sources) hold write transactions for seconds at a
+    # time; this lets our writers wait them out.
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 
