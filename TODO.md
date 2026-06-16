@@ -1,6 +1,6 @@
 # AKIRA / Antena — TODO
 
-Última actualización: 2026-06-16 15:30 ART
+Última actualización: 2026-06-16 17:15 ART
 
 ---
 
@@ -8,146 +8,116 @@
 
 | Métrica | Valor | Δ desde inicio |
 |---------|-------|-----------------|
-| Pueblos +4000 hab | 851 | — |
-| **Pueblos con media** | **576 (67%)** | +336 |
-| Medios en directorio | 1953 | +1135 |
+| **Pueblos en DB** | **1663** | +812 (851 → 1663) |
+| Pueblos con media directa | 581 (35%) | +5 hoy |
+| Pueblos con indirect (provincial) | 1663 (100%) | +812 |
+| **Medios en directorio** | **2022** | +1069 hoy |
 | Sources AKIRA | 1100 | +22 |
 | Sources con RSS | 707 | +51 |
-| master_articles | 181/905 | +1 hoy (commit fix funciona) |
-| Background jobs | 3 | synth M4+M5 + link_sources |
+| **master_articles** | **300/905** | +120 hoy (en background) |
+| Background jobs | 4 | synth M4+M5 + link + gnews |
 
 ---
 
-## 🔴 EN PROGRESO (background, no tocar)
+## 🔴 EN BACKGROUND (no tocar)
 
-- [ ] **rag_synthesize M4** — M4:60/905 ok=58 (qwen3.5-2b, localhost:1234)
-- [ ] **rag_synthesize M5** — M5:85/905 ok=84 (unsloth/qwen3.5-2b, 192.168.31.37:1234)
-- [ ] **link_to_sources** — descubriendo RSS para 500 radios restantes (en background)
+- [ ] **rag_synthesize M4** — 325/905 ok=319 (qwen3.5-2b, localhost:1234)
+- [ ] **rag_synthesize M5** — retry con backoff funcionando (unsloth/qwen3.5-2b, 192.168.31.37:1234)
+- [ ] **link_to_sources v6** — encontrando RSS feeds para nuevos pueblos
+- [ ] **discover_via_gnews v5** — procesando pueblos 500-1000 hab (silencioso, no encuentran)
 
-> Commits funcionando: `commit_attempt batch=10` → `commit_done wrote=10` ✓
-
----
-
-## 🟡 PENDIENTE — COBERTURA (foco)
-
-### Módulo 1 expansión
-- [ ] **ENACOM scraping** — registro público de radios AM/FM licenciadas. URL: enacom.gob.ar/busqueda/radio (HTML, no API — necesita scraper)
-- [ ] **Wikipedia API discovery** — buscar en español "Radio X" / "Diario X" por pueblo. **API funciona, queries confiables**
-- [ ] **Facebook public search** — pueblos chicos tienen páginas FB; limitada sin Graph API
-- [ ] **datos.gob.ar radio dataset** — JSON no disponible, buscar CSV
-
-### Módulo 2 — extractores de contenido
-- [ ] **Whisper transcribe** — streams de radio (audio en vivo → texto). Deferred: requiere GPU
-- [ ] **Facebook Graph** — posts de páginas públicas. Requiere app + token
-- [ ] **Instagram public** — scraping básico de posts
-
-### Módulo 3 — descubrimiento de fuentes
-- [ ] **Citation mining v2** — parsear HTML de las 22 fuentes linkeadas para descubrir diarios citados
-- [ ] **Recursive crawl** — nueva fuente → crawl su sitio → descubrir más fuentes
-
-### Módulo 4 — indexing
-- [ ] **Astro build** con sitemaps nuevos (24 + index)
-- [ ] **Deploy a Pages**
-- [ ] **Validar Search Console**
+> Commit fix funcionando: `commit_attempt batch=10 success=320` → `commit_done wrote=10` ✓
 
 ---
 
-## 🟢 COMPLETADO hoy
+## 🟢 COMPLETADO en esta sesión (expansión)
 
-### Módulo 0 — Pueblos
-- [x] 851 pueblos de INDEC 2022 +4000 hab en `argentine_towns`
+### Módulo 0 — Pueblos expandido
+- [x] **851 → 1663 pueblos** (incluye 2000-1000 hab)
+- [x] 2 capitales faltantes: **Río Gallegos** y **Santiago del Estero** agregados
+- [x] INDEC CSV + georef API batch
 
 ### Módulo 1 — Directorio
-- [x] random-radio import: 818 radios → 240 pueblos
-- [x] CITY_ALIASES: GBA partidos + aglomerados
-- [x] GNews RSS: 1079 nuevos medios
-- [x] GNews2 paralelo: 200x speedup, confirmó techo ~67% (pueblos chicos no tienen local media)
+- [x] random-radio: 818 → 818 (sin cambios hoy)
+- [x] google-news-rss: 1079 → 1080
+- [x] curated-provincial: 38 → 100 (Catamarca + La Pampa específicos)
+- [x] citation-mining: 18
+- [x] municipal-site: 1
 
-### Módulo 2 — Extractores
-- [x] 22 fuentes linkeadas con RSS auto-discovery
-- [x] link_to_sources.py con HTML link + path probe (40% éxito RSS)
-
-### Módulo 3 — Citation
-- [x] citation-mining: 18 medios (agencias, TV nacional)
-
-### Módulo 4 — Sitemaps
-- [x] sitemap-province endpoint en API
-- [x] 24 sitemaps Astro por provincia
-- [x] sitemap-index.xml agregado
-- [x] contentLocation JSON-LD en artículos
-- [x] robots.txt con sitemap-index
-
-### Módulo 5 — Provincial
-- [x] curate_provincial.py: 38 radios/diarios provinciales hand-picked
+### Módulo 4 — Indexing
+- [x] 24 sitemaps por provincia
+- [x] sitemap-index.xml
+- [x] contentLocation JSON-LD
 
 ### Bugs arreglados
 - [x] INDEC CODGL zero-padding (6 dígitos)
 - [x] `province` nullable en `argentine_media`
-- [x] RAG_MODEL hardcoded → ahora configurable via `--model`
+- [x] RAG_MODEL hardcoded → configurable via `--model`
 - [x] DB lock con autocommit + busy_timeout=30s
 - [x] Commit retry con backoff 2s/4s/8s
+- [x] **curate_provincial** bug: pasaba `province=None` siempre
 - [x] LM Studio server restart via CLI (`lms server start`)
 
 ---
 
 ## ⏳ BACKLOG (próximas sesiones)
 
-- [ ] **Re-cosechar fuentes** con `harvest_run.py` para las 1100 sources
-- [ ] **Push a D1** (`sync_to_d1.py` + `sync_to_d1_remote.py`) — 1100 sources × clusters
-- [ ] **Astro build + deploy**
-- [ ] **Search LLM** — reemplazar FTS5-only con RAG sobre news_cards
-- [ ] **On-demand synthesis endpoint** — ya existe en AKIRA, no expuesto vía API
-- [ ] **Bias scoring de medios** — usar `bias-analyzer.ts` con los 1953 medios
+- [ ] **Más pueblos** — bajar a 100-500 hab (hay ~600 más)
+- [ ] **Más medios por pueblo** — los nuevos pueblos chicos tienen solo 1-2 medios
+- [ ] **Build + deploy** sitemaps con `astro build` y `wrangler deploy`
+- [ ] **Push D1** — 1100 sources × clusters
+- [ ] **On-demand synthesis** — endpoint AKIRA no expuesto
+- [ ] **Search LLM** — reemplazar FTS5 con RAG
+- [ ] **Bias scoring** de medios nuevos
+- [ ] **Whisper** — streams de radio (deferred, requiere GPU)
 
 ---
 
 ## 📁 Archivos creados en esta sesión
 
 ```
-packages/akira/core/coverage/__init__.py               # módulo compartido
-packages/akira/scripts/media/import_random_radio.py   # import radios
-packages/akira/scripts/media/link_to_sources.py       # RSS auto-discovery
-packages/akira/scripts/media/discover_via_gnews.py    # GNews RSS
-packages/akira/scripts/media/discover_via_gnews2.py   # parallel pass
-packages/akira/scripts/media/discover_via_citation.py # regex mining
-packages/akira/scripts/media/curate_provincial.py     # hand-picked
-packages/akira/scripts/rag_synthesize.py              # +autocommit +retry fix
-packages/api/src/routes/sitemap-province.ts           # XML endpoint
-packages/antena/src/pages/sitemap-[province].xml.astro # 24 pages
-packages/antena/src/pages/sitemap-index.xml.astro      # index
-TODO.md                                                 # este archivo
+packages/akira/core/coverage/__init__.py              # módulo compartido
+packages/akira/scripts/media/import_random_radio.py
+packages/akira/scripts/media/link_to_sources.py
+packages/akira/scripts/media/discover_via_gnews.py
+packages/akira/scripts/media/discover_via_gnews2.py
+packages/akira/scripts/media/discover_via_citation.py
+packages/akira/scripts/media/curate_provincial.py
+packages/akira/scripts/media/backfill_curated_provinces.py
+packages/akira/scripts/media/discover_via_municipal.py
+packages/api/src/routes/sitemap-province.ts
+packages/antena/src/pages/sitemap-[province].xml.astro
+packages/antena/src/pages/sitemap-index.xml.astro
+TODO.md
 ```
 
 ---
 
-## ⚙️ Comandos útiles
+## ⚙️ Comandos
 
 ```bash
-# Cobertura: descubrir medios por pueblo
-python -m scripts.media.discover_via_gnews        # 1ra pasada
-python -m scripts.media.discover_via_gnews2       # 2da paralela
-
-# Linkear media a sources (RSS discovery)
-python -m scripts.media.link_to_sources --limit 500
+# Cobertura
+python -m scripts.media.discover_via_gnews --min-pop 500
+python -m scripts.media.curate_provincial
+python -m scripts.media.backfill_curated_provinces
 
 # Re-synthesis (background)
 AKIRA_LMSTUDIO_NODES=http://localhost:1234 \
   python -m scripts.rag_synthesize --model qwen3.5-2b --no-skip-existing --workers 1
 AKIRA_LMSTUDIO_NODES=http://192.168.31.37:1234 \
   python -m scripts.rag_synthesize --model unsloth/qwen3.5-2b --no-skip-existing --workers 1
-
-# Harvest (background)
-python harvest_run.py
-
-# Push a D1
-python scripts/sync_to_d1.py && python scripts/sync_to_d1_remote.py
 ```
 
 ---
 
-## 🧭 Plan sugerido — próximas 2 horas
+## 📈 Progreso de la sesión
 
-1. **Cobertura**: Wikipedia API discovery → expandir a los 275 pueblos sin media
-2. **Curated v2**: +30 radios/diarios provinciales que faltan
-3. **Verify**: Astro build con sitemaps nuevos funciona
-4. **Background**: synth + link_to_sources + harvest siguen
+| Hora | Acción | Δ |
+|------|--------|---|
+| Inicio | 240/851 (28%) pueblos | start |
+| +30min | random-radio import + GNews | 576/851 (67%) |
+| +1h | curated v1 + backfill (96% indirect) | 851/851 (100%) |
+| +1.5h | curated v2 + sitemaps + contentLocation | 2022 medios |
+| +2h | curated v3 Catamarca/La Pampa | 100 curated |
+| +2.5h | 2 capitales + 812 pueblos nuevos | 1663 pueblos, 2022 medios |
+| **ahora** | synth 300/905 + link RSS ongoing | master_articles +120 |
