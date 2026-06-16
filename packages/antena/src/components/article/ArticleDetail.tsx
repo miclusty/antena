@@ -178,6 +178,18 @@ export default function ArticleDetail(props: ArticleDetailProps) {
     return n().body || n().summary || '';
   };
 
+  // Cluster-level signal: how many sources cover this fact,
+  // not just the single article. Mirrors the mapper buckets.
+  const clusterSignal = () => {
+    const count = clusterData()?.length ?? 0;
+    if (count >= 20) return 10;
+    if (count >= 10) return 8;
+    if (count >= 5) return 6;
+    if (count >= 3) return 4;
+    if (count >= 2) return 3;
+    return 1;
+  };
+
   const realVoices = (): VoiceBreakdown[] => {
     const articles = clusterData();
     if (!articles || articles.length <= 1) return n().voces ?? [];
@@ -556,7 +568,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           onSelect={props.onArticleSelect}
         />
 
-        {/* Signal Gauge */}
+        {/* Signal Gauge — cluster-level coverage, not the single article */}
         <section
           class="rounded-xl border p-4 mb-4"
           style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
@@ -573,16 +585,19 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                   class="w-2.5 rounded-full transition-all duration-500"
                   style={{
                     height: `${6 + i * 3}px`,
-                    'background-color': i <= n().signalLevel ? 'var(--accent)' : 'var(--border-base)',
+                    'background-color': i <= clusterSignal() ? 'var(--accent)' : 'var(--border-base)',
                   }}
                 />
               )}
             </For>
           </div>
           <p class="text-center text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Nivel {n().signalLevel}/10 —{' '}
+            Nivel {clusterSignal()}/10 —{' '}
             <span class="font-medium" style={{ color: 'var(--text-primary)' }}>
-              {n().signalLevel >= 7 ? 'Alta propagación' : n().signalLevel >= 4 ? 'Propagación media' : 'Baja propagación'}
+              {clusterSignal() >= 7 ? 'Alta propagación' : clusterSignal() >= 4 ? 'Propagación media' : 'Baja propagación'}
+            </span>
+            <span class="block mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+              {clusterData().length} {clusterData().length === 1 ? 'fuente cubre' : 'fuentes cubren'} este hecho
             </span>
           </p>
         </section>

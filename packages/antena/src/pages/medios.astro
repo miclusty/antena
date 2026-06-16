@@ -1,0 +1,236 @@
+---
+// /medios — Lista todos los medios aliados.
+//
+// Direccionado a:
+// 1. Editores de medios que quieren saber si Antena los está cubriendo
+// 2. Lectores curiosos que quieren ver la diversidad de fuentes
+// 3. Google News / News Media Transparency —
+//    requerido por la política de transparencia algorítmica
+//
+// Carga en build time (prerender) y refresca en cada deploy.
+// Para datos en tiempo real, /api/stats/sources expone lo mismo.
+
+import Layout from '../layouts/Layout.astro';
+import SeoHead from '../components/SeoHead.astro';
+
+export const prerender = true;
+
+const SITE = 'https://www.antena.com.ar';
+const API_BASE_FALLBACK = 'https://akira-api.miclusty.workers.dev';
+
+const fromEnv = import.meta.env.PUBLIC_API_BASE;
+const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+  ? API_BASE_FALLBACK
+  : fromEnv;
+
+interface Source {
+  id: number;
+  name: string;
+  url: string;
+  type: string;
+  reliability_score: number;
+  is_active: number;
+  last_fetch: string | null;
+  news_count: number;
+  location_name: string | null;
+  province: string | null;
+}
+
+let sources: Source[] = [];
+try {
+  const res = await fetch(`${apiBase}/api/stats/sources?limit=1500`, {
+    headers: { 'User-Agent': 'AntenaSitemapBuilder/1.0' },
+  });
+  if (res.ok) {
+    sources = (await res.json()) as Source[];
+  }
+} catch {
+  sources = [];
+}
+
+// Group by type
+const byType = new Map<string, Source[]>();
+for (const s of sources) {
+  const t = s.type || 'other';
+  if (!byType.has(t)) byType.set(t, []);
+  byType.get(t)!.push(s);
+}
+
+// Group by province
+const byProvince = new Map<string, Source[]>();
+for (const s of sources) {
+  const p = s.province || 'Argentina';
+  if (!byProvince.has(p)) byProvince.set(p, []);
+  byProvince.get(p)!.push(s);
+}
+
+// Sort each group by news_count DESC
+for (const arr of byType.values()) arr.sort((a, b) => b.news_count - a.news_count);
+for (const arr of byProvince.values()) arr.sort((a, b) => b.news_count - a.news_count);
+
+const totalSources = sources.length;
+const totalActive = sources.filter((s) => s.is_active === 1).length;
+const totalArticles = sources.reduce((sum, s) => sum + (s.news_count || 0), 0);
+const topProvince = Array.from(byProvince.entries())
+  .sort((a, b) => b[1].length - a[1].length)
+  .slice(0, 5);
+
+const formatDate = (s: string | null) => {
+  if (!s) return 'nunca';
+  const d = new Date(s);
+  const now = new Date();
+  const hoursAgo = Math.round((now.getTime() - d.getTime()) / (1000 * 60 * 60));
+  if (hoursAgo < 1) return 'hace <1h';
+  if (hoursAgo < 24) return `hace ${hoursAgo}h`;
+  const daysAgo = Math.round(hoursAgo / 24);
+  if (daysAgo < 30) return `hace ${daysAgo}d`;
+  return d.toISOString().slice(0, 10);
+};
+
+const typeLabel: Record<string, string> = {
+  diario: 'Diarios digitales',
+  radio: 'Radios AM/FM',
+  portal: 'Portales / Agencias',
+  regional: 'Portales regionales',
+  local: 'Medios locales',
+  provincial: 'Medios provinciales',
+  rss: 'Feeds RSS',
+  news_portal: 'Portales de noticias',
+  other: 'Otros',
+};
+const typeOrder = ['diario', 'radio', 'portal', 'regional', 'local', 'provincial', 'news_portal', 'rss', 'other'];
+const typeRows = typeOrder
+  .filter((t) => byType.has(t))
+  .map((t) => ({ type: t, label: typeLabel[t] || t, sources: byType.get(t)! }));
+
+const provinceOrder = Array.from(byProvince.entries())
+  .sort((a, b) => b[1].length - a[1].length);
+---
+<Layout>
+  <Fragment slot="head">
+    <SeoHead
+      title="Medios aliados — Antena"
+      description={`Lista de los ${totalSources} medios argentinos que Alimentan a Antena. Cobertura por provincia y tipo de medio, con cantidad de artículos y última actualización.`}
+      canonical={`${SITE}/medios`}
+      jsonLd={{
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': 'Medios aliados — Antena',
+        'url': `${SITE}/medios`,
+        'description': `Lista de ${totalSources} medios argentinos aliados.`,
+        'inLanguage': 'es-AR',
+      }}
+    />
+  </Fragment>
+
+  <main id="main-content" class="max-w-[860px] mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+      Medios aliados
+    </h1>
+    <p class="text-base mb-8" style={{ color: 'var(--text-secondary)' }}>
+      Antena sintetiza la cobertura de <strong style={{ color: 'var(--text-primary)' }}>{totalSources}</strong> medios argentinos.
+      {totalActive} están activos y se actualizan cada 2 horas vía nuestro motor de extracción
+      <strong> AKIRA</strong>. Total acumulado: <strong style={{ color: 'var(--text-primary)' }}>{totalArticles.toLocaleString('es-AR')}</strong> artículos.
+    </p>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Por tipo de medio</h2>
+      <div class="space-y-6">
+        {typeRows.map((row) => (
+          <details class="rounded-xl border" style={{ 'border-color': 'var(--border-base)', background: 'var(--bg-elevated)' }}>
+            <summary class="cursor-pointer p-4 flex justify-between items-center">
+              <span class="font-semibold" style={{ color: 'var(--text-primary)' }}>{row.label}</span>
+              <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{row.sources.length} medios</span>
+            </summary>
+            <div class="px-4 pb-4">
+              <ul class="divide-y" style={{ 'border-color': 'var(--border-base)' }}>
+                {row.sources.map((s) => (
+                  <li class="py-2 flex justify-between items-center gap-3">
+                    <div class="min-w-0 flex-1">
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener"
+                        class="text-sm font-medium hover:underline"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        {s.name}
+                      </a>
+                      <p class="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        {s.province || 'Argentina'} · actualizado {formatDate(s.last_fetch)}
+                      </p>
+                    </div>
+                    <span class="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-tertiary)' }}>
+                      {s.news_count.toLocaleString('es-AR')} art.
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Por provincia</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {provinceOrder.map(([prov, arr]) => (
+          <a
+            href={`#prov-${prov}`}
+            class="rounded-lg p-3 border hover:shadow-sm transition"
+            style={{ 'border-color': 'var(--border-base)', background: 'var(--bg-elevated)' }}
+          >
+            <p class="text-xs uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>{prov}</p>
+            <p class="text-2xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>{arr.length}</p>
+            <p class="text-xs" style={{ color: 'var(--text-tertiary)' }}>{arr.reduce((s, x) => s + x.news_count, 0).toLocaleString('es-AR')} artículos</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="mb-10">
+      <h2 class="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Cobertura por provincia (detalle)</h2>
+      <div class="space-y-6">
+        {provinceOrder.map(([prov, arr]) => (
+          <details id={`prov-${prov}`} class="rounded-xl border" style={{ 'border-color': 'var(--border-base)', background: 'var(--bg-elevated)' }}>
+            <summary class="cursor-pointer p-4 flex justify-between items-center">
+              <span class="font-semibold" style={{ color: 'var(--text-primary)' }}>{prov}</span>
+              <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{arr.length} medios</span>
+            </summary>
+            <div class="px-4 pb-4">
+              <ul class="divide-y" style={{ 'border-color': 'var(--border-base)' }}>
+                {arr.map((s) => (
+                  <li class="py-2 flex justify-between items-center gap-3">
+                    <div class="min-w-0 flex-1">
+                      <a
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener"
+                        class="text-sm font-medium hover:underline"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        {s.name}
+                      </a>
+                      <p class="text-xs capitalize" style={{ color: 'var(--text-tertiary)' }}>{s.type} · actualizado {formatDate(s.last_fetch)}</p>
+                    </div>
+                    <span class="text-xs tabular-nums shrink-0" style={{ color: 'var(--text-tertiary)' }}>
+                      {s.news_count.toLocaleString('es-AR')} art.
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <section class="text-sm p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', color: 'var(--text-tertiary)' }}>
+      <p class="font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>¿Sos un medio que quiere aparecer en Antena?</p>
+      <p>
+        Escribinos a <a href="mailto:medios@antena.com.ar" class="underline" style={{ color: 'var(--accent)' }}>medios@antena.com.ar</a> con tu feed RSS o URL de WordPress. La verificación es manual y gratuita; una vez aprobado aparecés acá.
+      </p>
+    </section>
+  </main>
+</Layout>

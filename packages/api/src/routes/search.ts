@@ -24,14 +24,16 @@ searchRoutes.get("/", async (c) => {
 
   const { q, limit, category, source_id, time } = parsed.data;
 
-  // Build the WHERE clause. FTS5 is on news_cards_fts which
-  // doesn't have category/source_id columns directly, so we
-  // join against news_cards when filters are active. Without
-  // filters, we stay on the virtual table for speed.
+  // Build the WHERE clause. FTS5 is on news_cards_fts (contentless
+  // table — `content=''` in the migration), so the FTS index only
+  // has the row id and the rank. To return the actual title/summary
+  // we must always join against news_cards. The original code
+  // tried to query the FTS table directly for the unfiltered case
+  // and got all-NULL rows back, because contentless FTS tables
+  // can't SELECT their indexed columns.
   const hasFilters = !!(category || source_id || (time && time !== "all"));
   const timeClause = time && time !== "all" ? ` AND nc.created_at >= datetime('now', ?)` : "";
-  const filterSql = hasFilters
-    ? `SELECT nc.id, nc.title, nc.summary, nc.image_url,
+  const filterSql = `SELECT nc.id, nc.title, nc.summary, nc.image_url,
              nc.source_name, nc.category, nc.published_at,
              f.rank
         FROM news_cards_fts f
@@ -41,11 +43,6 @@ searchRoutes.get("/", async (c) => {
         ${source_id ? " AND nc.source_id = ?" : ""}
         ${timeClause}
         ORDER BY f.rank
-        LIMIT ?`
-    : `SELECT id, title, summary, image_url, source_name, category, published_at, rank
-        FROM news_cards_fts
-        WHERE news_cards_fts MATCH ?
-        ORDER BY rank
         LIMIT ?`;
 
   return withCache(async () => {
