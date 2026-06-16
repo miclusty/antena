@@ -226,9 +226,18 @@ def build_alias_index(towns: Dict[str, Tuple[str, str, int]]) -> Dict[str, str]:
 
 # ─── Database helpers ────────────────────────────────────────────
 
-def get_connection(db_path: str = DEFAULT_DB) -> sqlite3.Connection:
+def get_connection(db_path: str = DEFAULT_DB,
+                    autocommit: bool = False) -> sqlite3.Connection:
     """Open a connection with WAL + foreign keys. Reuse the standard
-    AKIRA SQLite path so the rest of the system can read it."""
+    AKIRA SQLite path so the rest of the system can read it.
+
+    autocommit=True: set isolation_level=None so every execute()
+    is its own atomic transaction. This is the right mode for
+    long-lived reader connections in a busy system: a read
+    never holds a SHARED lock that blocks writers. Writes
+    from other connections (e.g., commit_perspectives) can
+    proceed immediately.
+    """
     conn = sqlite3.connect(db_path, timeout=30)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -237,6 +246,8 @@ def get_connection(db_path: str = DEFAULT_DB) -> sqlite3.Connection:
     # link_to_sources) hold write transactions for seconds at a
     # time; this lets our writers wait them out.
     conn.execute("PRAGMA busy_timeout=30000")
+    if autocommit:
+        conn.isolation_level = None
     return conn
 
 

@@ -86,6 +86,7 @@ def fetch_clusters(
     both environments.
     """
     with sqlite3.connect(db_path) as conn:
+        conn.isolation_level = None
         if skip_existing:
             sql = """
                 SELECT cluster_id
@@ -150,7 +151,20 @@ def commit_perspectives(
         return 0
     n = 0
     with lock:
-        with sqlite3.connect(db_path) as conn:
+        # Autocommit mode: every execute is its own transaction.
+        # The writer never blocks on readers (long-lived
+        # connections in the RAGEngine hold SHARED locks for
+        # their reads, which can block writers in WAL mode).
+        conn = sqlite3.connect(db_path, timeout=30)
+        conn.execute("PRAGMA busy_timeout=60000")
+        conn.isolation_level = None
+        # Retry-with-backoff: when multiple processes are
+        # writing, even with WAL + autocommit, the writer can
+        # briefly get "database is locked" when a reader
+        # upgrades to a reserved/exclusive lock. 3 retries with
+        # 2s/4s/8s backoff lets a slow reader finish without
+        # losing the batch.
+        for attempt in range(4):
             try:
                 for cluster_id, neutral_title, neutral_summary, pro_gov_text, anti_gov_text in rows:
                     # Split pro/anti into title + body. The RAG engine
@@ -190,10 +204,18 @@ def commit_perspectives(
                             anti_gov_text,
                         ),
                     )
-                conn.commit()
                 n = len(rows)
+                break  # success
             except sqlite3.OperationalError as e:
-                logger.error(f"commit_failed: {e}")
+                if attempt == 3:
+                    logger.error(f"commit_failed_after_3_retries: {e}")
+                else:
+                    backoff = 2 ** attempt
+                    logger.warning(
+                        f"commit_retry attempt={attempt+1}/3 backoff={backoff}s err={e}"
+                    )
+                    time.sleep(backoff)
+        conn.close()
     return n
 
 
@@ -244,6 +266,7 @@ def main() -> int:
 
     # Make sure master_articles has the perspective_type column.
     with sqlite3.connect(args.db) as conn:
+        conn.isolation_level = None
         cols = {
             r[1]
             for r in conn.execute("PRAGMA table_info(master_articles)").fetchall()
@@ -296,7 +319,12 @@ def main() -> int:
                     (p.cluster_id, p.neutral_title, p.neutral_summary, pro_text, anti_text)
                 )
                 if len(pending_rows) >= args.batch:
-                    commit_perspectives(args.db, pending_rows, db_lock)
+                    logger.info(
+                        f"commit_attempt batch={len(pending_rows)} "
+                        f"success={success} failed={failed}"
+                    )
+                    n = commit_perspectives(args.db, pending_rows, db_lock)
+                    logger.info(f"commit_done wrote={n}")
                     pending_rows = []
             if done % 5 == 0 or done == len(clusters):
                 elapsed = time.monotonic() - t0
