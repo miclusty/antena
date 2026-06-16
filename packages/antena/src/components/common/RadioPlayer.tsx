@@ -23,6 +23,8 @@ export interface Radio {
 }
 
 const STORAGE_KEY = 'antena.radio.v1';
+const FAV_KEY = 'antena.radio.favorites';
+const RECENT_KEY = 'antena.radio.recent';
 const API_BASE_FALLBACK = 'https://akira-api.miclusty.workers.dev';
 
 function getApiBase(): string {
@@ -47,6 +49,12 @@ export default function RadioPlayer() {
   const [search, setSearch] = createSignal('');
   const [cityFilter, setCityFilter] = createSignal<string>('');
   const [radios, setRadios] = createSignal<Radio[]>([]);
+  // Favorites & recent — separate localStorage keys so the
+  // rest of the player state isn't bloated.
+  const [favorites, setFavorites] = createSignal<number[]>([]);
+  const [recents, setRecents] = createSignal<number[]>([]);
+  // Sleep timer: epoch ms when playback should auto-stop. 0 = off.
+  const [sleepAt, setSleepAt] = createSignal(0);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [expanded, setExpanded] = createSignal(false);
@@ -74,6 +82,10 @@ export default function RadioPlayer() {
           setCurrent({ id: s.currentId } as Radio);
         }
       }
+      const favs = JSON.parse(localStorage.getItem(FAV_KEY) ?? '[]') as number[];
+      if (Array.isArray(favs)) setFavorites(favs);
+      const rec = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]') as number[];
+      if (Array.isArray(rec)) setRecents(rec);
     } catch {
       // ignore corrupt storage
     }
@@ -201,6 +213,12 @@ export default function RadioPlayer() {
     setCurrent(r);
     setPlaying(true);
     setOpen(false);
+    // Persist to recents (most recent first, dedup, max 10).
+    setRecents((prev) => {
+      const next = [r.id, ...prev.filter((id) => id !== r.id)].slice(0, 10);
+      try { localStorage.setItem(RECENT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
     // Safety: if the audio doesn't fire `playing` or `error`
     // within 12s, drop the starting state and show a hint.
     if (playTimer) window.clearTimeout(playTimer);
@@ -211,6 +229,37 @@ export default function RadioPlayer() {
       }
     }, 12000);
   };
+
+  const toggleFavorite = (id: number) => {
+    haptic.vibrate('tap');
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      try { localStorage.setItem(FAV_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const setSleep = (minutes: number) => {
+    if (minutes === 0) {
+      setSleepAt(0);
+    } else {
+      setSleepAt(Date.now() + minutes * 60_000);
+    }
+  };
+
+  // Sleep timer: poll once a second; pause when expired.
+  createEffect(() => {
+    if (!sleepAt() || !playing()) return;
+    const tick = () => {
+      if (sleepAt() && Date.now() >= sleepAt()) {
+        setPlaying(false);
+        setSleepAt(0);
+      }
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    onCleanup(() => window.clearInterval(id));
+  });
 
   // Keyboard shortcut: spacebar to play/pause when the panel
   // is open. Disabled elsewhere to avoid hijacking scroll.
@@ -332,22 +381,54 @@ export default function RadioPlayer() {
               </button>
               <button
                 onClick={() => { haptic.vibrate('tap'); setOpen(!open()); if (!radios().length) loadRadios(); }}
-                class="flex-1 min-w-0 text-left px-2"
+                class="flex-1 min-w-0 text-left px-2 flex items-center gap-2"
                 aria-label="Abrir reproductor"
               >
-                <p
-                  class="text-xs font-bold truncate"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {current()?.name ?? 'Reproductor'}
-                </p>
-                <p
-                  class="text-[10px] truncate"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  {current()?.city ? `${current()!.city} · ${current()!.province ?? ''}` : 'Tocá para elegir radio'}
-                </p>
+                {/* Live indicator: pulsing red dot when playing */}
+                <Show when={playing()}>
+                  <span class="relative flex items-center justify-center shrink-0">
+                    <span
+                      class="absolute w-2.5 h-2.5 rounded-full animate-ping"
+                      style={{ background: 'var(--accent)' }}
+                      aria-hidden="true"
+                    />
+                    <span
+                      class="w-2 h-2 rounded-full"
+                      style={{ background: 'var(--accent)' }}
+                      aria-hidden="true"
+                    />
+                  </span>
+                </Show>
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="text-xs font-bold truncate"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {current()?.name ?? 'Reproductor'}
+                  </p>
+                  <p
+                    class="text-[10px] truncate"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    {current()?.city ? `${current()!.city} · ${current()!.province ?? ''}` : 'Tocá para elegir radio'}
+                  </p>
+                </div>
               </button>
+              {/* Favorite button — visible whenever there's a current radio */}
+              <Show when={current()}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleFavorite(current()!.id); }}
+                  aria-label={favorites().includes(current()!.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                  class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                >
+                  <MaterialIcon
+                    name={favorites().includes(current()!.id) ? 'favorite' : 'favorite_border'}
+                    size="sm"
+                    class="text-base"
+                    style={{ color: favorites().includes(current()!.id) ? 'var(--accent)' : 'var(--text-secondary)' }}
+                  />
+                </button>
+              </Show>
               <Show when={open()}>
                 <button
                   onClick={() => { haptic.vibrate('tap'); setMuted(!muted()); }}
