@@ -46,6 +46,7 @@ import { readDensity, writeDensity, type Density } from './lib/preferences';
 import { readFontScale, readDataSaver } from './lib/preferences';
 import DensityToggle from './components/common/DensityToggle';
 import ModoMate from './components/common/ModoMate';
+import RadioPlayer from './components/common/RadioPlayer';
 import { isOnboarded } from './components/onboarding/OnboardingView';
 import TimeFilters, { type TimeFilter } from './components/common/TimeFilters';
 import QualityFilters, { type QualityFilter } from './components/common/QualityFilters';
@@ -956,6 +957,9 @@ export default function App() {
         newsItems={mappedNews().map(n => ({ title: n.title, summary: n.summary }))}
         currentIndex={0}
       />
+
+      {/* Persistent radio player — visible on every page */}
+      <RadioPlayer />
 
       <Show when={onboardingVisible()}>
         <OnboardingView

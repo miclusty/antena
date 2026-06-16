@@ -73,9 +73,9 @@ statsRoutes.get("/by-category", async (c) => {
 // Source reliability report
 statsRoutes.get("/sources", async (c) => {
   const db = c.env.DB;
-  
+
   const results = await db.prepare(`
-    SELECT 
+    SELECT
       s.id,
       s.name,
       s.url,
@@ -92,4 +92,83 @@ statsRoutes.get("/sources", async (c) => {
   `).all();
 
   return c.json(results.results ?? []);
+});
+
+// Live radio directory
+// ──────────────────────────────────────────────────────────
+// Powering the persistent player (/radios page + floating
+// play bar in the homepage). 818+ radios with stream_url —
+// most use HLS (.m3u8) or MP3/AAC over HTTPS. The page
+// filters by city when the device is following a pueblo
+// (via /api/follows).
+//
+// Response shape: [{ id, name, stream_url, website,
+// city, province, codgl, tags, type, source }]
+statsRoutes.get("/radios", async (c) => {
+  const db = c.env.DB;
+  const limit = Math.min(Number(c.req.query("limit") ?? 2000), 5000);
+  const codgl = c.req.query("codgl");
+  const province = c.req.query("province");
+
+  // The radios live in a separate table (argentine_media) that
+  // gets populated by media/link_sources.py and
+  // media/discover_via_gnews.py. The D1 sync is best-effort;
+  // until then the radios are not queryable from D1, so we
+  // ship them via AKIRA's /medios endpoint instead and cache
+  // the result in Cloudflare cache.
+  const cache = caches.default;
+  const cacheKey = new Request(`https://akira-api.miclusty.workers.dev/api/stats/radios?limit=${limit}&codgl=${codgl ?? ''}&province=${province ?? ''}`);
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    const body = await cached.json() as { items: unknown[]; cached: boolean; source: string };
+    body.cached = true;
+    return c.json(body);
+  }
+
+  // Try AKIRA first. If unreachable, fall back to D1 sources
+  // table (where we only have ~22 radios with RSS).
+  const akiraBase = c.env.AKIRA_URL;
+  let items: unknown[] = [];
+  let source = 'd1';
+  if (akiraBase) {
+    try {
+      const url = new URL(`${akiraBase}/medios/radios`);
+      url.searchParams.set('limit', String(limit));
+      if (codgl) url.searchParams.set('codgl', codgl);
+      if (province) url.searchParams.set('province', province);
+      const res = await fetch(url.toString(), {
+        headers: { 'User-Agent': 'AntenaRadiosProxy/1.0' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const data = await res.json() as { items?: unknown[] };
+        items = data.items ?? [];
+        source = 'akira';
+      }
+    } catch {
+      // fall through to D1
+    }
+  }
+  if (!items.length) {
+    // Fallback: D1 sources table (only the 22 with RSS).
+    const where: string[] = ["type = 'radio'", "is_active = 1"];
+    const params: (string | number)[] = [];
+    if (province) { where.push("province = ?"); params.push(province); }
+    const res = await db.prepare(`
+      SELECT id, name, url, NULL as stream_url, NULL as website,
+             NULL as city, province, NULL as codgl, NULL as tags,
+             'radio' as type, 'sources' as source
+      FROM sources
+      WHERE ${where.join(' AND ')}
+      ORDER BY news_count DESC
+      LIMIT ?
+    `).bind(...params, limit).all();
+    items = res.results ?? [];
+  }
+  const body = { items, total: items.length, cached: false, source };
+  const cacheRes = new Response(JSON.stringify(body), {
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=900' },
+  });
+  await cache.put(cacheKey, cacheRes);
+  return c.json(body);
 });

@@ -1,0 +1,180 @@
+---
+// /radios — Listado completo de radios en vivo.
+//
+// Página SSR para indexar todas las radios. El reproductor
+// persistente se monta desde <RadioPlayer /> en App.tsx y
+// se puede abrir desde cualquier página tocando el botón
+// flotante. Esta página es el "directorio" navegable.
+
+import Layout from '../layouts/Layout.astro';
+import SeoHead from '../components/SeoHead.astro';
+import RadioPlayer from '../components/common/RadioPlayer';
+
+export const prerender = true;
+
+const SITE = 'https://www.antena.com.ar';
+const API_BASE_FALLBACK = 'https://akira-api.miclusty.workers.dev';
+
+const fromEnv = import.meta.env.PUBLIC_API_BASE;
+const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+  ? API_BASE_FALLBACK
+  : fromEnv;
+
+interface Radio {
+  id: number;
+  name: string;
+  stream_url: string;
+  website: string | null;
+  city: string | null;
+  province: string | null;
+  codgl: string | null;
+  tags: string | null;
+  type: string;
+}
+
+let radios: Radio[] = [];
+try {
+  const res = await fetch(`${apiBase}/api/stats/radios?limit=2000`, {
+    headers: { 'User-Agent': 'AntenaRadiosPage/1.0' },
+  });
+  if (res.ok) {
+    const data = (await res.json()) as { items?: Radio[] };
+    radios = data.items ?? [];
+  }
+} catch {
+  radios = [];
+}
+
+// Group by province
+const byProvince = new Map<string, Radio[]>();
+for (const r of radios) {
+  const p = r.province || 'Argentina';
+  if (!byProvince.has(p)) byProvince.set(p, []);
+  byProvince.get(p)!.push(r);
+}
+for (const arr of byProvince.values()) arr.sort((a, b) => a.name.localeCompare(b.name));
+
+const provinces = Array.from(byProvince.entries())
+  .sort((a, b) => b[1].length - a[1].length);
+
+const totalByType = (() => {
+  const t: Record<string, number> = {};
+  for (const r of radios) t[r.province || 'Argentina'] = (t[r.province || 'Argentina'] ?? 0) + 1;
+  return t;
+})();
+
+const formatTags = (raw: string | null): string[] => {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.slice(0, 3) : [];
+  } catch {
+    return [];
+  }
+};
+---
+<Layout>
+  <Fragment slot="head">
+    <SeoHead
+      title="Radios en vivo — Antena"
+      description={`Directorio de ${radios.length} radios argentinas en vivo. AM, FM, radios online de todas las provincias. Escuchá en vivo desde el reproductor integrado de Antena.`}
+      canonical={`${SITE}/radios`}
+      jsonLd={{
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'name': 'Radios en vivo — Antena',
+        'url': `${SITE}/radios`,
+        'description': `Directorio de ${radios.length} radios argentinas en vivo.`,
+        'inLanguage': 'es-AR',
+      }}
+    />
+  </Fragment>
+
+  <main id="main-content" class="max-w-[860px] mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+      Radios en vivo
+    </h1>
+    <p class="text-base mb-6" style={{ color: 'var(--text-secondary)' }}>
+      <strong style={{ color: 'var(--text-primary)' }}>{radios.length}</strong> emisoras argentinas
+      transmitiendo en vivo. Tocá cualquiera para abrir el reproductor integrado,
+      que queda visible mientras navegás por el resto del feed.
+    </p>
+
+    <div class="rounded-xl border p-4 mb-8 flex flex-wrap gap-2"
+         style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}>
+      {provinces.slice(0, 12).map(([prov, arr]) => (
+        <a
+          href={`#prov-${prov}`}
+          class="text-xs px-3 py-1.5 rounded-full font-medium"
+          style={{ background: 'var(--bg-base)', color: 'var(--text-secondary)', 'border-color': 'var(--border-base)' }}
+        >
+          {prov} <span style={{ color: 'var(--text-tertiary)' }}>({arr.length})</span>
+        </a>
+      ))}
+    </div>
+
+    <div class="space-y-8">
+      {provinces.map(([prov, arr]) => (
+        <section id={`prov-${prov}`} class="rounded-xl border p-4"
+                 style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+              {prov}
+            </h2>
+            <span class="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {arr.length} {arr.length === 1 ? 'emisora' : 'emisoras'}
+            </span>
+          </div>
+          <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {arr.map((r) => (
+              <li>
+                <div
+                  class="flex items-center gap-2 p-2.5 rounded-lg"
+                  style={{ background: 'var(--bg-base)' }}
+                >
+                  <div
+                    class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: 'var(--bg-elevated)', color: 'var(--accent)' }}
+                    aria-hidden="true"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3.24 6.15C2.51 6.43 2 7.17 2 8v12a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H8.3l8.26-3.34L15.88 1l-12.64 5.15zM7 20c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-8h-2v-2h-2v2H4V8h12v4z" />
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                      {r.name}
+                    </p>
+                    <p class="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
+                      {r.city ?? 'Argentina'}
+                      {formatTags(r.tags).length > 0 ? ` · ${formatTags(r.tags).join(' · ')}` : ''}
+                    </p>
+                  </div>
+                  <span class="text-[10px] font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--accent)' }}>EN VIVO</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+
+    <section class="text-sm p-4 mt-8 rounded-xl"
+             style={{ background: 'var(--bg-elevated)', color: 'var(--text-tertiary)' }}>
+      <p class="font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+        ¿Sos una radio y querés aparecer en Antena?
+      </p>
+      <p>
+        Escribinos a <a href="mailto:radios@antena.com.ar" class="underline"
+        style={{ color: 'var(--accent)' }}>radios@antena.com.ar</a> con el
+        URL de tu stream (HLS .m3u8, MP3, AAC, Icecast, Shoutcast).
+        Verificamos y agregamos al directorio.
+      </p>
+    </section>
+
+    {/* The persistent player is mounted globally by App.tsx, but we
+        also re-render it here so the page works standalone. */}
+    <RadioPlayer client:load />
+  </main>
+</Layout>

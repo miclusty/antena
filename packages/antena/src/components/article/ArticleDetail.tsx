@@ -357,6 +357,65 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           </span>
         </div>
 
+        {/* Source card — bigger, with bias stripe, so the user
+            sees the source as a "voice" of the article, not just
+            a small text label. */}
+        <Show when={n().source}>
+          <div
+            class="flex items-stretch gap-3 mb-4 p-3 rounded-xl border"
+            style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+          >
+            {/* Bias color stripe on the left edge */}
+            <div
+              class="w-1 rounded-full shrink-0"
+              style={{ background: n().biasGradientColor || 'var(--bias-neutral)' }}
+              aria-hidden="true"
+            />
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: 'var(--bg-base)', color: 'var(--text-secondary)' }}
+              aria-hidden="true"
+            >
+              <MaterialIcon
+                name="newspaper"
+                size="base"
+                class="text-base"
+                style={{ 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24'" }}
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p
+                class="text-[10px] uppercase tracking-wider font-bold"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                Fuente
+              </p>
+              <p
+                class="text-base font-bold truncate"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {n().source}
+              </p>
+              <p
+                class="text-xs truncate"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                {cleanLocation() ? `${cleanLocation()} · ` : ''}
+                {n().time} · {readingTime()} de lectura
+                <Show when={n().author}>
+                  {' '}· Por {n().author}
+                </Show>
+              </p>
+            </div>
+            <span
+              class="shrink-0 self-center text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
+              style={{ background: n().biasGradientColor || 'var(--bias-neutral)' }}
+            >
+              {n().bias || 'Neutral'}
+            </span>
+          </div>
+        </Show>
+
         {/* Title */}
         <h1
           class="text-[24px] md:text-[30px] font-bold leading-[1.15] mb-4 tracking-tight"
@@ -365,27 +424,18 @@ export default function ArticleDetail(props: ArticleDetailProps) {
           {displayTitle().replace('📢 ', '')}
         </h1>
 
-        {/* Meta row */}
+        {/* Meta row — kept for compact info (location/time/etc) */}
         <div
           class="flex items-center gap-2 mb-6 pb-4 flex-wrap"
           style={{ 'border-bottom': '1px solid var(--border-base)' }}
         >
-          <span class="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {n().source}
-          </span>
-          <span
-            class="text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
-            style={{ 'background-color': n().biasGradientColor || 'var(--bias-neutral)' }}
-          >
-            {n().bias || 'Neutral'}
+          <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            {n().time} · {readingTime()} de lectura
           </span>
           <Show when={n().author}>
             <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
-            <MaterialIcon name="person" size="sm" class="text-sm " style={{ color: 'var(--text-tertiary)', 'font-variation-settings': "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16'", }} />
             <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>Por {n().author}</span>
           </Show>
-          <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
-          <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{n().time}</span>
           <span class="w-0.5 h-0.5 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
           <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>{readingTime()}</span>
           <Show when={scrollPct() > 0.05 && remainingMinutes() > 0}>
