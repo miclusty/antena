@@ -2,6 +2,9 @@ name = "antena"
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "./dist"
 
+[vars]
+API_BASE = "https://akira-api.miclusty.workers.dev"
+
 # Phase 6 will fill in the actual Cloudflare bindings (D1, KV, R2,
 # Vectorize, Analytics Engine, Queues, Cron Triggers). Keeping them
 # commented here as a checklist so deploys don't surprise us later.
