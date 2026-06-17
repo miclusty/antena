@@ -251,7 +251,7 @@ export default function NewsCard(props: NewsCardProps) {
             source={props.news.source}
             size={24}
             biasScore={props.news.biasScore}
-            showBiasDot={false}
+            showBiasDot={true}
             sourceId={props.news.sourceId ?? null}
             onClick={props.onSourceClick}
           />
