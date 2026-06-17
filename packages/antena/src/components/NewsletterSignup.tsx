@@ -1,25 +1,23 @@
 /** @jsxImportSource solid-js */
-import { createSignal, Show } from 'solid-js';
+import { createSignal, createEffect } from 'solid-js';
 import { useHaptic } from '../lib/haptic';
 import { toast } from './Toast';
 import MaterialIcon from './common/MaterialIcon';
 
-/**
- * Newsletter signup banner. Appears at the bottom of
- * the feed on the third+ visit, dismissable. POSTs to
- * /api/newsletter (or shows a fallback toast if the
- * endpoint is unavailable — typical in static builds).
- */
 export default function NewsletterSignup() {
   const haptic = useHaptic();
   const [email, setEmail] = createSignal('');
-  const [open, setOpen] = createSignal(
-    typeof window !== 'undefined'
-      ? (!localStorage.getItem('antena-newsletter-dismissed')
-      && !localStorage.getItem('antena-newsletter-subscribed'))
-      : false, // SSR: never show (min-height reserved below prevents CLS)
-  );
+  const [open, setOpen] = createSignal(false);
   const [submitting, setSubmitting] = createSignal(false);
+
+  createEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored =
+        localStorage.getItem('antena-newsletter-dismissed') ||
+        localStorage.getItem('antena-newsletter-subscribed');
+      if (!stored) setOpen(true);
+    }
+  });
 
   const dismiss = () => {
     localStorage.setItem('antena-newsletter-dismissed', '1');
@@ -48,9 +46,6 @@ export default function NewsletterSignup() {
         toast('No pudimos suscribirte. Probá más tarde.', 'error');
       }
     } catch {
-      // Endpoint not wired in static mode — show success
-      // optimistically since the localStorage flag keeps
-      // the banner from reappearing.
       localStorage.setItem('antena-newsletter-subscribed', '1');
       toast('¡Listo! Te avisamos cuando haya noticias importantes.', 'success');
       setOpen(false);
@@ -60,11 +55,6 @@ export default function NewsletterSignup() {
   };
 
   return (
-    // Always render the <section> with a reserved min-height so the
-    // banner appearing on hydration (client-side) doesn't push the
-    // rest of the feed down — that was the source of the 0.094 CLS
-    // score. When closed, the content is hidden but the box reserves
-    // its space via `aria-hidden` and the same min-height.
     <section
       class="rounded-2xl border p-4 mb-4 mx-4"
       style={{
@@ -78,7 +68,14 @@ export default function NewsletterSignup() {
       aria-label="Suscribite al newsletter"
       aria-hidden={!open()}
     >
-      <Show when={open()}>
+      <div
+        style={{
+          transition: 'opacity 0.3s, transform 0.3s',
+          opacity: open() ? 1 : 0,
+          transform: open() ? 'translateY(0)' : 'translateY(-8px)',
+          'pointer-events': open() ? 'auto' : 'none',
+        }}
+      >
         <header class="flex items-start gap-3 mb-3">
           <MaterialIcon name="mail" size="xl" class="text-2xl shrink-0" style={{ color: 'var(--accent)' }} aria-hidden="true" />
           <div class="flex-1 min-w-0">
@@ -120,7 +117,7 @@ export default function NewsletterSignup() {
             {submitting() ? '…' : 'Suscribirme'}
           </button>
         </form>
-      </Show>
+      </div>
     </section>
   );
 }
