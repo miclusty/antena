@@ -2,7 +2,10 @@
 """AKIRA Harvester v12.0 - Delta extraction with domain-aware rate limiting."""
 import re, sqlite3, json, uuid, asyncio, aiohttp, time, os, sys
 from datetime import datetime
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+
+import aiohttp
+from tqdm import tqdm
 from collections import defaultdict
 from email.utils import parsedate_to_datetime
 
@@ -191,10 +194,29 @@ conn.execute("PRAGMA busy_timeout=120000")
 # run_pipeline_cron.sh behavior). Otherwise seen_urls from a
 # prior run blocks all new items.
 conn.execute("DELETE FROM seen_urls")
-conn.execute("UPDATE sources SET last_harvest_at = '1970-01-01' WHERE is_active = 1")
+conn.execute("UPDATE sources SET last_harvest_at = '1970-01-01', error_count = 0 WHERE is_active = 1")
 conn.execute("UPDATE source_health SET consecutive_failures = 0, is_circuit_open = 0")
+# Reactivate auto-deactivated sources (old bug: empty items = error)
+conn.execute("""
+    UPDATE sources SET is_active = 1, error_count = 0
+    WHERE is_active = 0 AND (deactivation_reason IS NULL OR deactivation_reason LIKE 'auto%')
+""")
 conn.commit()
 print("Reset seen_urls + last_harvest_at + circuit breakers", flush=True)
+# Reactivate sources that were auto-deactivated because of the
+# old bug (0 items = error). Now that empty-return is NOT an
+# error, most of these will produce content. Only sources
+# deactivated for actual errors (5+ consecutive_failures
+# from real HTTP errors) stay deactivated.
+conn.execute("""
+    UPDATE sources SET is_active = 1
+    WHERE is_active = 0
+    AND (deactivation_reason IS NULL
+         OR deactivation_reason LIKE 'auto%')
+""")
+conn.commit()
+reactivated = conn.execute("SELECT COUNT(*) FROM sources WHERE is_active = 1").fetchone()[0]
+print(f"Reactivated sources → now {reactivated} active", flush=True)
 # Use consecutive_failures from source_health as the
 # active-failure signal rather than the historical
 # sources.error_count, which is cumulative. A source
@@ -394,78 +416,6 @@ async def process_sources():
         conn2.commit()
         conn2.close()
 
-        # ── Image fallback (post-process) ────────────────────
-        # Many RSS feeds don't include <enclosure> or <media:thumbnail>
-        # so the extractor returns image_url=null. The article
-        # page almost always has an og:image meta tag, so we
-        # fetch the page and extract it for cards that landed
-        # without an image. Runs in parallel to the harvest
-        # for speed. Cap to 30s total so it doesn't slow the
-        # pipeline.
-        try:
-            no_img_cards = conn2.execute('''
-                SELECT id, article_url, source_url FROM news_cards
-                WHERE created_at >= datetime('now', '-30 minutes')
-                  AND (image_url IS NULL OR image_url = '')
-                  AND (article_url IS NOT NULL AND article_url != ''
-                       OR source_url IS NOT NULL AND source_url != '')
-            ''').fetchall()
-        except Exception:
-            no_img_cards = []
-        if no_img_cards:
-            print(f"  [images] backfilling {len(no_img_cards)} cards without image", flush=True)
-            import re as _re
-            OG_RE = _re.compile(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', _re.I)
-            TW_RE = _re.compile(r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']', _re.I)
-            IMG_RE = _re.compile(r'<img[^>]+src=["\']([^"\']+\.(?:jpg|jpeg|png|webp|gif))["\']', _re.I)
-            SKIP = ('doubleclick.', 'googletagmanager.', 'google-analytics.')
-            async def fetch_og(session, url, sem):
-                async with sem:
-                    try:
-                        async with session.get(
-                            url,
-                            timeout=aiohttp.ClientTimeout(total=10),
-                            headers={'User-Agent': 'Mozilla/5.0 AntenaImageBot/1.0'},
-                        ) as resp:
-                            if resp.status != 200:
-                                return None
-                            body = await resp.content.read(500_000)
-                            ct = resp.headers.get('Content-Type', '')
-                            if 'text/html' not in ct:
-                                return None
-                            html = body.decode('utf-8', errors='ignore')
-                    except Exception:
-                        return None
-                m = OG_RE.search(html)
-                if m and not any(s in m.group(1) for s in SKIP):
-                    return m.group(1)
-                m = TW_RE.search(html)
-                if m and not any(s in m.group(1) for s in SKIP):
-                    return m.group(1)
-                m = IMG_RE.search(html)
-                if m and not any(s in m.group(1) for s in SKIP):
-                    return m.group(1)
-                return None
-            async def run_images():
-                sem = asyncio.Semaphore(8)
-                async with aiohttp.ClientSession() as session:
-                    tasks = []
-                    for nc_id, article_url, source_url in no_img_cards:
-                        url = article_url or source_url
-                        tasks.append((nc_id, url, asyncio.create_task(fetch_og(session, url, sem))))
-                    filled = 0
-                    for nc_id, url, task in tasks:
-                        img = await task
-                        if img:
-                            conn2.execute('UPDATE news_cards SET image_url = ? WHERE id = ?', (img, nc_id))
-                            filled += 1
-                    if filled:
-                        conn2.commit()
-                    print(f"  [images] filled {filled}/{len(tasks)} og:images", flush=True)
-            try:
-                asyncio.run(run_images())
-            except Exception as e:
-                print(f"  [images] backfill failed: {e}", flush=True)
 
 asyncio.run(process_sources())
 
