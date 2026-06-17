@@ -15,8 +15,9 @@ export default function NewsletterSignup() {
   const [email, setEmail] = createSignal('');
   const [open, setOpen] = createSignal(
     typeof window !== 'undefined'
-    && !localStorage.getItem('antena-newsletter-dismissed')
-    && !localStorage.getItem('antena-newsletter-subscribed'),
+      ? (!localStorage.getItem('antena-newsletter-dismissed')
+      && !localStorage.getItem('antena-newsletter-subscribed'))
+      : false, // SSR: never show (min-height reserved below prevents CLS)
   );
   const [submitting, setSubmitting] = createSignal(false);
 
@@ -69,10 +70,7 @@ export default function NewsletterSignup() {
       style={{
         background: 'var(--bg-elevated)',
         'border-color': 'var(--border-base)',
-        // Always reserve the full height so the section appearing
-        // on hydration doesn't push the rest of the feed down.
-        // 220px fits header (~60) + 12mb + form (~40) + 32 padding
-        // comfortably with a 76px buffer for font-scale up to 1.25.
+        height: '220px',
         'min-height': '220px',
         'max-height': '220px',
         overflow: 'hidden',
