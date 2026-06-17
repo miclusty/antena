@@ -65,6 +65,8 @@ def parse_args() -> argparse.Namespace:
         description="Synthesize 3-perspective master articles via RAG"
     )
     p.add_argument("--limit", type=int, default=0)
+    p.add_argument("--offset", type=int, default=0,
+                   help="Skip first N clusters in the queue (use with --limit to partition work across machines)")
     p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("--model", type=str, default=DEFAULT_MODEL)
     p.add_argument("--skip-existing", action="store_true", default=True)
@@ -75,7 +77,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def fetch_clusters(
-    db_path: str, limit: int, skip_existing: bool
+    db_path: str, limit: int, skip_existing: bool, offset: int = 0
 ) -> List[str]:
     """Return cluster_ids that need synthesis.
 
@@ -108,7 +110,7 @@ def fetch_clusters(
                 ORDER BY COUNT(*) DESC
             """
         if limit > 0:
-            sql += f" LIMIT {limit}"
+            sql += f" LIMIT {limit} OFFSET {offset}"
         rows = conn.execute(sql).fetchall()
     return [r[0] for r in rows]
 
@@ -279,7 +281,7 @@ def main() -> int:
                 "CREATE INDEX IF NOT EXISTS idx_master_perspective ON master_articles (cluster_id, perspective_type)"
             )
 
-    clusters = fetch_clusters(args.db, args.limit, args.skip_existing)
+    clusters = fetch_clusters(args.db, args.limit, args.skip_existing, args.offset)
     if not clusters:
         logger.info("nothing to do (no clusters need synthesis)")
         return 0
