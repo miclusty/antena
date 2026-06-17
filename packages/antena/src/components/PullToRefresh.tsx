@@ -1,4 +1,5 @@
-import { createSignal, type JSX } from 'solid-js';
+import { createSignal, type JSX } from 'solid-js'
+import MaterialIcon from './common/MaterialIcon'
 
 interface PullToRefreshProps {
   onRefresh: () => Promise<void>;
@@ -52,11 +53,9 @@ export default function PullToRefresh(props: PullToRefreshProps) {
         style={{ height: `${pullDistance()}px`, opacity: pullDistance() / 60 }}
       >
         {refreshing() ? (
-          <span class="material-symbols-outlined animate-spin text-muted text-lg">sync</span>
+          <MaterialIcon name="sync" size="lg" class="text-muted animate-spin" />
         ) : (
-          <span class="material-symbols-outlined text-muted text-lg" style={{ transform: `rotate(${pullDistance() * 3}deg)` }}>
-            arrow_downward
-          </span>
+          <MaterialIcon name="arrow_downward" size="lg" class="text-muted" style={{ transform: `rotate(${pullDistance() * 3}deg)` }} />
         )}
       </div>
       {props.children}

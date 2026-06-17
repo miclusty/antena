@@ -68,7 +68,7 @@ const CAT_COLORS: Record<string, string> = {
 
 type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking' | 'readLater';
 
-export default function App() {
+export default function App(props?: { initialFeed?: unknown[] }) {
   const [activeCategory, setActiveCategory] = createSignal('Todas');
   const [searchQuery, setSearchQuery] = createSignal('');
   const [activeLocation, setActiveLocation] = createSignal<string | null>(null);
@@ -86,7 +86,9 @@ export default function App() {
   ]);
   const [stats, setStats] = createSignal<{ total_news: number; active_sources: number; total_locations: number; news_today?: number }>({ total_news: 0, active_sources: 0, total_locations: 0 });
   const [offset, setOffset] = createSignal(0);
-  const [allNews, setAllNews] = createSignal<NewsItem[]>([]);
+  const [allNews, setAllNews] = createSignal<NewsItem[]>(
+    (props?.initialFeed ?? []).map(n => mapNewsCard(n as unknown as ApiNewsCard))
+  );
   const [hasMore, setHasMore] = createSignal(true);
   const [isLoadingMore, setIsLoadingMore] = createSignal(false);
   const [activeTab, setActiveTab] = createSignal<TabId>('home');
@@ -165,6 +167,15 @@ export default function App() {
     }
   };
 
+  const initialFeedResp: FeedResponse = {
+    news: (props?.initialFeed ?? []) as ApiNewsCard[],
+    total: (props?.initialFeed?.length ?? 0),
+    page: 0,
+    per_page: 15,
+    location: null,
+    category: null,
+  }
+
   const [feed, { refetch }] = createResource(
     () => `${activeCategory()}:${searchQuery()}:${activeLocation() ?? 'all'}:${activeFeedTab()}:${follows.followedIds().size}:${JSON.stringify(filterState())}`,
     async (): Promise<FeedResponse> => {
@@ -203,7 +214,8 @@ export default function App() {
         }
         throw e;
       }
-    }
+    },
+    { initialValue: initialFeedResp }
   );
 
   const resetFeed = () => { setOffset(0); setAllNews([]); setHasMore(true); refetch(); };
@@ -719,7 +731,7 @@ export default function App() {
 
                     <PersonalizationBanner
                       showCityHint={!activeLocation() || activeLocation() === ''}
-                      showFollowHint={follows.follows.length === 0}
+                      showFollowHint={follows.follows().length === 0}
                       showCategoryHint={!activeCategory() || activeCategory() === 'Todas'}
                       onOpenOnboarding={() => setOnboardingVisible(true)}
                     />

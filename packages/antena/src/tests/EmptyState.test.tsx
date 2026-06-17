@@ -41,13 +41,13 @@ describe("EmptyState", () => {
     }
   });
 
-  it("falls back to material-symbol for unknown icons", () => {
+  it("renders SVG for any icon name", () => {
     const { container } = render(() => (
       <EmptyState title="t" icon="unknown-icon" />
     ));
-    const matSymbol = container.querySelector(".material-symbols-rounded");
-    expect(matSymbol).toBeTruthy();
-    expect(matSymbol?.textContent).toBe("unknown-icon");
+    const svg = container.querySelector("svg use");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("href")).toBe("/icons.svg#unknown-icon");
   });
 
   it("renders without icon when no icon prop is provided", () => {
@@ -55,7 +55,6 @@ describe("EmptyState", () => {
       <EmptyState title="Just a title" />
     ));
     expect(container.querySelector("svg")).toBeNull();
-    expect(container.querySelector(".material-symbols-rounded")).toBeNull();
   });
 
   it("invokes action callback when button is clicked", () => {

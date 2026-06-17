@@ -18,6 +18,7 @@
     "@astrojs/cloudflare": "^13.7.0",
     "@astrojs/solid-js": "^5.0.0",
     "@astrojs/tailwind": "^5.1.4",
+    "@material-design-icons/svg": "^0.14.15",
     "@tanstack/solid-query": "^5.59.0",
     "astro": "^5.0.0",
     "dompurify": "^3.4.10",
