@@ -47,14 +47,40 @@ step() {
     fi
 }
 
+# Step 0: ensure AKIRA server is up. If not running, try to
+# start it. This prevents the "AKIRA not running — aborting"
+# loop that silently killed 3 consecutive pipeline runs
+# (2026-06-16 03:44, 09:44, 15:44).
+LOCKFILE="/tmp/akira-pipeline.lock"
+if ! mkdir "$LOCKFILE" 2>/dev/null; then
+    log "ERROR: another pipeline is already running (lock: $LOCKFILE)"
+    exit 2
+fi
+trap 'rmdir "$LOCKFILE" 2>/dev/null' EXIT
+
 log "=== Pipeline start ==="
 
-# Step 0: ensure AKIRA server is up
-if ! curl -sf -m 5 http://127.0.0.1:5100/health > /dev/null; then
-    log "ERROR: AKIRA server not running on :5100 — aborting"
-    exit 1
-fi
-log "AKIRA server healthy"
+# Health check with auto-restart
+for attempt in 1 2 3; do
+    if curl -sf -m 5 http://127.0.0.1:5100/health > /dev/null; then
+        log "AKIRA server healthy"
+        break
+    fi
+    log "AKIRA server not running on :5100 (attempt $attempt/3) — starting…"
+    pkill -f "uvicorn main:app" 2>/dev/null || true
+    sleep 2
+    nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 5100 > /tmp/akira.log 2>&1 &
+    sleep 8
+    if curl -sf -m 5 http://127.0.0.1:5100/health > /dev/null; then
+        log "AKIRA server started OK"
+        break
+    fi
+    log "AKIRA server still not reachable after start attempt"
+    if [ $attempt -eq 3 ]; then
+        log "FATAL: AKIRA server won't start after 3 attempts — aborting"
+        exit 1
+    fi
+done
 
 # Step 1: reset dedup state so fresh items are picked up
 log "Reset seen_urls + last_harvest_at + error_count"
