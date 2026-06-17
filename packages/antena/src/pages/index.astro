@@ -6,17 +6,25 @@ import SeoHead from '../components/SeoHead.astro';
 const SITE = 'https://www.antena.com.ar';
 
 // SSR: pre-fetch first 20 cards so HTML has content before JS hydrates.
-// This drops LCP from 13.5s → ~1.5s (cards visible in the first paint).
+// This also pre-fetches blindspot items — the blindspot title is typically
+// the LCP element, so it must be in the initial HTML.
 // If the fetch fails (e.g. build environment without a running API),
 // the App falls back to client-side fetching with zero regression.
 let initialFeed: unknown[] = []
+let initialBlindspot: unknown[] = []
 try {
   const API = (import.meta as Record<string, any>).env?.PUBLIC_API_BASE || 'https://akira-api.miclusty.workers.dev'
-  const url = `${API}/api/news/feed?limit=15&foryou=true`
-  const res = await fetch(url)
-  if (res.ok) {
-    const data = await res.json()
+  const [feedRes, blindspotRes] = await Promise.all([
+    fetch(`${API}/api/news/feed?limit=15&foryou=true`),
+    fetch(`${API}/api/news/blindspot?limit=10`),
+  ])
+  if (feedRes.ok) {
+    const data = await feedRes.json()
     initialFeed = data.news ?? []
+  }
+  if (blindspotRes.ok) {
+    const data = await blindspotRes.json()
+    initialBlindspot = data.items ?? []
   }
 } catch {
   // API not reachable during build — client fetches on hydration
@@ -33,5 +41,5 @@ try {
       ogImageAlt="Antena — Noticias hiperlocales de Argentina"
     />
   </Fragment>
-  <App client:load initialFeed={initialFeed} />
+  <App client:load initialFeed={initialFeed} initialBlindspot={initialBlindspot} />
 </Layout>

@@ -68,7 +68,7 @@ const CAT_COLORS: Record<string, string> = {
 
 type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking' | 'readLater';
 
-export default function App(props?: { initialFeed?: unknown[] }) {
+export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?: unknown[] }) {
   const [activeCategory, setActiveCategory] = createSignal('Todas');
   const [searchQuery, setSearchQuery] = createSignal('');
   const [activeLocation, setActiveLocation] = createSignal<string | null>(null);
@@ -120,7 +120,18 @@ export default function App(props?: { initialFeed?: unknown[] }) {
   const [drawerOpen, setDrawerOpen] = createSignal(false);
   const [trendingItems, setTrendingItems] = createSignal<ApiNewsCard[]>([]);
   const [breakingItems, setBreakingItems] = createSignal<ApiNewsCard[]>([]);
-  const [blindspotItems, setBlindspotItems] = createSignal<Array<{ id: string; title: string; summary: string; source: string; sourceUrl?: string; sourceId?: number | null; category?: string; biasColor?: string }>>([]);
+  const [blindspotItems, setBlindspotItems] = createSignal<Array<{ id: string; title: string; summary: string; source: string; sourceUrl?: string; sourceId?: number | null; category?: string; biasColor?: string }>>(
+    (props?.initialBlindspot ?? []).map((it: any) => ({
+      id: it.id,
+      title: it.title,
+      summary: it.summary,
+      source: it.source_name ?? it.source ?? 'Fuente',
+      sourceUrl: it.source_url ?? undefined,
+      sourceId: it.source_id ?? null,
+      category: it.category ?? undefined,
+      biasColor: it.biasColor ?? undefined,
+    }))
+  );
   const [blindspotLoading, setBlindspotLoading] = createSignal(false);
   const [density, setDensity] = createSignal<Density>(readDensity());
   const [mateMode, setMateMode] = createSignal(false);
@@ -432,7 +443,7 @@ export default function App(props?: { initialFeed?: unknown[] }) {
     // duplicate /api/news/blindspot request on every page load,
     // showing up as a 1.7s critical path latency in Lighthouse).
     const refreshBlindspot = () => {
-      setBlindspotLoading(true);
+      if (blindspotItems().length === 0) setBlindspotLoading(true);
       fetchBlindspot(10)
         .then((res) => res && setBlindspotItems(res.items.map((it: any) => ({
           id: it.id,
