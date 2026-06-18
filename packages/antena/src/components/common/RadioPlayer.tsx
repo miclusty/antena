@@ -10,6 +10,9 @@ import {
 } from 'solid-js';
 import MaterialIcon from '../common/MaterialIcon';
 import { useHaptic } from '../../lib/haptic';
+import { loadUserCountry, country } from '../../lib/user-country';
+import { COUNTRIES } from '../../lib/countries';
+import CountrySelector from '../radios/CountrySelector';
 
 export interface Radio {
   id: number;
@@ -63,6 +66,7 @@ export default function RadioPlayer() {
   // Distinct from the directory `loading()` which is the
   // first-time fetch.
   const [starting, setStarting] = createSignal<number | null>(null);
+  const [showCountryPicker, setShowCountryPicker] = createSignal(false);
 
   let audioEl: HTMLAudioElement | undefined;
   let userInteracted = false;
@@ -104,6 +108,18 @@ export default function RadioPlayer() {
       window.removeEventListener('keydown', onFirstGesture);
       window.removeEventListener('touchstart', onFirstGesture);
     });
+    // Resolve the user's country (localStorage override → AKIRA
+    // detection) before fetching the directory, so the first
+    // loadRadios() already targets the right country.
+    void loadUserCountry().then(() => loadRadios());
+    // Refetch the directory whenever the user picks a new
+    // country in the selector drawer.
+    const onCountryChanged = () => {
+      setRadios([]);
+      loadRadios();
+    };
+    window.addEventListener('antena:country-changed', onCountryChanged);
+    onCleanup(() => window.removeEventListener('antena:country-changed', onCountryChanged));
   });
 
   // Persist on changes
@@ -128,7 +144,9 @@ export default function RadioPlayer() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(`${getApiBase()}/api/stats/radios?limit=2000`);
+      const url = new URL(`${getApiBase()}/api/stats/radios`);
+      url.searchParams.set('country', country());
+      url.searchParams.set('limit', '2000');
       const res = await fetch(url.toString(), { headers: { 'User-Agent': 'AntenaRadio/1.0' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { items?: Radio[] };
@@ -429,6 +447,18 @@ export default function RadioPlayer() {
                   />
                 </button>
               </Show>
+              {/* Country picker — always visible so the user can
+                  change country at any time, not just from the
+                  full directory page. */}
+              <button
+                type="button"
+                class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-[var(--bg-elevated)]"
+                onClick={(e) => { e.stopPropagation(); haptic.vibrate('tap'); setShowCountryPicker(true); }}
+                aria-label="Cambiar país"
+                title={`País: ${COUNTRIES[country()]?.name ?? country()}`}
+              >
+                <span class="text-base leading-none">{COUNTRIES[country()]?.flag ?? '🌍'}</span>
+              </button>
               <Show when={open()}>
                 <button
                   onClick={() => { haptic.vibrate('tap'); setMuted(!muted()); }}
@@ -689,6 +719,10 @@ export default function RadioPlayer() {
         >
           <MaterialIcon name="radio" size="base" class="text-xl" />
         </button>
+      </Show>
+
+      <Show when={showCountryPicker()}>
+        <CountrySelector onClose={() => setShowCountryPicker(false)} />
       </Show>
     </>
   );
