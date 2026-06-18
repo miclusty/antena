@@ -12,6 +12,8 @@ import MaterialIcon from '../common/MaterialIcon';
 import { useHaptic } from '../../lib/haptic';
 import { loadUserCountry, country } from '../../lib/user-country';
 import { COUNTRIES } from '../../lib/countries';
+import { buildQueue, getNext, getPrev, getNextFavorite } from '../../lib/radio-queue';
+import { installMediaSession, setMetadata } from '../../lib/media-session';
 import CountrySelector from '../radios/CountrySelector';
 
 export interface Radio {
@@ -215,6 +217,25 @@ export default function RadioPlayer() {
     audioEl.volume = muted() ? 0 : volume();
   });
 
+  createEffect(() => {
+    const c = current();
+    if (!c) {
+      setMetadata(null);
+      return;
+    }
+    const countryCode = country();
+    const countryName = COUNTRIES[countryCode]?.name ?? countryCode;
+    const countryFlag = COUNTRIES[countryCode]?.flag ?? '🌍';
+    setMetadata(new MediaMetadata({
+      title: c.name,
+      artist: [c.city, c.province].filter(Boolean).join(' · ') || countryName,
+      album: `Antena · ${countryFlag} ${countryName}`,
+      artwork: [
+        { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' },
+      ],
+    }));
+  });
+
   const togglePlay = () => {
     haptic.vibrate('tap');
     userInteracted = true;
@@ -223,11 +244,74 @@ export default function RadioPlayer() {
     setPlaying((p) => !p);
   };
 
+  const playNext = () => {
+    const queue = buildQueue(favorites(), recents(), radiosById());
+    const nextId = getNext(queue, current()?.id ?? null);
+    if (nextId === null) {
+      setError('No hay más radios para saltar');
+      return;
+    }
+    const radio = radiosById().get(nextId);
+    if (radio) selectRadio(radio);
+  };
+
+  const playPrev = () => {
+    const queue = buildQueue(favorites(), recents(), radiosById());
+    const prevId = getPrev(queue, current()?.id ?? null);
+    if (prevId === null) {
+      setError('No hay más radios para saltar');
+      return;
+    }
+    const radio = radiosById().get(prevId);
+    if (radio) selectRadio(radio);
+  };
+
+  const playNextFavorite = () => {
+    const nextFavId = getNextFavorite(
+      favorites(),
+      current()?.id ?? null,
+      radiosById(),
+    );
+    if (nextFavId === null) {
+      setError('Marcá radios como favoritas para usar ⏮⏭ doble');
+      return;
+    }
+    const radio = radiosById().get(nextFavId);
+    if (radio) selectRadio(radio);
+  };
+
+  const playPrevFavorite = playNextFavorite; // same handler either way
+
   const selectRadio = (r: Radio) => {
     haptic.vibrate('tap');
     userInteracted = true;
     setError(null);
     setStarting(r.id);
+    // Install Media Session handlers. Safe to call repeatedly —
+    // re-binds with the latest closures over favorites/recents state.
+    installMediaSession({
+      play: () => { setPlaying(true); },
+      pause: () => { setPlaying(false); },
+      next: playNext,
+      prev: playPrev,
+      nextFavorite: playNextFavorite,
+      prevFavorite: playPrevFavorite,
+      getMetadata: () => {
+        const c = current();
+        if (!c) return null;
+        const countryCode = country();
+        const countryName = COUNTRIES[countryCode]?.name ?? countryCode;
+        const countryFlag = COUNTRIES[countryCode]?.flag ?? '🌍';
+        return new MediaMetadata({
+          title: c.name,
+          artist: [c.city, c.province].filter(Boolean).join(' · ') || countryName,
+          album: `Antena · ${countryFlag} ${countryName}`,
+          artwork: [
+            { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' },
+          ],
+        });
+      },
+    });
     setCurrent(r);
     setPlaying(true);
     setOpen(false);
@@ -308,6 +392,12 @@ export default function RadioPlayer() {
         (r.province ?? '').toLowerCase().includes(q)
       );
     });
+  });
+
+  const radiosById = createMemo(() => {
+    const m = new Map<number, Radio>();
+    for (const r of radios()) m.set(r.id, r);
+    return m;
   });
 
   const cities = createMemo(() => {
