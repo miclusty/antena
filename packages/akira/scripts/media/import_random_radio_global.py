@@ -6,6 +6,11 @@ across 216 countries collected from Radio Garden's public API. This
 script pulls them all (not just AR), normalizes cities for AR rows
 against argentine_towns, and inserts into AKIRA's `media` table.
 
+random-radio's `country_code` column is an 8-char internal Radio Garden
+ID (e.g., "GhDXw4EW"), NOT an ISO-3166-1 alpha-2 code. We map the full
+country name → ISO alpha-2 via `_COUNTRY_NAME_TO_ISO` and write the
+ISO code to BOTH `media.country` and `media.country_code`.
+
 CLI:
     --db PATH         AKIRA sqlite path (default from env)
     --rr-db PATH      random-radio sqlite path
@@ -24,6 +29,99 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core import coverage
+
+
+# Map random-radio's full country names → ISO-3166-1 alpha-2 codes.
+# Covers all countries with >100 stations in the random-radio DB plus
+# common ones. Add new entries when adding new sources.
+_COUNTRY_NAME_TO_ISO: dict[str, str] = {
+    "Argentina": "AR",
+    "Australia": "AU",
+    "Austria": "AT",
+    "Belgium": "BE",
+    "Bolivia": "BO",
+    "Brazil": "BR",
+    "Bulgaria": "BG",
+    "Canada": "CA",
+    "Chile": "CL",
+    "China": "CN",
+    "Colombia": "CO",
+    "Costa Rica": "CR",
+    "Croatia": "HR",
+    "Cuba": "CU",
+    "Cyprus": "CY",
+    "Czechia": "CZ",
+    "Czech Republic": "CZ",
+    "Denmark": "DK",
+    "Dominican Republic": "DO",
+    "Ecuador": "EC",
+    "Egypt": "EG",
+    "El Salvador": "SV",
+    "Estonia": "EE",
+    "Finland": "FI",
+    "France": "FR",
+    "Germany": "DE",
+    "Greece": "GR",
+    "Guatemala": "GT",
+    "Honduras": "HN",
+    "Hungary": "HU",
+    "Iceland": "IS",
+    "India": "IN",
+    "Indonesia": "ID",
+    "Iran": "IR",
+    "Iraq": "IQ",
+    "Ireland": "IE",
+    "Israel": "IL",
+    "Italy": "IT",
+    "Jamaica": "JM",
+    "Japan": "JP",
+    "Kenya": "KE",
+    "Latvia": "LV",
+    "Lebanon": "LB",
+    "Lithuania": "LT",
+    "Luxembourg": "LU",
+    "Malaysia": "MY",
+    "Mexico": "MX",
+    "Morocco": "MA",
+    "Netherlands": "NL",
+    "New Zealand": "NZ",
+    "Nicaragua": "NI",
+    "Nigeria": "NG",
+    "Norway": "NO",
+    "Pakistan": "PK",
+    "Panama": "PA",
+    "Paraguay": "PY",
+    "Peru": "PE",
+    "Philippines": "PH",
+    "Poland": "PL",
+    "Portugal": "PT",
+    "Puerto Rico": "PR",
+    "Romania": "RO",
+    "Russia": "RU",
+    "Saudi Arabia": "SA",
+    "Serbia": "RS",
+    "Singapore": "SG",
+    "Slovakia": "SK",
+    "Slovenia": "SI",
+    "South Africa": "ZA",
+    "South Korea": "KR",
+    "Korea, Republic of": "KR",
+    "Spain": "ES",
+    "Sweden": "SE",
+    "Switzerland": "CH",
+    "Taiwan": "TW",
+    "Thailand": "TH",
+    "Tunisia": "TN",
+    "Türkiye": "TR",
+    "Turkey": "TR",
+    "Ukraine": "UA",
+    "United Arab Emirates": "AE",
+    "United Kingdom": "GB",
+    "United States": "US",
+    "Uruguay": "UY",
+    "Venezuela": "VE",
+    "Vietnam": "VN",
+}
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -98,7 +196,10 @@ def main(args_override: list[str] | None = None) -> int:
 
     for name, city, country, country_code, website, stream_url, tags, language, bitrate, codec in rows:
         country = country or "Unknown"
-        is_argentine = country == "Argentina"
+        iso_country = _COUNTRY_NAME_TO_ISO.get(
+            country, country[:2].upper() if country else "XX"
+        )
+        is_argentine = iso_country == "AR"
 
         province: str | None = None
         codgl: str | None = None
@@ -122,12 +223,10 @@ def main(args_override: list[str] | None = None) -> int:
 
         source = "random-radio" if is_argentine else "random-radio-global"
 
-        iso_country = country_code or country
-
         batch.append((
             name, city or "", province, codgl,
             website, stream_url, tags, source,
-            iso_country, country_code, language, bitrate, codec,
+            iso_country, iso_country, language, bitrate, codec,
         ))
 
         if len(batch) >= BATCH:
@@ -198,7 +297,7 @@ def _flush_batch(conn: sqlite3.Connection, batch: list[tuple]) -> dict:
                  source, country, country_code, language, bitrate, codec),
             )
             if cur.rowcount == 1:
-                if country == "Argentina":
+                if country == "AR":
                     if codgl:
                         matched += 1
                     else:
