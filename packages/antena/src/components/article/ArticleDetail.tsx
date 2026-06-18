@@ -3,6 +3,7 @@ import { createResource, For, Show, createMemo, createSignal, onMount } from 'so
 import type { NewsItem, VoiceBreakdown } from '../../lib/types';
 import { fetchNewsByCluster, fetchMasterArticle, fetchFeedback, fetchReport, type MasterArticle, type ReportReason } from '../../lib/api';
 import { mapNewsCard, stripHtml } from '../../lib/mappers';
+import { sanitizeArticleHtmlForView } from '../../lib/sanitize-html';
 import ClusterView from './ClusterView';
 import ReadingMode from './ReadingMode';
 import MediaEmbed from '../common/MediaEmbed';
@@ -176,6 +177,11 @@ export default function ArticleDetail(props: ArticleDetailProps) {
     if (master?.body) return stripHtml(master.body);
     if (master?.summary) return stripHtml(master.summary);
     return n().body || n().summary || '';
+  };
+  const displayBodyHtml = () => {
+    const master = masterArticle() as MasterArticle | null;
+    if (master?.body) return master.body;
+    return n().body_html || n().body || n().summary || '';
   };
 
   // Cluster-level signal: how many sources cover this fact,
@@ -541,11 +547,10 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             </div>
           </Show>
           <div
-            class="text-[17px] leading-[1.65] whitespace-pre-line"
+            class="article-body text-[17px] leading-[1.65]"
             style={{ color: 'var(--text-primary)' }}
-          >
-            <p>{displaySummary()}</p>
-          </div>
+            innerHTML={sanitizeArticleHtmlForView(displayBodyHtml())}
+          />
         </section>
 
         {/* S3.5 — "¿Te fue útil?" + S3.6 reportar */}

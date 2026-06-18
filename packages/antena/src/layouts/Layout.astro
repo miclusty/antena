@@ -173,6 +173,65 @@ const SITE = 'https://www.antena.com.ar';
           padding-bottom: 0;
         }
       }
+
+      /* ─── Article body (S3.3) ─── */
+      .article-body p { margin: 0 0 1em; }
+      .article-body h2 {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.3;
+        margin: 2em 0 0.75em;
+        color: var(--text-primary);
+        scroll-margin-top: calc(var(--header-height) + 12px);
+      }
+      .article-body h3 {
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.35;
+        margin: 1.75em 0 0.6em;
+        color: var(--text-primary);
+        scroll-margin-top: calc(var(--header-height) + 12px);
+      }
+      .article-body blockquote {
+        border-left: 3px solid var(--accent);
+        padding: 0.25em 1em;
+        margin: 1.25em 0;
+        color: var(--text-secondary);
+        font-style: italic;
+      }
+      .article-body ul, .article-body ol {
+        margin: 0 0 1em;
+        padding-left: 1.5em;
+      }
+      .article-body li { margin: 0.25em 0; }
+      .article-body figure { margin: 1.5em 0; }
+      .article-body figcaption {
+        font-size: 14px;
+        color: var(--text-tertiary);
+        text-align: center;
+        margin-top: 0.5em;
+      }
+      .article-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+      .article-body img { max-width: 100%; height: auto; border-radius: 8px; }
+      .article-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1em 0;
+        font-size: 15px;
+      }
+      .article-body th, .article-body td {
+        border: 1px solid var(--border-base);
+        padding: 0.5em 0.75em;
+        text-align: left;
+      }
+      .article-body th { background: var(--bg-hover); font-weight: 600; }
+      .article-body code {
+        background: var(--bg-hover);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+      }
     </style>
 
     <!-- Theme init: prevent FOUC -->

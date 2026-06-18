@@ -397,4 +397,41 @@ describe("mapNewsCard", () => {
     const result = mapNewsCard(card);
     expect(result.publishedAt).toBe("2026-01-01T00:00:00Z");
   });
+
+  it("extracts h2/h3 headings from body and assigns sequential ids", () => {
+    const card = {
+      ...baseCard,
+      body: "<p>Intro</p><h2>Contexto</h2><p>...</p><h3>Antecedentes</h3><p>...</p><h2>Desarrollo</h2>",
+    };
+    const result = mapNewsCard(card);
+    expect(result.headings).toEqual([
+      { level: 2, text: "Contexto", id: "h-0" },
+      { level: 3, text: "Antecedentes", id: "h-1" },
+      { level: 2, text: "Desarrollo", id: "h-2" },
+    ]);
+  });
+
+  it("returns empty headings array when body has no h2/h3", () => {
+    const card = { ...baseCard, body: "<p>Solo texto sin estructura</p>" };
+    const result = mapNewsCard(card);
+    expect(result.headings).toEqual([]);
+  });
+
+  it("returns empty headings array when body is empty", () => {
+    const card = { ...baseCard, body: "" };
+    const result = mapNewsCard(card);
+    expect(result.headings).toEqual([]);
+  });
+
+  it("ignores h1, h4+ and nested tags inside heading text", () => {
+    const card = {
+      ...baseCard,
+      body: "<h1>Título principal</h1><h2>Sección <em>uno</em></h2><h4>Sub-sub</h4><h2>Sección dos</h2>",
+    };
+    const result = mapNewsCard(card);
+    expect(result.headings).toEqual([
+      { level: 2, text: "Sección uno", id: "h-0" },
+      { level: 2, text: "Sección dos", id: "h-1" },
+    ]);
+  });
 });

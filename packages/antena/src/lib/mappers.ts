@@ -201,6 +201,7 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     // Falls back to the summary so the TOC at least has
     // something to scan when the body is missing.
     body_html: card.body ?? card.summary ?? "",
+    headings: extractHeadings(card.body ?? ""),
     category,
     source: sourceName,
     sourceId: card.source_id ?? null,
