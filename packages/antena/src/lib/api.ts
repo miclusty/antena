@@ -8,6 +8,10 @@
 // only used in dev (wrangler dev → 8787).
 const API_BASE_FALLBACK = "https://akira-api.miclusty.workers.dev";
 const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_API_BASE as string) || API_BASE_FALLBACK;
+
+export function getApiBase(): string {
+  return API_BASE;
+}
 // AKIRA_BASE points at the Python extractor (NOT the API). It only runs
 // on the dev machine, not in production. Caller code must check for null.
 const AKIRA_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_AKIRA_BASE as string) || 'http://localhost:5000';
