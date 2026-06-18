@@ -1,5 +1,5 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createResource, createEffect, createMemo, For, Show, onMount, onCleanup, lazy, Suspense } from 'solid-js';
+import { createSignal, createResource, createEffect, createMemo, For, Show, onMount, onCleanup, lazy, Suspense, untrack } from 'solid-js';
 import type { NewsItem } from './lib/types';
 import NewsCard from './components/common/NewsCard';
 import BottomNav, { type TabId } from './components/common/BottomNav';
@@ -18,6 +18,7 @@ import PersonalizationBanner from './components/PersonalizationBanner';
 import PullToRefresh from './components/PullToRefresh';
 import { toast } from './components/Toast';
 import { useHaptic } from './lib/haptic';
+import { useFeed } from './hooks/useFeed';
 import { cacheNews, getCachedNews, markAsRead } from './lib/db';
 import { useInfiniteScroll } from './lib/hooks';
 import { saveScrollPos, restoreScrollPos } from './lib/scroll';
@@ -70,7 +71,6 @@ type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking' | 'readLa
 
 export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?: unknown[] }) {
   const [activeCategory, setActiveCategory] = createSignal('Todas');
-  const [searchQuery, setSearchQuery] = createSignal('');
   const [activeLocation, setActiveLocation] = createSignal<string | null>(null);
   const [selectedId, setSelectedId] = createSignal<string | null>(null);
   const [currentView, setCurrentView] = createSignal<ViewType>('feed');
@@ -85,12 +85,6 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     { name: 'Sociedad', icon: 'groups', slug: 'sociedad' },
   ]);
   const [stats, setStats] = createSignal<{ total_news: number; active_sources: number; total_locations: number; news_today?: number }>({ total_news: 0, active_sources: 0, total_locations: 0 });
-  const [offset, setOffset] = createSignal(0);
-  const [allNews, setAllNews] = createSignal<NewsItem[]>(
-    (props?.initialFeed ?? []).map(n => mapNewsCard(n as unknown as ApiNewsCard))
-  );
-  const [hasMore, setHasMore] = createSignal(true);
-  const [isLoadingMore, setIsLoadingMore] = createSignal(false);
   const [activeTab, setActiveTab] = createSignal<TabId>('home');
   const [searchOpen, setSearchOpen] = createSignal(false);
   const [activeFeedTab, setActiveFeedTab] = createSignal<string>('home');
@@ -118,37 +112,32 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
   );
   const [cities, setCities] = createSignal<Array<{ id: number; name: string; province: string; count: number }>>([]);
   const [drawerOpen, setDrawerOpen] = createSignal(false);
-  const [trendingItems, setTrendingItems] = createSignal<ApiNewsCard[]>([]);
-  const [breakingItems, setBreakingItems] = createSignal<ApiNewsCard[]>([]);
-  const [blindspotItems, setBlindspotItems] = createSignal<Array<{ id: string; title: string; summary: string; source: string; sourceUrl?: string; sourceId?: number | null; category?: string; biasColor?: string }>>(
-    (props?.initialBlindspot ?? []).map((it: any) => ({
-      id: it.id,
-      title: it.title,
-      summary: it.summary,
-      source: it.source_name ?? it.source ?? 'Fuente',
-      sourceUrl: it.source_url ?? undefined,
-      sourceId: it.source_id ?? null,
-      category: it.category ?? undefined,
-      biasColor: it.biasColor ?? undefined,
-    }))
-  );
-  const [blindspotLoading, setBlindspotLoading] = createSignal(false);
   const [density, setDensity] = createSignal<Density>(readDensity());
   const [mateMode, setMateMode] = createSignal(false);
   const [filterState, setFilterState] = createSignal<FeedFilterState>({ ...DEFAULT_FILTERS });
   const [showFilters, setShowFilters] = createSignal(false);
   const [onboardingVisible, setOnboardingVisible] = createSignal(false);
 
-  const updateTime = (t: TimeFilter) => { setFilterState(s => ({ ...s, time: t })); resetFeed(); };
-  const updateQuality = (q: QualityFilter) => { setFilterState(s => ({ ...s, quality: q })); resetFeed(); };
-  const updateBias = (b: BiasFilter) => { setFilterState(s => ({ ...s, bias: b })); resetFeed(); };
-  const clearFilters = () => { setFilterState({ ...DEFAULT_FILTERS }); resetFeed(); };
+  const updateTime = (t: TimeFilter) => { setFilterState(s => ({ ...s, time: t })); feedHook.resetFeed(); };
+  const updateQuality = (q: QualityFilter) => { setFilterState(s => ({ ...s, quality: q })); feedHook.resetFeed(); };
+  const updateBias = (b: BiasFilter) => { setFilterState(s => ({ ...s, bias: b })); feedHook.resetFeed(); };
+  const clearFilters = () => { setFilterState({ ...DEFAULT_FILTERS }); feedHook.resetFeed(); };
 
   const haptic = useHaptic();
 
   const { bookmarks, isBookmarked, toggleBookmark } = useBookmarks();
   const { queue: readLaterQueue } = useReadLater();
   const follows = useFollows();
+
+  const feedHook = useFeed({
+    initialFeed: props?.initialFeed,
+    initialBlindspot: props?.initialBlindspot,
+    activeCategory,
+    activeLocation,
+    activeFeedTab,
+    filterState,
+    follows,
+  });
 
   const shareNews = async (news: NewsItem) => {
     haptic.vibrate('tap');
@@ -178,105 +167,12 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     }
   };
 
-  const initialFeedResp: FeedResponse = {
-    news: (props?.initialFeed ?? []) as ApiNewsCard[],
-    total: (props?.initialFeed?.length ?? 0),
-    page: 0,
-    per_page: 15,
-    location: null,
-    category: null,
-  }
-
-  const [feed, { refetch }] = createResource(
-    () => `${activeCategory()}:${searchQuery()}:${activeLocation() ?? 'all'}:${activeFeedTab()}:${follows.followedIds().size}:${JSON.stringify(filterState())}`,
-    async (): Promise<FeedResponse> => {
-      try {
-        const catParam = activeCategory() === 'Todas' ? undefined : activeCategory();
-        const result = await fetchFeed({
-          category: catParam,
-          location_id: activeLocation() ? parseInt(activeLocation()!) : undefined,
-          limit: 20,
-          offset: 0,
-          // "Siguiendo" is strict: only news from followed sources.
-          // "Para vos" (foryou) is permissive: quality-ranked mix that
-          // may include non-followed sources. The two are mutually
-          // exclusive — the API treats foryou=true as a different sort,
-          // not an extra filter.
-          following: activeFeedTab() === "following",
-          // Use foryou (RANDOM() tie-breaker) for all tabs so the
-          // feed shows variety across sources instead of 20
-          // cards from the same source that published most
-          // recently. Pure chronological order on 1500 cards
-          // means the same 2-3 sources dominate every page
-          // load.
-          foryou: true,
-          ...buildFeedFilterParams(filterState()),
-        });
-        return result as FeedResponse;
-      } catch (e) {
-        console.error('fetchFeed failed:', e);
-        if (typeof window === 'undefined') throw e;
-        if (!navigator.onLine) {
-          const cached = await getCachedNews(50);
-          if (cached?.length) {
-            toast('Sin conexión — mostrando artículos guardados', 'warning');
-            return { news: cached as unknown as ApiNewsCard[], total: cached.length, page: 1, per_page: cached.length, location: null, category: null };
-          }
-        }
-        throw e;
-      }
-    },
-    { initialValue: initialFeedResp }
-  );
-
-  const resetFeed = () => { setOffset(0); setAllNews([]); setHasMore(true); refetch(); };
-
-  const loadMore = () => {
-    if (!hasMore() || isLoadingMore()) return;
-    setIsLoadingMore(true);
-    const data = feed();
-    if (!data?.news) { setIsLoadingMore(false); return; }
-    const newItems = data.news.map(mapNewsCard);
-    setAllNews(prev => [...prev, ...newItems]);
-    setOffset(prev => prev + 20);
-    setHasMore(data.news.length >= 20);
-    setIsLoadingMore(false);
-  };
-
   const updateDensity = (d: Density) => {
     setDensity(d);
     writeDensity(d);
   };
 
-  const { setObserverTarget } = useInfiniteScroll({ onLoadMore: loadMore, hasMore, isLoading: () => feed.loading });
-
-  const featuredCluster = createMemo(() => {
-    const data = feed();
-    if (!data?.news) return null;
-    const newsList = data.news as unknown as ApiNewsCard[];
-    const featured = newsList.find(n => (n.sources_count ?? 0) >= 3);
-    if (!featured) return null;
-    return {
-      primary: mapNewsCard(featured),
-      clusterId: featured.cluster_id ?? '',
-      sourcesCount: featured.sources_count ?? 1,
-      sourceNames: (featured.source_names ?? (featured.source_name ? [featured.source_name] : [])).slice(0, 5),
-    };
-  });
-
-  createEffect(() => {
-    const data = feed();
-    if (data?.news && offset() === 0) {
-      setAllNews(data.news.map(mapNewsCard));
-      setHasMore(data.news.length >= 20);
-      cacheNews(data.news).catch(() => {});
-
-      const newsList = data.news as unknown as ApiNewsCard[];
-      setTrendingItems(newsList.filter(n => (n.sources_count ?? 1) >= 1).slice(0, 10));
-      const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
-      setBreakingItems(newsList.filter(n => new Date(n.created_at).getTime() >= twoHoursAgo));
-    }
-  });
+  const { setObserverTarget } = useInfiniteScroll({ onLoadMore: feedHook.loadMore, hasMore: feedHook.hasMore, isLoading: () => feedHook.feed.loading });
 
   const [selectedNews, setSelectedNews] = createSignal<NewsItem | null>(null);
 
@@ -323,37 +219,6 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
       handleBack();
     }
   };
-
-  const mappedNews = createMemo<NewsItem[]>(() => {
-    let items = allNews();
-    const tab = activeFeedTab();
-    if (tab === 'following') {
-      // Filter by the user's followed source ids (loaded from
-      // server-side D1 via useFollows).
-      const followedIds = follows.followedIds();
-      if (followedIds.size > 0) {
-        items = items.filter(
-          (n) => n.sourceId != null && followedIds.has(n.sourceId),
-        );
-      } else {
-        // No follows yet — empty the tab so the user is prompted
-        // to follow a source.
-        items = [];
-      }
-    }
-    const q = searchQuery().toLowerCase().trim();
-    if (q) items = items.filter(n => n.title.toLowerCase().includes(q) || n.summary.toLowerCase().includes(q) || n.category.toLowerCase().includes(q));
-    return items;
-  });
-
-  const topSourcesForDrawer = createMemo<{ name: string; count: number; biasColor: string }[]>(() => {
-    const counts: Record<string, { name: string; count: number; biasColor: string }> = {};
-    for (const n of mappedNews()) {
-      if (!counts[n.source]) counts[n.source] = { name: n.source, count: 0, biasColor: n.biasColor };
-      counts[n.source].count++;
-    }
-    return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
-  });
 
   onMount(async () => {
     // Apply user preferences to the root <html> before any UI
@@ -434,37 +299,6 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     } catch (e) { toast('Error al cargar categorias', 'warning'); }
 
     fetchCities().then(setCities).catch(() => setCities([]));
-
-    // Blindspot is per-device, so it can't share the feed
-    // resource. The createEffect below runs on mount AND
-    // whenever followedIds changes — that's the only place
-    // we need to call it (the previous version had an extra
-    // explicit call before the effect, which caused a
-    // duplicate /api/news/blindspot request on every page load,
-    // showing up as a 1.7s critical path latency in Lighthouse).
-    const refreshBlindspot = () => {
-      if (blindspotItems().length === 0) setBlindspotLoading(true);
-      fetchBlindspot(10)
-        .then((res) => res && setBlindspotItems(res.items.map((it: any) => ({
-          id: it.id,
-          title: it.title,
-          summary: it.summary,
-          source: it.source_name ?? it.source ?? 'Fuente',
-          sourceUrl: it.source_url ?? undefined,
-          sourceId: it.source_id ?? null,
-          category: it.category ?? undefined,
-          biasColor: it.biasColor ?? undefined,
-        }))))
-        .catch(() => setBlindspotItems([]))
-        .finally(() => setBlindspotLoading(false));
-    };
-    createEffect(() => {
-      // Re-fetch whenever the followed set changes. createEffect
-      // runs once on mount automatically — no need for an
-      // explicit refreshBlindspot() call before this.
-      follows.followedIds();
-      refreshBlindspot();
-    });
   });
 
   // ── Shared sidebar component ─────────────────────────────────────────────────
@@ -474,7 +308,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
       onCategoryChange={(cat) => {
         setActiveCategory(cat);
         updateURL({ cat: cat === 'Todas' ? null : cat });
-        resetFeed();
+        feedHook.resetFeed();
         handleViewChange('feed');
       }}
       activeLocation={activeLocation()}
@@ -482,11 +316,11 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
         setActiveLocation(locId);
         updateURL({ loc: locId });
         handleViewChange('feed');
-        resetFeed();
+        feedHook.resetFeed();
       }}
       categories={categories()}
       stats={stats()}
-      news={mappedNews()}
+      news={feedHook.mappedNews()}
       savedCount={bookmarks().length}
       readLaterCount={readLaterQueue().length}
       onOpenReadLater={() => handleViewChange('readLater')}
@@ -500,7 +334,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
   const rightSidebar = (
     <RightSidebar
-      news={mappedNews()}
+      news={feedHook.mappedNews()}
       onNewsClick={handleNewsClick}
       totalNews={stats().total_news}
     />
@@ -520,11 +354,11 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
           onCategoryChange={(cat) => {
             setActiveCategory(cat);
             updateURL({ cat: cat === 'Todas' ? null : cat });
-            setSearchQuery('');
+            feedHook.setSearchQuery('');
             handleViewChange('feed');
-            resetFeed();
+            feedHook.resetFeed();
           }}
-          onSearch={(query) => setSearchQuery(query)}
+          onSearch={(query) => feedHook.setSearchQuery(query)}
           searchOpen={searchOpen()}
           onSearchOpenChange={setSearchOpen}
         />
@@ -548,7 +382,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
               );
               if (resolved.categoryName) setActiveCategory(resolved.categoryName);
               else if (tabId !== activeFeedTab()) setActiveCategory('Todas');
-              if (resolved.shouldReset) resetFeed();
+              if (resolved.shouldReset) feedHook.resetFeed();
             }}
             customTabs={customTabs()}
             onAddCustomTab={(cat) => {
@@ -601,7 +435,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                       setActiveLocation(locId);
                       updateURL({ loc: locId });
                       handleViewChange('feed');
-                      resetFeed();
+                      feedHook.resetFeed();
                     }}
                   />
                 </div>
@@ -615,7 +449,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                           haptic.vibrate('tap');
                           setActiveCategory(cat.name);
                           updateURL({ cat: cat.name === 'Todas' ? null : cat.name });
-                          resetFeed();
+                          feedHook.resetFeed();
                         }}
                         class="text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap transition-all"
                         style={isActive
@@ -631,20 +465,20 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
               </div>
 
               <Show
-                when={!feed.error}
+                when={!feedHook.feed.error}
                 fallback={
                   <div class="px-4 py-8">
                     <EmptyState
                       icon="wifi_off"
                       title="No se pudieron cargar las noticias"
                       description="Revisá tu conexión a internet y volvé a intentarlo."
-                      action={{ label: 'Reintentar', onClick: () => { resetFeed(); refetch(); } }}
+                      action={{ label: 'Reintentar', onClick: () => { feedHook.resetFeed(); } }}
                     />
                   </div>
                 }
               >
                 <Show
-                  when={!feed.loading || offset() > 0}
+                  when={!feedHook.feed.loading || feedHook.offset() > 0}
                   fallback={
                     <div class="px-4">
                       <div class="flex flex-col">
@@ -666,7 +500,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                   }
                 >
                   <Show
-                     when={mappedNews().length > 0}
+                     when={feedHook.mappedNews().length > 0}
                      fallback={
                        <div class="px-4 py-8">
                          <EmptyState
@@ -675,19 +509,19 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                            description={activeLocation()
                              ? 'Probá con otra ubicación o quitá el filtro.'
                              : 'Probá con otra categoría o esperá unos minutos.'}
-                           action={searchQuery()
-                             ? { label: 'Limpiar búsqueda', onClick: () => setSearchQuery('') }
+                           action={feedHook.searchQuery()
+                             ? { label: 'Limpiar búsqueda', onClick: () => feedHook.setSearchQuery('') }
                              : { label: 'Ver todas', onClick: () => {
                                  setActiveCategory('Todas');
                                  updateURL({ cat: null });
-                                 resetFeed();
+                                 feedHook.resetFeed();
                                } }}
                          />
                        </div>
                      }
                      >
                     {/* Featured story hero — only when there's a multi-source story */}
-                    <Show when={featuredCluster()}>
+                    <Show when={feedHook.featuredCluster()}>
                       {(cluster) => (
                         <div class="px-4 pt-3">
                           <FeaturedStory
@@ -702,10 +536,10 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                     </Show>
 
                     {/* Trending horizontal scroll */}
-                    <Show when={trendingItems().length > 0 || offset() === 0 /* show skeleton on first load */}>
+                    <Show when={feedHook.trendingItems().length > 0 || feedHook.offset() === 0 /* show skeleton on first load */}>
                       <TrendingSection
-                        items={trendingItems().map(n => ({ id: n.id, title: n.title, category: n.category ?? 'General' }))}
-                        loading={trendingItems().length === 0}
+                        items={feedHook.trendingItems().map(n => ({ id: n.id, title: n.title, category: n.category ?? 'General' }))}
+                        loading={feedHook.trendingItems().length === 0}
                         onItemClick={(item) => {
                           // Try the in-memory feed first (zero network
                           // roundtrip). If the trending item isn't in the
@@ -715,7 +549,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                           // it via the API. Without the fallback the
                           // click was a silent no-op for any trending
                           // item not in the visible feed.
-                          const full = mappedNews().find(n => n.id === item.id);
+                          const full = feedHook.mappedNews().find(n => n.id === item.id);
                           if (full) {
                             handleNewsClick(full);
                           } else {
@@ -727,8 +561,8 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
                      {/* Blindspot: news from sources the user does NOT follow */}
                     <BlindspotSection
-                      items={blindspotItems()}
-                      loading={blindspotLoading()}
+                      items={feedHook.blindspotItems()}
+                      loading={feedHook.blindspotLoading()}
                       onItemClick={(item) => handleNewsClick(item)}
                     />
 
@@ -838,15 +672,15 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                         onSelect={(id) => {
                           setActiveLocation(id ? String(id) : null);
                           updateURL({ loc: id ? String(id) : null });
-                          resetFeed();
+                          feedHook.resetFeed();
                         }}
                       />
                     </div>
 
-                    <PullToRefresh onRefresh={async () => { resetFeed(); }}>
+                    <PullToRefresh onRefresh={async () => { feedHook.resetFeed(); }}>
                       <div>
                         <div class="flex flex-col [&>article:last-child]:mb-0">
-                          <For each={mappedNews()}>
+                          <For each={feedHook.mappedNews()}>
                             {(item) => (
                               <NewsCard
                                 news={item}
@@ -888,7 +722,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
                         <div ref={setObserverTarget} class="h-1" />
 
-                        <Show when={feed.loading && offset() > 0}>
+                        <Show when={feedHook.feed.loading && feedHook.offset() > 0}>
                           <div class="flex justify-center py-6">
                             <div class="flex items-center gap-2 text-text-tertiary text-[15px]">
                               <span class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -918,16 +752,16 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
             {/* ── Breaking view (En Vivo) ── */}
             <Show when={currentView() === 'breaking'}>
               <BreakingView
-                items={breakingItems().map(n => ({
+                items={feedHook.breakingItems().map(n => ({
                   id: n.id,
                   title: n.title,
-                  source: n.source_name ?? 'Fuente',
-                  biasScore: n.bias_score ?? undefined,
-                  createdAt: n.created_at,
+                  source: n.source,
+                  biasScore: n.biasScore,
+                  createdAt: n.createdAt,
                 }))}
                 onItemClick={(item) => {
-                  const full = mappedNews().find(n => n.id === item.id) ?? breakingItems().find(n => n.id === item.id);
-                  if (full) handleNewsClick(mapNewsCard(full as ApiNewsCard));
+                  const full = feedHook.mappedNews().find(n => n.id === item.id) ?? feedHook.breakingItems().find(n => n.id === item.id);
+                  if (full) handleNewsClick(mapNewsCard(full as unknown as ApiNewsCard));
                 }}
               />
             </Show>
@@ -961,7 +795,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
             else if (tab === 'live') {
               handleViewChange('breaking');
               // refresh breaking
-              fetchBreaking(50).then(r => r && setBreakingItems(r.news)).catch(() => {});
+              feedHook.refreshBreaking();
             }
             else if (tab === 'search') {
               if (typeof window !== 'undefined') {
@@ -973,7 +807,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
             if (typeof window === 'undefined') return 0;
             try {
               const read = JSON.parse(localStorage.getItem('antena-read') || '[]');
-              return Math.max(0, allNews().filter(n => !read.includes(n.id)).length);
+              return Math.max(0, feedHook.allNews().filter(n => !read.includes(n.id)).length);
             } catch { return 0; }
           })()}
       savedCount={bookmarks().length}
@@ -983,7 +817,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
       <ModoMate
         visible={mateMode()}
-        newsItems={mappedNews().map(n => ({ title: n.title, summary: n.summary }))}
+        newsItems={feedHook.mappedNews().map(n => ({ title: n.title, summary: n.summary }))}
         currentIndex={0}
       />
 
@@ -1000,7 +834,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
               const cat = categories().find((c) => c.slug === firstCat);
               if (cat) setActiveCategory(cat.name);
             }
-            resetFeed();
+            feedHook.resetFeed();
             // Re-load follows so the "Siguiendo" tab works immediately.
             void follows.refresh();
           }}
@@ -1025,11 +859,11 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
         onSelectCategory={(cat) => {
           setActiveCategory(cat);
           updateURL({ cat: cat === 'Todas' ? null : cat });
-          resetFeed();
+          feedHook.resetFeed();
           setDrawerOpen(false);
         }}
         categories={categories()}
-        topSources={topSourcesForDrawer()}
+        topSources={feedHook.topSourcesForDrawer()}
         activeCategory={activeCategory()}
       />
 
