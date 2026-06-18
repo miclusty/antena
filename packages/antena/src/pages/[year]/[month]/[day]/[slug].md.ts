@@ -7,7 +7,7 @@ const SITE = 'https://www.antena.com.ar';
 const FALLBACK_API = 'https://akira-api.miclusty.workers.dev';
 
 function resolveApiBase(): string {
-  const fromEnv = import.meta.env.PUBLIC_API_BASE;
+  const fromEnv = (import.meta as { env?: Record<string, string> }).env?.PUBLIC_API_BASE;
   if (!fromEnv || fromEnv.includes('localhost')) return FALLBACK_API;
   return fromEnv;
 }

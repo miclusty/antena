@@ -15,7 +15,7 @@ const sampleItem = {
   bias: '',
 } as never;
 
-const otherItem = { ...sampleItem, id: 'n2', title: 'Second' } as never;
+const otherItem = { ...(sampleItem as object), id: 'n2', title: 'Second' } as never;
 
 describe('useReadLater', () => {
   beforeEach(() => {
