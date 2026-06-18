@@ -19,6 +19,7 @@ import PullToRefresh from './components/PullToRefresh';
 import { toast } from './components/Toast';
 import { useHaptic } from './lib/haptic';
 import { useFeed } from './hooks/useFeed';
+import { useUrlState } from './hooks/useUrlState';
 import { cacheNews, getCachedNews, markAsRead } from './lib/db';
 import { useInfiniteScroll } from './lib/hooks';
 import { saveScrollPos, restoreScrollPos } from './lib/scroll';
@@ -72,8 +73,6 @@ type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking' | 'readLa
 export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?: unknown[] }) {
   const [activeCategory, setActiveCategory] = createSignal('Todas');
   const [activeLocation, setActiveLocation] = createSignal<string | null>(null);
-  const [selectedId, setSelectedId] = createSignal<string | null>(null);
-  const [currentView, setCurrentView] = createSignal<ViewType>('feed');
   const [categories, setCategories] = createSignal<{ name: string; icon: string; slug: string }[]>([
     { name: 'Todas', icon: 'home', slug: 'all' },
     { name: 'Política', icon: 'gavel', slug: 'politica' },
@@ -139,6 +138,13 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     follows,
   });
 
+  const nav = useUrlState({
+    activeCategory,
+    setActiveCategory,
+    activeLocation,
+    setActiveLocation,
+  });
+
   const shareNews = async (news: NewsItem) => {
     haptic.vibrate('tap');
     const articleUrl = typeof window !== 'undefined'
@@ -174,52 +180,6 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
   const { setObserverTarget } = useInfiniteScroll({ onLoadMore: feedHook.loadMore, hasMore: feedHook.hasMore, isLoading: () => feedHook.feed.loading });
 
-  const [selectedNews, setSelectedNews] = createSignal<NewsItem | null>(null);
-
-  const handleViewChange = (view: ViewType) => {
-    haptic.vibrate('tap');
-    setCurrentView(view);
-    setActiveTab(
-      view === 'feed' ? 'home'
-      : view === 'bookmarks' ? 'bookmarks'
-      : view === 'menu' ? 'menu'
-      : 'home'
-    );
-    if (view === 'feed') { setSelectedId(null); setSelectedNews(null); restoreScrollPos(); }
-  };
-
-  const handleNewsClick = async (news: NewsItem) => {
-    saveScrollPos();
-    await loadArticleFromId(news.id);
-    // Push the canonical /<y>/<m>/<d>/<slug>/ path when we have
-    // slug pieces. Falls back to the legacy ?view=article&id=<uuid>
-    // form for cards that haven't been backfilled yet (articleCanonicalPath).
-    pushPath(articleCanonicalPath(news.slug, news.slugDate, news.id));
-  };
-
-  const handleBack = () => {
-    setSelectedId(null);
-    setSelectedNews(null);
-    setCurrentView('feed');
-    restoreScrollPos();
-    clearURL();
-  };
-
-  const loadArticleFromId = async (articleId: string) => {
-    markAsRead(articleId);
-    setSelectedId(articleId);
-    setCurrentView('article');
-    setSelectedNews(null);
-    const card = await fetchNewsById(articleId);
-    if (card) {
-      setSelectedNews(mapNewsCard(card));
-    } else {
-      setSelectedNews(null);
-      toast('No se pudo cargar la noticia', 'error');
-      handleBack();
-    }
-  };
-
   onMount(async () => {
     // Apply user preferences to the root <html> before any UI
     // renders — avoids a flash of the default size / data-saver
@@ -249,15 +209,15 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     if (urlState.category) setActiveCategory(urlState.category);
     if (urlState.locationId) setActiveLocation(urlState.locationId);
     if (urlState.view === 'article' && urlState.articleId) {
-      await loadArticleFromId(urlState.articleId);
+      await nav.loadArticleFromId(urlState.articleId);
     }
 
     const onPopState = async () => {
       const state = parseURLState();
       if (state.view === 'article' && state.articleId) {
-        await loadArticleFromId(state.articleId);
+        await nav.loadArticleFromId(state.articleId);
       } else {
-        handleViewChange('feed');
+        nav.handleViewChange('feed');
       }
       if (state.category) setActiveCategory(state.category);
       if (state.locationId !== null) setActiveLocation(state.locationId);
@@ -309,13 +269,13 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
         setActiveCategory(cat);
         updateURL({ cat: cat === 'Todas' ? null : cat });
         feedHook.resetFeed();
-        handleViewChange('feed');
+        nav.handleViewChange('feed');
       }}
       activeLocation={activeLocation()}
       onLocationChange={(locId) => {
         setActiveLocation(locId);
         updateURL({ loc: locId });
-        handleViewChange('feed');
+        nav.handleViewChange('feed');
         feedHook.resetFeed();
       }}
       categories={categories()}
@@ -323,19 +283,19 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
       news={feedHook.mappedNews()}
       savedCount={bookmarks().length}
       readLaterCount={readLaterQueue().length}
-      onOpenReadLater={() => handleViewChange('readLater')}
+      onOpenReadLater={() => nav.handleViewChange('readLater')}
       bookmarks={bookmarks()}
       followsCount={follows.followedIds().size}
       feedTab={activeFeedTab()}
       onFeedTabChange={(tab) => { haptic.vibrate('tap'); setActiveFeedTab(tab); }}
-      onOpenBookmarks={() => handleViewChange('bookmarks')}
+      onOpenBookmarks={() => nav.handleViewChange('bookmarks')}
     />
   );
 
   const rightSidebar = (
     <RightSidebar
       news={feedHook.mappedNews()}
-      onNewsClick={handleNewsClick}
+      onNewsClick={nav.handleNewsClick}
       totalNews={stats().total_news}
     />
   );
@@ -355,7 +315,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
             setActiveCategory(cat);
             updateURL({ cat: cat === 'Todas' ? null : cat });
             feedHook.setSearchQuery('');
-            handleViewChange('feed');
+            nav.handleViewChange('feed');
             feedHook.resetFeed();
           }}
           onSearch={(query) => feedHook.setSearchQuery(query)}
@@ -363,7 +323,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
           onSearchOpenChange={setSearchOpen}
         />
 
-        <Show when={currentView() === 'feed'}>
+        <Show when={nav.currentView() === 'feed'}>
           <FeedTabs
             activeTab={activeFeedTab()}
             onTabChange={(tabId) => {
@@ -425,7 +385,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
           <section aria-label="Feed de noticias" class="flex-1 min-w-0 max-w-[640px] xl:max-w-[960px] border-r border-border-base">
 
             {/* ── Feed view ── */}
-            <Show when={currentView() === 'feed'}>
+            <Show when={nav.currentView() === 'feed'}>
               {/* Mobile-only: location + category chips */}
               <div class="xl:hidden">
                 <div class="px-4 py-2">
@@ -434,7 +394,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                     onLocationChange={(locId) => {
                       setActiveLocation(locId);
                       updateURL({ loc: locId });
-                      handleViewChange('feed');
+                      nav.handleViewChange('feed');
                       feedHook.resetFeed();
                     }}
                   />
@@ -529,7 +489,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                             clusterId={cluster().clusterId}
                             sourcesCount={cluster().sourcesCount}
                             sourceNames={cluster().sourceNames}
-                            onClick={() => handleNewsClick(cluster().primary)}
+                            onClick={() => nav.handleNewsClick(cluster().primary)}
                           />
                         </div>
                       )}
@@ -545,15 +505,15 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                           // roundtrip). If the trending item isn't in the
                           // current feed (filtered category, paginated
                           // out, different time window, etc.), fall
-                          // through to loadArticleFromId which fetches
+                          // through to nav.loadArticleFromId which fetches
                           // it via the API. Without the fallback the
                           // click was a silent no-op for any trending
                           // item not in the visible feed.
                           const full = feedHook.mappedNews().find(n => n.id === item.id);
                           if (full) {
-                            handleNewsClick(full);
+                            nav.handleNewsClick(full);
                           } else {
-                            loadArticleFromId(item.id);
+                            nav.loadArticleFromId(item.id);
                           }
                         }}
                       />
@@ -563,7 +523,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                     <BlindspotSection
                       items={feedHook.blindspotItems()}
                       loading={feedHook.blindspotLoading()}
-                      onItemClick={(item) => handleNewsClick(item)}
+                      onItemClick={(item) => nav.handleNewsClick(item)}
                     />
 
                     {/* Map: removed in this iteration — wasn't adding value yet,
@@ -685,7 +645,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                               <NewsCard
                                 news={item}
                                 variant={density() === 'compact' ? 'compact' : 'default'}
-                                onClick={() => handleNewsClick(item)}
+                                onClick={() => nav.handleNewsClick(item)}
                                 onUpvote={(_id, current) => {
                                   haptic.vibrate('tap');
                                   // Fire-and-forget: the optimistic
@@ -714,7 +674,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                                     toast('Fuente sin enlace', 'warning');
                                   }
                                 }}
-                                onViewCluster={() => handleNewsClick(item)}
+                                onViewCluster={() => nav.handleNewsClick(item)}
                               />
                             )}
                           </For>
@@ -738,19 +698,19 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
             </Show>
 
             {/* ── Article view (inline, sidebars visible on desktop) ── */}
-            <Show when={currentView() === 'article' && selectedNews()}>
+            <Show when={nav.currentView() === 'article' && nav.selectedNews()}>
               <ArticleDetail
-                news={selectedNews()!}
-                onBack={handleBack}
+                news={nav.selectedNews()!}
+                onBack={nav.handleBack}
                 onArticleSelect={(article) => {
-                  setSelectedNews(article);
+                  nav.setSelectedNews(article);
                   updateURL({ view: 'article', id: article.id });
                 }}
               />
             </Show>
 
             {/* ── Breaking view (En Vivo) ── */}
-            <Show when={currentView() === 'breaking'}>
+            <Show when={nav.currentView() === 'breaking'}>
               <BreakingView
                 items={feedHook.breakingItems().map(n => ({
                   id: n.id,
@@ -761,18 +721,18 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                 }))}
                 onItemClick={(item) => {
                   const full = feedHook.mappedNews().find(n => n.id === item.id) ?? feedHook.breakingItems().find(n => n.id === item.id);
-                  if (full) handleNewsClick(mapNewsCard(full as unknown as ApiNewsCard));
+                  if (full) nav.handleNewsClick(mapNewsCard(full as unknown as ApiNewsCard));
                 }}
               />
             </Show>
 
             {/* ── Bookmarks view ── */}
-            <Show when={currentView() === 'bookmarks'}>
-              <BookmarksView onBack={() => handleViewChange('feed')} onNewsClick={handleNewsClick} />
+            <Show when={nav.currentView() === 'bookmarks'}>
+              <BookmarksView onBack={() => nav.handleViewChange('feed')} onNewsClick={nav.handleNewsClick} />
             </Show>
 
-            <Show when={currentView() === 'readLater'}>
-              <ReadLaterView onBack={() => handleViewChange('feed')} onNewsClick={handleNewsClick} />
+            <Show when={nav.currentView() === 'readLater'}>
+              <ReadLaterView onBack={() => nav.handleViewChange('feed')} onNewsClick={nav.handleNewsClick} />
             </Show>
 
           </section>
@@ -783,17 +743,17 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
       </div>
 
       {/* Bottom Nav — mobile only, hidden during article */}
-      <Show when={currentView() !== 'article'}>
+      <Show when={nav.currentView() !== 'article'}>
         <BottomNav
           activeTab={activeTab()}
           onTabChange={(tab) => {
             haptic.vibrate('tap');
             setActiveTab(tab);
-            if (tab === 'home') handleViewChange('feed');
-            else if (tab === 'bookmarks') handleViewChange('bookmarks');
+            if (tab === 'home') nav.handleViewChange('feed');
+            else if (tab === 'bookmarks') nav.handleViewChange('bookmarks');
             else if (tab === 'menu') setDrawerOpen(true);
             else if (tab === 'live') {
-              handleViewChange('breaking');
+              nav.handleViewChange('breaking');
               // refresh breaking
               feedHook.refreshBreaking();
             }
@@ -854,7 +814,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
         readLaterCount={readLaterQueue().length}
         unreadCount={0}
         activeFeedTab={activeFeedTab()}
-        onNavigate={(view) => { setDrawerOpen(false); handleViewChange(view); }}
+        onNavigate={(view) => { setDrawerOpen(false); nav.handleViewChange(view); }}
         onSelectTab={(tab) => { haptic.vibrate('tap'); setActiveFeedTab(tab); setDrawerOpen(false); }}
         onSelectCategory={(cat) => {
           setActiveCategory(cat);
