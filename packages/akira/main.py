@@ -1788,6 +1788,37 @@ async def get_radios(request: Request):
         conn.close()
 
 
+@app.get("/medios/radios/countries")
+async def get_radios_countries():
+    """Country index for the radio selector UI.
+
+    Returns one row per country that has at least one radio with
+    a stream_url, sorted by count DESC. Cheap aggregate query.
+    Excludes 'UN' (unknown country) rows.
+    """
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("""
+            SELECT country, COUNT(*) AS count
+            FROM media
+            WHERE type = 'radio'
+              AND stream_url IS NOT NULL
+              AND stream_url != ''
+              AND country IS NOT NULL
+              AND country != 'UN'
+            GROUP BY country
+            ORDER BY count DESC
+        """).fetchall()
+        countries = [
+            {"code": r["country"], "count": r["count"]}
+            for r in rows
+        ]
+        total = sum(c["count"] for c in countries)
+        return {"countries": countries, "total": total}
+    finally:
+        conn.close()
+
+
 @app.get("/api/sources/{source_id}/profile")
 async def get_source_profile(source_id: int):
     """Source bias profile with recent bias history."""

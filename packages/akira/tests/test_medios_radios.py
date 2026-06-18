@@ -107,3 +107,35 @@ def test_un_rows_excluded_from_country_specific_query(client):
     r = client.get("/medios/radios?country=UN")
     data = r.json()
     assert data["items"] == []
+
+
+def test_countries_endpoint_returns_index(client):
+    r = client.get("/medios/radios/countries")
+    assert r.status_code == 200
+    data = r.json()
+    assert "countries" in data
+    assert "total" in data
+    # Fixture has AR=2, US=1, BR=1, UN=1 (filtered out)
+    assert data["total"] >= 3  # AR, US, BR
+
+
+def test_countries_sorted_by_count_desc(client):
+    r = client.get("/medios/radios/countries")
+    data = r.json()
+    counts = [c["count"] for c in data["countries"]]
+    assert counts == sorted(counts, reverse=True)
+
+
+def test_countries_have_iso_code(client):
+    r = client.get("/medios/radios/countries")
+    for c in r.json()["countries"]:
+        assert "code" in c
+        assert len(c["code"]) == 2
+        assert "count" in c
+
+
+def test_countries_excludes_unknown(client):
+    """The /countries endpoint must not include 'UN' rows."""
+    r = client.get("/medios/radios/countries")
+    codes = [c["code"] for c in r.json()["countries"]]
+    assert "UN" not in codes
