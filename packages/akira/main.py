@@ -1725,22 +1725,37 @@ async def get_sources():
 async def get_radios(request: Request):
     """Live radio directory for the persistent player.
 
-    Returns all radios with stream_url from argentine_media.
+    Returns all radios with stream_url from the `media` table.
     Used by the Antena /radios page and the floating play bar.
+    Filters out rows with country='UN' (unknown country from
+    random-radio stations that lack metadata).
 
     Query params:
-      - limit: max rows (default 2000, max 5000)
+      - limit: max rows (default 200, max 5000)
+      - offset: pagination offset (default 0)
+      - country: ISO-3166-1 alpha-2 (e.g. 'AR', 'US'); case-insensitive
       - codgl: filter to a specific pueblo (5-digit gov-loc code)
       - province: filter to a specific province name
     """
     conn = get_db_connection()
     try:
-        limit = min(int(request.query_params.get("limit", "2000")), 5000)
+        limit = min(int(request.query_params.get("limit", "200")), 5000)
+        offset = max(int(request.query_params.get("offset", "0")), 0)
         codgl = request.query_params.get("codgl")
         province = request.query_params.get("province")
+        country = request.query_params.get("country")
 
-        where = ["type = 'radio'", "stream_url IS NOT NULL", "stream_url != ''"]
+        where = [
+            "type = 'radio'",
+            "stream_url IS NOT NULL",
+            "stream_url != ''",
+            "country IS NOT NULL",
+            "country != 'UN'",
+        ]
         params: list = []
+        if country:
+            where.append("country = ?")
+            params.append(country.upper())
         if codgl:
             where.append("codgl = ?")
             params.append(codgl)
@@ -1750,18 +1765,25 @@ async def get_radios(request: Request):
 
         sql = f"""
             SELECT id, name, stream_url, website, city, province,
+                   country, country_code, language, bitrate, codec,
                    codgl, tags, type, source
-            FROM argentine_media
+            FROM media
             WHERE {' AND '.join(where)}
             ORDER BY
               CASE WHEN codgl IS NOT NULL THEN 0 ELSE 1 END,
               name ASC
-            LIMIT ?
+            LIMIT ? OFFSET ?
         """
-        params.append(limit)
+        params.extend([limit, offset])
         rows = conn.execute(sql, params).fetchall()
         items = [dict(r) for r in rows]
-        return {"items": items, "total": len(items)}
+        return {
+            "items": items,
+            "total": len(items),
+            "country": country.upper() if country else None,
+            "offset": offset,
+            "limit": limit,
+        }
     finally:
         conn.close()
 
