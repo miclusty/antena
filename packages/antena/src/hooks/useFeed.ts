@@ -114,7 +114,7 @@ export function useFeed(opts: UseFeedOptions) {
           limit: 20,
           offset: 0,
           following: opts.activeFeedTab() === "following",
-          foryou: true,
+          foryou: opts.activeFeedTab() !== "home",
           ...buildFeedFilterParams(opts.filterState()),
         });
         return result as FeedResponse;
