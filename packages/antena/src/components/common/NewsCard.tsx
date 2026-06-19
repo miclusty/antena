@@ -378,6 +378,14 @@ export default function NewsCard(props: NewsCardProps) {
                   again on xl+ (≥1280px) where there's room. */}
               <span class="hidden xl:inline text-[15px] xl:text-[16px] font-medium">Compartir</span>
             </button>
+            <button
+              type="button"
+              onClick={() => { setActionSheetOpen(true); haptic.vibrate('tap'); }}
+              aria-label="Más acciones"
+              class="flex items-center justify-center min-h-[44px] min-w-[44px] px-2 py-2 rounded-full hover:bg-bg-hover active:scale-90 transition-all text-text-tertiary"
+            >
+              <MaterialIcon name="more_horiz" size="base" class="text-[20px]" aria-hidden="true" />
+            </button>
           </div>
         </div>
       </div>
