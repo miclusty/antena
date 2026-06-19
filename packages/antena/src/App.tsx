@@ -20,6 +20,9 @@ import { toast } from './components/Toast';
 import { useHaptic } from './lib/haptic';
 import { useFeed } from './hooks/useFeed';
 import { useUrlState } from './hooks/useUrlState';
+import { useFeedFilters } from './hooks/useFeedFilters';
+import { useDiscovery } from './hooks/useDiscovery';
+import { useChromeUi } from './hooks/useChromeUi';
 import { cacheNews, getCachedNews, markAsRead } from './lib/db';
 import { useInfiniteScroll } from './lib/hooks';
 import { saveScrollPos, restoreScrollPos } from './lib/scroll';
@@ -73,54 +76,10 @@ type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking' | 'readLa
 export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?: unknown[] }) {
   const [activeCategory, setActiveCategory] = createSignal('Todas');
   const [activeLocation, setActiveLocation] = createSignal<string | null>(null);
-  const [categories, setCategories] = createSignal<{ name: string; icon: string; slug: string }[]>([
-    { name: 'Todas', icon: 'home', slug: 'all' },
-    { name: 'Política', icon: 'gavel', slug: 'politica' },
-    { name: 'Economía', icon: 'trending_up', slug: 'economia' },
-    { name: 'Deportes', icon: 'sports_soccer', slug: 'deportes' },
-    { name: 'Policiales', icon: 'local_police', slug: 'policiales' },
-    { name: 'Cultura', icon: 'theater_comedy', slug: 'cultura' },
-    { name: 'Tecnología', icon: 'devices', slug: 'tecnologia' },
-    { name: 'Sociedad', icon: 'groups', slug: 'sociedad' },
-  ]);
-  const [stats, setStats] = createSignal<{ total_news: number; active_sources: number; total_locations: number; news_today?: number }>({ total_news: 0, active_sources: 0, total_locations: 0 });
   const [activeTab, setActiveTab] = createSignal<TabId>('home');
   const [searchOpen, setSearchOpen] = createSignal(false);
   const [activeFeedTab, setActiveFeedTab] = createSignal<string>('home');
-  const [feedTabsVisible, setFeedTabsVisible] = createSignal(true);
-  // User-added category tabs (e.g. "Política", "Deportes") that
-  // appear after the default Para vos / Siguiendo / Explorar tabs.
-  // Persisted to localStorage so the user's tab layout survives
-  // a page reload. The shape is a list of {id, label, category}
-  // where id is "cat:<slug>" (used to dispatch onTabChange in
-  // the FeedTabs onTabChange handler).
-  type CustomTab = { id: string; label: string; category: string };
-  const [customTabs, setCustomTabs] = createSignal<CustomTab[]>(
-    typeof window === 'undefined'
-      ? []
-      : (() => {
-          try {
-            const raw = localStorage.getItem("antena-custom-tabs");
-            if (!raw) return [];
-            const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? (parsed as CustomTab[]) : [];
-          } catch {
-            return [];
-          }
-        })(),
-  );
-  const [cities, setCities] = createSignal<Array<{ id: number; name: string; province: string; count: number }>>([]);
-  const [drawerOpen, setDrawerOpen] = createSignal(false);
   const [density, setDensity] = createSignal<Density>(readDensity());
-  const [mateMode, setMateMode] = createSignal(false);
-  const [filterState, setFilterState] = createSignal<FeedFilterState>({ ...DEFAULT_FILTERS });
-  const [showFilters, setShowFilters] = createSignal(false);
-  const [onboardingVisible, setOnboardingVisible] = createSignal(false);
-
-  const updateTime = (t: TimeFilter) => { setFilterState(s => ({ ...s, time: t })); feedHook.resetFeed(); };
-  const updateQuality = (q: QualityFilter) => { setFilterState(s => ({ ...s, quality: q })); feedHook.resetFeed(); };
-  const updateBias = (b: BiasFilter) => { setFilterState(s => ({ ...s, bias: b })); feedHook.resetFeed(); };
-  const clearFilters = () => { setFilterState({ ...DEFAULT_FILTERS }); feedHook.resetFeed(); };
 
   const haptic = useHaptic();
 
@@ -128,15 +87,19 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
   const { queue: readLaterQueue } = useReadLater();
   const follows = useFollows();
 
+  const filters = useFeedFilters();
+
   const feedHook = useFeed({
     initialFeed: props?.initialFeed,
     initialBlindspot: props?.initialBlindspot,
     activeCategory,
     activeLocation,
     activeFeedTab,
-    filterState,
+    filterState: filters.filterState,
     follows,
   });
+
+  filters.setReset(feedHook.resetFeed);
 
   const nav = useUrlState({
     activeCategory,
@@ -144,6 +107,9 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     activeLocation,
     setActiveLocation,
   });
+
+  const discovery = useDiscovery();
+  const chrome = useChromeUi();
 
   const shareNews = async (news: NewsItem) => {
     haptic.vibrate('tap');
@@ -225,40 +191,6 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
     window.addEventListener('popstate', onPopState);
     onCleanup(() => window.removeEventListener('popstate', onPopState));
-
-    // ── Scroll-hide/reveal for FeedTabs (mobile only) ──
-    let lastScrollY = 0;
-    const SCROLL_THRESHOLD = 8;
-    const onScroll = () => {
-      if (window.innerWidth >= 1024) {
-        setFeedTabsVisible(true);
-        return;
-      }
-      const currentY = window.scrollY;
-      const delta = currentY - lastScrollY;
-      if (Math.abs(delta) < SCROLL_THRESHOLD) return;
-      if (currentY < 80) {
-        setFeedTabsVisible(true);
-      } else if (delta > 0) {
-        setFeedTabsVisible(false);
-      } else {
-        setFeedTabsVisible(true);
-      }
-      lastScrollY = currentY;
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onCleanup(() => window.removeEventListener('scroll', onScroll));
-
-    try {
-      const [cats, s] = await Promise.all([
-        fetchCategories().catch(() => []),
-        fetchStats().catch(() => ({ status: 'ok', stats: { total_news: 0, active_sources: 0, total_locations: 0 } })),
-      ]);
-      if (cats.length > 0) setCategories([{ name: 'Todas', icon: 'home', slug: 'all' }, ...cats.map(c => ({ name: c.name, icon: c.icon, slug: c.slug }))]);
-      setStats(s.stats);
-    } catch (e) { toast('Error al cargar categorias', 'warning'); }
-
-    fetchCities().then(setCities).catch(() => setCities([]));
   });
 
   // ── Shared sidebar component ─────────────────────────────────────────────────
@@ -278,8 +210,8 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
         nav.handleViewChange('feed');
         feedHook.resetFeed();
       }}
-      categories={categories()}
-      stats={stats()}
+      categories={discovery.categories()}
+      stats={discovery.stats()}
       news={feedHook.mappedNews()}
       savedCount={bookmarks().length}
       readLaterCount={readLaterQueue().length}
@@ -296,7 +228,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     <RightSidebar
       news={feedHook.mappedNews()}
       onNewsClick={nav.handleNewsClick}
-      totalNews={stats().total_news}
+      totalNews={discovery.stats().total_news}
     />
   );
 
@@ -338,42 +270,28 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
               // new fetch is in flight.
               const resolved = resolveCustomTabSelection(
                 tabId,
-                categories().map((c) => ({ name: c.name, slug: c.slug })),
+                discovery.categories().map((c) => ({ name: c.name, slug: c.slug })),
               );
               if (resolved.categoryName) setActiveCategory(resolved.categoryName);
               else if (tabId !== activeFeedTab()) setActiveCategory('Todas');
               if (resolved.shouldReset) feedHook.resetFeed();
             }}
-            customTabs={customTabs()}
+            customTabs={discovery.customTabs()}
             onAddCustomTab={(cat) => {
-              const newTab = { id: `cat:${cat.slug}`, label: cat.name, category: cat.slug };
-              const next = [...customTabs(), newTab];
-              setCustomTabs(next);
-              try {
-                localStorage.setItem("antena-custom-tabs", JSON.stringify(next));
-              } catch {
-                // localStorage may be unavailable (private mode);
-                // the in-memory state is still usable for the session.
-              }
+              discovery.onAddCustomTab(cat);
               haptic.vibrate('tap');
-              setActiveFeedTab(newTab.id);
+              setActiveFeedTab(`cat:${cat.slug}`);
               setActiveCategory(cat.name);
             }}
             onRemoveCustomTab={(tabId) => {
-              const next = customTabs().filter((t) => t.id !== tabId);
-              setCustomTabs(next);
-              try {
-                localStorage.setItem("antena-custom-tabs", JSON.stringify(next));
-              } catch {
-                /* see above */
-              }
+              discovery.onRemoveCustomTab(tabId);
               // If the removed tab was active, fall back to 'home'.
               if (activeFeedTab() === tabId) {
                 setActiveFeedTab("home");
               }
             }}
             availableCategories={CATEGORIES.filter((c) => c.slug !== "all")}
-            visible={feedTabsVisible()}
+            visible={discovery.feedTabsVisible()}
           />
         </Show>
 
@@ -400,7 +318,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                   />
                 </div>
                 <div class="px-4 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                  {categories().map((cat) => {
+                  {discovery.categories().map((cat) => {
                     const color = CAT_COLORS[cat.name];
                     const isActive = activeCategory() === cat.name;
                     return (
@@ -538,7 +456,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                       showCityHint={!activeLocation() || activeLocation() === ''}
                       showFollowHint={follows.follows().length === 0}
                       showCategoryHint={!activeCategory() || activeCategory() === 'Todas'}
-                      onOpenOnboarding={() => setOnboardingVisible(true)}
+                      onOpenOnboarding={() => chrome.setOnboardingVisible(true)}
                     />
 
                     {/* Feed toolbar: density toggle + Mate mode */}
@@ -546,26 +464,26 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                       <DensityToggle density={density()} onChange={updateDensity} />
                       <div class="flex items-center gap-2">
                         <button
-                          onClick={() => { haptic.vibrate('tap'); setShowFilters(s => !s); }}
+                          onClick={() => { haptic.vibrate('tap'); filters.setShowFilters(s => !s); }}
                           class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
-                          style={hasActiveFilters(filterState())
+                          style={filters.hasActiveFilters()
                             ? { background: 'var(--accent)', color: '#fff' }
                             : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
                           }
-                          aria-pressed={showFilters()}
+                          aria-pressed={filters.showFilters()}
                           aria-label="Filtros"
                         >
                           <MaterialIcon name="tune" size="base" class="text-base " style={{ }} aria-hidden="true" />
                           Filtros
                         </button>
                         <button
-                          onClick={() => { haptic.vibrate('tap'); setMateMode(m => !m); }}
+                          onClick={() => { haptic.vibrate('tap'); chrome.setMateMode(!chrome.mateMode()); }}
                           class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
-                          style={mateMode()
+                          style={chrome.mateMode()
                             ? { background: 'var(--accent)', color: '#fff' }
                             : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
                           }
-                          aria-pressed={mateMode()}
+                          aria-pressed={chrome.mateMode()}
                         >
                           <MaterialIcon name="record_voice_over" size="base" class="text-base " style={{ }} aria-hidden="true" />
                           Modo Mate
@@ -574,7 +492,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                     </div>
 
                     {/* Filter panel (collapsible) */}
-                    <Show when={showFilters()}>
+                    <Show when={filters.showFilters()}>
                       <div
                         class="px-4 py-3 space-y-2 border-b border-border-base"
                         style={{ background: 'var(--bg-elevated)' }}
@@ -583,9 +501,9 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                           <p class="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
                             Período
                           </p>
-                          <Show when={hasActiveFilters(filterState())}>
+                          <Show when={filters.hasActiveFilters()}>
                             <button
-                              onClick={() => { haptic.vibrate('tap'); clearFilters(); }}
+                              onClick={() => { haptic.vibrate('tap'); filters.clearFilters(); }}
                               class="text-[11px] font-semibold"
                               style={{ color: 'var(--accent)' }}
                             >
@@ -593,11 +511,11 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                             </button>
                           </Show>
                         </div>
-                        <TimeFilters activeFilter={filterState().time} onFilterChange={updateTime} />
+                        <TimeFilters activeFilter={filters.filterState().time} onFilterChange={filters.updateTime} />
                         <p class="text-[10px] font-extrabold uppercase tracking-widest mt-2" style={{ color: 'var(--text-tertiary)' }}>
                           Calidad
                         </p>
-                        <QualityFilters activeFilter={filterState().quality} onFilterChange={updateQuality} />
+                        <QualityFilters activeFilter={filters.filterState().quality} onFilterChange={filters.updateQuality} />
                         <p class="text-[10px] font-extrabold uppercase tracking-widest mt-2" style={{ color: 'var(--text-tertiary)' }}>
                           Sesgo
                         </p>
@@ -606,10 +524,10 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                             const labels: Record<BiasFilter, string> = {
                               all: 'Todos', left: 'Opositor', right: 'Oficialista', neutral: 'Neutral',
                             };
-                            const active = () => filterState().bias === b;
+                            const active = () => filters.filterState().bias === b;
                             return (
                               <button
-                                onClick={() => updateBias(b)}
+                                onClick={() => filters.updateBias(b)}
                                 class="px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors border"
                                 style={active()
                                   ? { background: 'var(--accent)', color: '#fff', 'border-color': 'var(--accent)' }
@@ -627,7 +545,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                     {/* City selector — mobile only, between trending and chips */}
                     <div class="xl:hidden">
                       <CitySelector
-                        cities={cities()}
+                        cities={discovery.cities()}
                         activeCityId={null /* we use activeLocation signal but for cities its id, kept null for now */}
                         onSelect={(id) => {
                           setActiveLocation(id ? String(id) : null);
@@ -751,7 +669,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
             setActiveTab(tab);
             if (tab === 'home') nav.handleViewChange('feed');
             else if (tab === 'bookmarks') nav.handleViewChange('bookmarks');
-            else if (tab === 'menu') setDrawerOpen(true);
+            else if (tab === 'menu') chrome.setDrawerOpen(true);
             else if (tab === 'live') {
               nav.handleViewChange('breaking');
               // refresh breaking
@@ -776,7 +694,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
       </Show>
 
       <ModoMate
-        visible={mateMode()}
+        visible={chrome.mateMode()}
         newsItems={feedHook.mappedNews().map(n => ({ title: n.title, summary: n.summary }))}
         currentIndex={0}
       />
@@ -784,45 +702,45 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
       {/* Persistent radio player — visible on every page */}
       <RadioPlayer />
 
-      <Show when={onboardingVisible()}>
+      <Show when={chrome.onboardingVisible()}>
         <OnboardingView
           onComplete={({ cityId, categorySlugs }) => {
-            setOnboardingVisible(false);
+            chrome.setOnboardingVisible(false);
             if (cityId) setActiveLocation(String(cityId));
             const firstCat = categorySlugs[0];
             if (firstCat) {
-              const cat = categories().find((c) => c.slug === firstCat);
+              const cat = discovery.categories().find((c) => c.slug === firstCat);
               if (cat) setActiveCategory(cat.name);
             }
             feedHook.resetFeed();
             // Re-load follows so the "Siguiendo" tab works immediately.
             void follows.refresh();
           }}
-          onSkip={() => setOnboardingVisible(false)}
+          onSkip={() => chrome.setOnboardingVisible(false)}
         />
       </Show>
 
       <MobileDrawer
-        open={drawerOpen()}
-        onClose={() => setDrawerOpen(false)}
+        open={chrome.drawerOpen()}
+        onClose={() => chrome.setDrawerOpen(false)}
         stats={{
-          total_news: stats().total_news,
-          active_sources: stats().active_sources,
-          news_today: stats().news_today ?? 0,
+          total_news: discovery.stats().total_news,
+          active_sources: discovery.stats().active_sources,
+          news_today: discovery.stats().news_today ?? 0,
         }}
         savedCount={bookmarks().length}
         readLaterCount={readLaterQueue().length}
         unreadCount={0}
         activeFeedTab={activeFeedTab()}
-        onNavigate={(view) => { setDrawerOpen(false); nav.handleViewChange(view); }}
-        onSelectTab={(tab) => { haptic.vibrate('tap'); setActiveFeedTab(tab); setDrawerOpen(false); }}
+        onNavigate={(view) => { chrome.setDrawerOpen(false); nav.handleViewChange(view); }}
+        onSelectTab={(tab) => { haptic.vibrate('tap'); setActiveFeedTab(tab); chrome.setDrawerOpen(false); }}
         onSelectCategory={(cat) => {
           setActiveCategory(cat);
           updateURL({ cat: cat === 'Todas' ? null : cat });
           feedHook.resetFeed();
-          setDrawerOpen(false);
+          chrome.setDrawerOpen(false);
         }}
-        categories={categories()}
+        categories={discovery.categories()}
         topSources={feedHook.topSourcesForDrawer()}
         activeCategory={activeCategory()}
       />
