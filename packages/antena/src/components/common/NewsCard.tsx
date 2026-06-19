@@ -273,15 +273,14 @@ export default function NewsCard(props: NewsCardProps) {
               data-hide-on-data-saver="true"
             >
               {(() => {
-                // Resize via the /api/img/ edge endpoint.
-                // At 130×85 (the rendered size) we serve a
-                // single 2x variant. If the original image
-                // is missing, we leave the slot empty.
                 const u = props.news.imageUrl;
                 if (!u) return null;
+                const base = `https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(u)}&q=72&fmt=webp&fit=cover`;
                 return (
                   <img
-                    src={`https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(u)}&w=260&q=72&fmt=webp&fit=cover`}
+                    src={`${base}&w=260`}
+                    srcset={`${base}&w=260 260w, ${base}&w=390 390w, ${base}&w=520 520w`}
+                    sizes="(max-width: 768px) 130px, 260px"
                     alt=""
                     class="w-full h-full object-cover"
                     loading="lazy"
@@ -313,7 +312,7 @@ export default function NewsCard(props: NewsCardProps) {
             </span>
           </Show>
 
-          <div class="flex items-center justify-between gap-1 -mx-1.5">
+          <div class="flex items-center justify-between gap-1 -mx-1.5 flex-wrap">
             <button
               onClick={(e)=>{e.stopPropagation();haptic.vibrate('tap');}}
               aria-label="Comentarios"
@@ -368,7 +367,11 @@ export default function NewsCard(props: NewsCardProps) {
                 style={{ 'background-color': '#25D366' }}
                 aria-hidden="true"
               />
-              <span class="text-[15px] xl:text-[16px] font-medium">Compartir</span>
+              {/* Hide the text label on small screens — the green dot
+                  is enough signal for "WhatsApp" and the full label
+                  was pushing the row past the card edge. Show it
+                  again on xl+ (≥1280px) where there's room. */}
+              <span class="hidden xl:inline text-[15px] xl:text-[16px] font-medium">Compartir</span>
             </button>
           </div>
         </div>
