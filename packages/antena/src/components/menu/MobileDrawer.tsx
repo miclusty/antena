@@ -1,8 +1,9 @@
 /** @jsxImportSource solid-js */
-import { For, Show, createSignal, onCleanup, onMount } from 'solid-js';
+import { For, Show, createSignal, onCleanup, onMount, createEffect } from 'solid-js';
 import SourceLogo from '../common/SourceLogo';
 import MaterialIcon from '../common/MaterialIcon';
 import { useHaptic } from '../../lib/haptic';
+import { trapFocus } from '../../lib/focus-trap';
 
 export interface DrawerStats {
   total_news: number;
@@ -74,6 +75,26 @@ export default function MobileDrawer(props: MobileDrawerProps) {
   const [activityOpen, setActivityOpen] = createSignal(true);
   const [exploreOpen, setExploreOpen] = createSignal(true);
   const [sourcesOpen, setSourcesOpen] = createSignal(true);
+
+  let drawerRef: HTMLElement | undefined;
+  let triggerEl: HTMLElement | null = null;
+  let trap: ReturnType<typeof trapFocus> | null = null;
+  createEffect(() => {
+    if (!drawerRef) return;
+    if (props.open) {
+      if (!trap) {
+        triggerEl = (document.activeElement as HTMLElement | null) ?? null;
+        trap = trapFocus(drawerRef, triggerEl ?? undefined);
+      }
+      trap.activate();
+    } else if (trap) {
+      trap.deactivate();
+      trap = null;
+      const t = triggerEl;
+      if (t && typeof t.focus === 'function') t.focus();
+      triggerEl = null;
+    }
+  });
 
   let touchStartX = 0;
   let touchStartY = 0;
@@ -155,6 +176,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
         aria-hidden="true"
       />
       <aside
+        ref={(el) => { if (el) drawerRef = el; }}
         class="fixed top-0 left-0 h-full z-[var(--drawer-z)] overflow-y-auto transition-transform duration-300 ease-out"
         style={{
           width: 'var(--drawer-width)',
