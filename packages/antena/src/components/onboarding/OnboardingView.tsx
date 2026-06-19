@@ -1,7 +1,8 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createResource, For, Show, createMemo, onMount } from "solid-js";
+import { createSignal, createResource, For, Show, createMemo, onMount, onCleanup, createEffect } from "solid-js";
 import { fetchCities, fetchCategories, fetchSources, followSource, type ApiSourceEntry, type ApiCategory, type ApiCity } from "../../lib/api";
 import { useHaptic } from "../../lib/haptic";
+import { trapFocus } from "../../lib/focus-trap";
 import { toast } from "../Toast";
 import MaterialIcon from '../common/MaterialIcon';
 
@@ -111,8 +112,24 @@ export default function OnboardingView(props: OnboardingViewProps) {
 
   if (!visible()) return null;
 
+  let modalRef: HTMLDivElement | undefined;
+  let triggerEl: HTMLElement | null = null;
+  let trap: ReturnType<typeof trapFocus> | null = null;
+  createEffect(() => {
+    if (!visible() || !modalRef) return;
+    if (!trap) {
+      triggerEl = (document.activeElement as HTMLElement | null) ?? null;
+      trap = trapFocus(modalRef, triggerEl ?? undefined);
+    }
+    trap.activate();
+  });
+
   return (
     <div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Personalizá tu feed"
       class="fixed inset-0 z-[200] flex items-center justify-center px-4 py-6"
       style={{ background: "rgba(0,0,0,0.55)", "backdrop-filter": "blur(4px)" }}
     >
