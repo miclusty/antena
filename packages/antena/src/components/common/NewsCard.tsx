@@ -66,6 +66,10 @@ export interface NewsCardProps {
    *  card navigates to that source's profile page. Cards
    *  without a known source id leave the avatar inert. */
   onSourceClick?: (sourceId: number) => void;
+  /** Eager-load this card's thumbnail (skip lazy loading and
+   *  signal fetchpriority=high). Use for the first card above
+   *  the fold so LCP doesn't wait for the IntersectionObserver. */
+  priority?: boolean;
 }
 
 export default function NewsCard(props: NewsCardProps) {
@@ -283,7 +287,8 @@ export default function NewsCard(props: NewsCardProps) {
                     sizes="(max-width: 768px) 130px, 260px"
                     alt=""
                     class="w-full h-full object-cover"
-                    loading="lazy"
+                    loading={props.priority ? "eager" : "lazy"}
+                    fetchpriority={props.priority ? "high" : "auto"}
                     decoding="async"
                     width="130"
                     height="85"

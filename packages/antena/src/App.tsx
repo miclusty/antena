@@ -576,10 +576,11 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                       <div>
                         <div class="flex flex-col [&>article:last-child]:mb-0">
                           <For each={feedHook.mappedNews()}>
-                            {(item) => (
+                            {(item, index) => (
                               <NewsCard
                                 news={item}
                                 variant={density() === 'compact' ? 'compact' : 'default'}
+                                priority={index() === 0}
                                 onClick={() => nav.handleNewsClick(item)}
                                 onUpvote={(_id, current) => {
                                   haptic.vibrate('tap');
