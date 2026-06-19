@@ -249,7 +249,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
             <Show when={props.unreadCount > 0}>
               <span
                 class="ml-auto text-[10px] font-extrabold px-1.5 py-0.5 rounded-full"
-                style={{ background: 'var(--accent)', color: '#fff' }}
+                style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
               >
                 {props.unreadCount}
               </span>
@@ -340,7 +340,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
                     class="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full min-h-[32px] transition-colors"
                     style={
                       isActive()
-                        ? { background: 'var(--accent)', color: '#fff' }
+                        ? { background: 'var(--accent)', color: 'var(--accent-fg)' }
                         : { background: 'var(--bg-base)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
                     }
                   >

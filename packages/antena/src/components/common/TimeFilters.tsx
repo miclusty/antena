@@ -26,7 +26,7 @@ export default function TimeFilters(props: TimeFiltersProps) {
               onClick={() => props.onFilterChange(filter.id)}
               class="px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors border"
               style={active()
-                ? { background: 'var(--accent)', color: '#fff', 'border-color': 'var(--accent)' }
+                ? { background: 'var(--accent)', color: 'var(--accent-fg)', 'border-color': 'var(--accent)' }
                 : { background: 'var(--bg-elevated)', color: 'var(--text-tertiary)', 'border-color': 'var(--border-base)' }
               }
             >

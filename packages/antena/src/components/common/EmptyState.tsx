@@ -155,7 +155,7 @@ export default function EmptyState(props: EmptyStateProps) {
         <button
           onClick={props.action!.onClick}
           class="mt-5 px-5 min-h-[44px] rounded-full text-sm font-medium transition-all active:scale-95"
-          style={{ background: 'var(--accent)', color: '#fff' }}
+          style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}
         >
           {props.action!.label}
         </button>

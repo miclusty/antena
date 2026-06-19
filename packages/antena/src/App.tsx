@@ -331,7 +331,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                         }}
                         class="text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap transition-all"
                         style={isActive
-                          ? { 'background-color': color || 'var(--text-primary)', 'border-color': color || 'var(--text-primary)', color: '#fff' }
+                          ? { 'background-color': color || 'var(--text-primary)', 'border-color': color || 'var(--text-primary)', color: 'var(--accent-fg)' }
                           : { 'border-color': 'var(--border)', color: 'var(--text-secondary)' }
                         }
                       >
@@ -484,7 +484,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                           onClick={() => { haptic.vibrate('tap'); filters.setShowFilters(s => !s); }}
                           class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
                           style={filters.hasActiveFilters()
-                            ? { background: 'var(--accent)', color: '#fff' }
+                            ? { background: 'var(--accent)', color: 'var(--accent-fg)' }
                             : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
                           }
                           aria-pressed={filters.showFilters()}
@@ -497,7 +497,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                           onClick={() => { haptic.vibrate('tap'); chrome.setMateMode(!chrome.mateMode()); }}
                           class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
                           style={chrome.mateMode()
-                            ? { background: 'var(--accent)', color: '#fff' }
+                            ? { background: 'var(--accent)', color: 'var(--accent-fg)' }
                             : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
                           }
                           aria-pressed={chrome.mateMode()}
@@ -547,7 +547,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                                 onClick={() => filters.updateBias(b)}
                                 class="px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors border"
                                 style={active()
-                                  ? { background: 'var(--accent)', color: '#fff', 'border-color': 'var(--accent)' }
+                                  ? { background: 'var(--accent)', color: 'var(--accent-fg)', 'border-color': 'var(--accent)' }
                                   : { background: 'var(--bg-elevated)', color: 'var(--text-tertiary)', 'border-color': 'var(--border-base)' }
                                 }
                               >

@@ -114,7 +114,7 @@ export default function TrendingSection(props: TrendingSectionProps) {
                     class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full transition-colors"
                     style={
                       active()
-                        ? { background: 'var(--accent)', color: '#fff' }
+                        ? { background: 'var(--accent)', color: 'var(--accent-fg)' }
                         : { color: 'var(--text-tertiary)' }
                     }
                     aria-pressed={active()}

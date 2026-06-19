@@ -569,7 +569,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                 class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border"
                 style={
                   myUseful() === 1
-                    ? { background: 'var(--accent)', color: '#fff', 'border-color': 'var(--accent)' }
+                    ? { background: 'var(--accent)', color: 'var(--accent-fg)', 'border-color': 'var(--accent)' }
                     : { background: 'var(--bg-base)', color: 'var(--text-secondary)', 'border-color': 'var(--border-base)' }
                 }
                 aria-pressed={myUseful() === 1}
