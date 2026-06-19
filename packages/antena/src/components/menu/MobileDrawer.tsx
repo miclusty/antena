@@ -76,6 +76,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
   let touchStartX = 0;
   let touchStartY = 0;
   let touchCurrentX = 0;
+  let touchCurrentY = 0;
   let dragging = false;
 
   onMount(() => {
@@ -103,20 +104,21 @@ export default function MobileDrawer(props: MobileDrawerProps) {
     const t = e.touches[0];
     if (!t) return;
     touchCurrentX = t.clientX;
+    touchCurrentY = t.clientY;
   };
 
   const onTouchEnd = () => {
     if (!dragging) return;
     dragging = false;
     const dx = touchCurrentX - touchStartX;
-    const dy = Math.abs(touchCurrentX - touchStartX ? (touchCurrentX - touchStartX) : 0);
-    if (dx < -50 && Math.abs(touchCurrentX - touchStartX) > Math.abs(touchCurrentX - touchStartY)) {
+    const dy = touchCurrentY - touchStartY;
+    if (dx < -50 && Math.abs(dx) > Math.abs(dy)) {
       props.onClose();
     }
     touchStartX = 0;
     touchStartY = 0;
     touchCurrentX = 0;
-    void dy;
+    touchCurrentY = 0;
   };
 
   const handleNavigateFeed = () => {
