@@ -39,20 +39,21 @@ export default defineConfig({
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
           runtimeCaching: [
             {
-              urlPattern: /^https?:\/\/localhost:\d+\/api\/news.*/i,
-              handler: "NetworkFirst",
+              urlPattern: /^https?:\/\/(localhost:\d+|akira-api\.miclusty\.workers\.dev)\/api\/news.*/i,
+              handler: "StaleWhileRevalidate",
               options: {
                 cacheName: "news-api-cache",
-                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 5 },
                 cacheableResponse: { statuses: [0, 200] }
               }
             },
             {
-              urlPattern: /^https?:\/\/.*\.(png|jpg|jpeg|svg|gif|webp)$/i,
-              handler: "CacheFirst",
+              urlPattern: /^https?:\/\/akira-api\.miclusty\.workers\.dev\/api\/img.*/i,
+              handler: "StaleWhileRevalidate",
               options: {
-                cacheName: "image-cache",
-                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 }
+                cacheName: "img-proxy-cache",
+                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 },
+                cacheableResponse: { statuses: [0, 200] }
               }
             }
           ]
