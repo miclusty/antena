@@ -23,6 +23,7 @@ interface LeftSidebarProps {
   onFeedTabChange: (tab: string) => void;
   onOpenBookmarks: () => void;
   onOpenReadLater: () => void;
+  onOpenHistory: () => void;
   readLaterCount: number;
 }
 
@@ -230,7 +231,7 @@ export default function LeftSidebar(props: LeftSidebarProps) {
                 if (typeof window === 'undefined') return 0;
                 try { return JSON.parse(localStorage.getItem('antena-history') || '[]').length; } catch { return 0; }
               })()}
-              dimmed={true}
+              onClick={() => { haptic.vibrate('tap'); props.onOpenHistory(); }}
             />
           </div>
         </nav>

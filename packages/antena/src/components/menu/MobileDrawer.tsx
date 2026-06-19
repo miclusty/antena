@@ -2,6 +2,7 @@
 import { For, Show, createSignal, onCleanup, onMount } from 'solid-js';
 import SourceLogo from '../common/SourceLogo';
 import MaterialIcon from '../common/MaterialIcon';
+import { useHaptic } from '../../lib/haptic';
 
 export interface DrawerStats {
   total_news: number;
@@ -29,7 +30,7 @@ export interface MobileDrawerProps {
   readLaterCount: number;
   unreadCount: number;
   activeFeedTab: string;
-  onNavigate: (view: 'feed' | 'bookmarks' | 'readLater') => void;
+  onNavigate: (view: 'feed' | 'bookmarks' | 'readLater' | 'history') => void;
   onSelectTab: (tab: string) => void;
   onSelectCategory: (cat: string) => void;
   categories: DrawerCategory[];
@@ -69,6 +70,7 @@ function Accordion(props: AccordionProps) {
 }
 
 export default function MobileDrawer(props: MobileDrawerProps) {
+  const haptic = useHaptic();
   const [activityOpen, setActivityOpen] = createSignal(true);
   const [exploreOpen, setExploreOpen] = createSignal(true);
   const [sourcesOpen, setSourcesOpen] = createSignal(true);
@@ -313,6 +315,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
           </button>
           <button
             type="button"
+            onClick={() => { haptic.vibrate('tap'); props.onNavigate('history'); }}
             class="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-bg-hover"
             style={{ color: 'var(--text-primary)', 'font-weight': '500' }}
           >

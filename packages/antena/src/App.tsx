@@ -41,6 +41,7 @@ import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, f
 const ArticleDetail = lazy(() => import('./components/article/ArticleDetail'));
 const BookmarksView = lazy(() => import('./components/bookmarks/BookmarksView'));
 const ReadLaterView = lazy(() => import('./components/readlater/ReadLaterView'));
+const HistoryView = lazy(() => import('./components/history/HistoryView'));
 const BreakingView = lazy(() => import('./components/feed/BreakingView'));
 const MobileDrawer = lazy(() => import('./components/menu/MobileDrawer'));
 const OnboardingView = lazy(() => import('./components/onboarding/OnboardingView').then(m => ({ default: m.default })));
@@ -70,8 +71,6 @@ const CAT_COLORS: Record<string, string> = {
   'Cultura':'#8B5CF6','Tecnología':'#3B82F6','Sociedad':'#06B6D4','Internacional':'#6366F1',
   'Clima':'#0EA5E9','Espectáculos':'#EC4899',
 };
-
-type ViewType = 'feed' | 'article' | 'menu' | 'bookmarks' | 'breaking' | 'readLater';
 
 export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?: unknown[] }) {
   const [activeCategory, setActiveCategory] = createSignal('Todas');
@@ -221,6 +220,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
       feedTab={activeFeedTab()}
       onFeedTabChange={(tab) => { haptic.vibrate('tap'); setActiveFeedTab(tab); }}
       onOpenBookmarks={() => nav.handleViewChange('bookmarks')}
+      onOpenHistory={() => nav.handleViewChange('history')}
     />
   );
 
@@ -653,6 +653,11 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
               <ReadLaterView onBack={() => nav.handleViewChange('feed')} onNewsClick={nav.handleNewsClick} />
             </Show>
 
+            {/* ── History view (Historial) ── */}
+            <Show when={nav.currentView() === 'history'}>
+              <HistoryView onBack={() => nav.handleViewChange('feed')} onNewsClick={nav.handleNewsClick} />
+            </Show>
+
           </section>
 
           {rightSidebar}
@@ -667,7 +672,10 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
           onTabChange={(tab) => {
             haptic.vibrate('tap');
             setActiveTab(tab);
-            if (tab === 'home') nav.handleViewChange('feed');
+            if (tab === 'home') {
+              nav.handleViewChange('feed');
+              setActiveFeedTab('home');
+            }
             else if (tab === 'bookmarks') nav.handleViewChange('bookmarks');
             else if (tab === 'menu') chrome.setDrawerOpen(true);
             else if (tab === 'live') {

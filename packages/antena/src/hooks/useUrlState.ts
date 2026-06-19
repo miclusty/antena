@@ -8,7 +8,7 @@ import { mapNewsCard } from "../lib/mappers";
 import { toast } from "../components/Toast";
 import type { NewsItem } from "../lib/types";
 
-export type ViewType = "feed" | "article" | "menu" | "bookmarks" | "breaking" | "readLater" | "history";
+export type ViewType = "feed" | "article" | "menu" | "bookmarks" | "breaking" | "readLater" | "history" | "search";
 
 export type UseUrlStateOptions = {
   activeCategory?: () => string;
