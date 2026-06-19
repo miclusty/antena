@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
-import { Show } from "solid-js";
+import { Show, createSignal, onMount, onCleanup } from "solid-js";
 import MaterialIcon from '../common/MaterialIcon';
+import { trapFocus } from '../../lib/focus-trap';
 
 interface ImageLightboxProps {
   open: boolean;
@@ -16,17 +17,32 @@ interface ImageLightboxProps {
  * article column). Escape to close, click backdrop to close.
  */
 export default function ImageLightbox(props: ImageLightboxProps) {
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Escape" && props.open) props.onClose();
-  };
+  let dialogRef: HTMLDivElement | undefined;
+  const [triggerEl, setTriggerEl] = createSignal<HTMLElement | null>(null);
 
-  if (typeof document !== "undefined") {
+  onMount(() => {
+    const trap = trapFocus(dialogRef!, triggerEl() ?? undefined);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && props.open) props.onClose();
+    };
+    const onFocusIn = () => trap.activate();
+
     document.addEventListener("keydown", onKeyDown);
-  }
+    if (props.open) {
+      setTriggerEl(document.activeElement as HTMLElement | null);
+      trap.activate();
+    }
+    onCleanup(() => {
+      document.removeEventListener("keydown", onKeyDown);
+      trap.deactivate();
+    });
+    void onFocusIn;
+  });
 
   return (
     <Show when={props.open}>
       <div
+        ref={dialogRef}
         class="fixed inset-0 z-[200] flex items-center justify-center p-4"
         style={{ background: "rgba(0,0,0,0.92)" }}
         onClick={props.onClose}
