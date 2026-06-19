@@ -58,9 +58,6 @@ export function sanitizeArticleHtml(html: string): string {
     ALLOW_DATA_ATTR: false,
     FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button", "select", "textarea", "link", "meta", "base"],
     FORBID_ATTR: ["style", "srcdoc"],
-    // Hardening hooks: DOMPurify's addHook is global, so we don't
-    // use it here to avoid leaking hooks across renders. Instead,
-    // we post-process the output to force the right attributes.
   });
 }
 

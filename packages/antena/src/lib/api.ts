@@ -8,9 +8,6 @@
 // only used in dev (wrangler dev → 8787).
 const API_BASE_FALLBACK = "https://akira-api.miclusty.workers.dev";
 const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_API_BASE as string) || API_BASE_FALLBACK;
-// AKIRA_BASE points at the Python extractor (NOT the API). It only runs
-// on the dev machine, not in production. Caller code must check for null.
-const AKIRA_BASE = (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.PUBLIC_AKIRA_BASE as string) || 'http://localhost:5000';
 
 // safeFetch: wrap every API call in this so a network
 // error becomes `null` instead of an unhandled promise
@@ -326,23 +323,6 @@ export interface FeaturedStoryResponse {
   message?: string;
 }
 
-export async function fetchMap(limit = 500): Promise<{
-  items: Array<{
-    id: string; title: string; category: string | null;
-    published_at: string | null;
-    location_id: number; location_name: string;
-    lat: number; lng: number;
-  }>;
-} | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/news/map?limit=${limit}`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
 export async function fetchSearch(q: string, limit = 20, filters?: {
   category?: string;
   source_id?: number;
@@ -506,27 +486,6 @@ export async function unfollowSource(sourceId: number): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-export async function fetchFeedFiltered(
-  options: { following?: boolean; sourceIds?: number[]; category?: string; location_id?: number; limit?: number; offset?: number }
-): Promise<FeedResponse> {
-  const params = new URLSearchParams();
-  if (options.following) {
-    const deviceId = getDeviceId();
-    if (deviceId) params.set("following", "true");
-    params.set("device_id", deviceId);
-  }
-  if (options.sourceIds && options.sourceIds.length > 0) {
-    params.set("source_ids", options.sourceIds.join(","));
-  }
-  if (options.category) params.set("category", options.category);
-  if (options.location_id) params.set("location_id", String(options.location_id));
-  if (options.limit) params.set("limit", String(options.limit));
-  if (options.offset) params.set("offset", String(options.offset));
-  const res = await fetch(`${API_BASE}/api/news/feed?${params}`);
-  if (!res.ok) throw new Error(`Failed to fetch feed: ${res.status}`);
-  return res.json();
 }
 
 // ─── Engagement: votes + reposts ────────────────────────────

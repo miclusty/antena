@@ -31,12 +31,8 @@ export interface NewsItem {
   clickbaitAnswer?: string;
   propagation: PropagationEvent[];
   // Pre-existing inconsistency: the field is named `voces` in the
-  // type (Spanish) but the rest of the code uses `voices` (English)
-  // — see ArticleDetail.tsx and BiasBreakdownBar.tsx. We support
-  // both names via a union so existing call sites keep working
-  // while new code can use either.
+  // Voice breakdown (cluster-level bias attribution).
   voces: VoiceBreakdown[];
-  voices?: VoiceBreakdown[];
   clusterId: string;
   sourcesCount: number;
   imageUrl?: string;
@@ -70,12 +66,6 @@ export interface NewsItem {
   // only when this has ≥2 entries.
   headings?: { level: 2 | 3; text: string; id: string }[];
 }
-
-interface _ForceLspRefetch {
-  body_html?: string;
-  headings?: { level: 2 | 3; text: string; id: string }[];
-}
-void (null as unknown as _ForceLspRefetch);
 
 export interface PropagationEvent {
   time: string;
