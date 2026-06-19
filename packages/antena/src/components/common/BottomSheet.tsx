@@ -2,7 +2,7 @@
 import { Show, createSignal, onMount, onCleanup, createEffect } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { useHaptic } from '../../lib/haptic';
-import { trapFocus } from '../../lib/focus-trap';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface BottomSheetProps {
   open: boolean;
@@ -53,24 +53,7 @@ export default function BottomSheet(props: BottomSheetProps) {
     lockBody(false);
   });
 
-  let triggerEl: HTMLElement | null = null;
-  let trap: ReturnType<typeof trapFocus> | null = null;
-  createEffect(() => {
-    if (!sheetRef) return;
-    if (props.open) {
-      if (!trap) {
-        triggerEl = (document.activeElement as HTMLElement | null) ?? null;
-        trap = trapFocus(sheetRef, triggerEl ?? undefined);
-      }
-      trap.activate();
-    } else if (trap) {
-      trap.deactivate();
-      trap = null;
-      const t = triggerEl;
-      if (t && typeof t.focus === 'function') t.focus();
-      triggerEl = null;
-    }
-  });
+  const setSheetRef = useFocusTrap(() => props.open);
 
   const onTouchStart = (e: TouchEvent) => {
     if (!sheetRef) return;
@@ -172,7 +155,7 @@ export default function BottomSheet(props: BottomSheetProps) {
           role="presentation"
         >
           <div
-            ref={sheetRef}
+            ref={(el) => { sheetRef = el; setSheetRef(el); }}
             class={`w-full max-w-md ${heightClass()} rounded-t-2xl border border-border-base overflow-hidden flex flex-col`}
             style={{
               background: 'var(--bg-elevated)',

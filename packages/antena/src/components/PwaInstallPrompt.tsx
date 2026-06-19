@@ -1,7 +1,7 @@
 /** @jsxImportSource solid-js */
 import { createSignal, onMount, onCleanup, Show, createEffect, on } from 'solid-js';
 import { useHaptic } from '../lib/haptic';
-import { trapFocus } from '../lib/focus-trap';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import MaterialIcon from './common/MaterialIcon';
 
 /**
@@ -29,27 +29,9 @@ const AUTO_DISMISS_MS = 30_000;
 
 export default function PwaInstallPrompt() {
   const haptic = useHaptic();
-  let iosRef: HTMLElement | undefined;
-  let triggerEl: HTMLElement | null = null;
-  let trap: ReturnType<typeof trapFocus> | null = null;
-  createEffect(() => {
-    if (!iosRef) return;
-    if (iosVisible()) {
-      if (!trap) {
-        triggerEl = (document.activeElement as HTMLElement | null) ?? null;
-        trap = trapFocus(iosRef, triggerEl ?? undefined);
-      }
-      trap.activate();
-    } else if (trap) {
-      trap.deactivate();
-      trap = null;
-      const t = triggerEl;
-      if (t && typeof t.focus === 'function') t.focus();
-      triggerEl = null;
-    }
-  });
   const [deferredPrompt, setDeferredPrompt] = createSignal<any>(null);
   const [iosVisible, setIosVisible] = createSignal(false);
+  const setIosRef = useFocusTrap(iosVisible);
   const [showButton, setShowButton] = createSignal(false);
   const [installed, setInstalled] = createSignal(false);
 
@@ -152,7 +134,7 @@ export default function PwaInstallPrompt() {
 
       <Show when={iosVisible()}>
         <div
-          ref={(el) => { if (el) iosRef = el; }}
+          ref={setIosRef}
           class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.6)' }}
           onClick={() => setIosVisible(false)}
