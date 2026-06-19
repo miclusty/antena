@@ -2,6 +2,7 @@
 import '../lib/design-tokens.css';
 import '../styles/animations.css';
 import SeoHead from '../components/SeoHead.astro';
+import iconsSprite from '../public/icons.svg?raw';
 
 interface Props {
   title?: string;
@@ -92,9 +93,10 @@ const SITE = 'https://www.antena.com.ar';
     <link rel="dns-prefetch" href="https://antena-images.r2.dev" />
 
     <!-- Icons via SVG sprite (36 KB, replaces 1.9 MB Material Symbols font).
-         Inlined to avoid an extra HTTP request. The sprite is hidden via
-         style="display:none" and referenced via <use href="#icon-name" />
+         Inlined via ?raw import to avoid an extra HTTP request. The sprite
+         is hidden via style="display:none" and referenced via <use href="#icon-name" />
          from the MaterialIcon component. -->
+    <Fragment set:html={iconsSprite} />
 
     <style>
       /* ─── Reset & Base ─── */

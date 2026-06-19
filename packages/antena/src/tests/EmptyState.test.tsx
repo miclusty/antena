@@ -47,7 +47,7 @@ describe("EmptyState", () => {
     ));
     const svg = container.querySelector("svg use");
     expect(svg).toBeTruthy();
-    expect(svg?.getAttribute("href")).toBe("/icons.svg#unknown-icon");
+    expect(svg?.getAttribute("href")).toBe("#unknown-icon");
   });
 
   it("renders without icon when no icon prop is provided", () => {

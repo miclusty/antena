@@ -27,7 +27,7 @@ export default function MaterialIcon(props: MaterialIconProps) {
   return (
     <span class={className()} style={style()} {...rest}>
       <svg width={px()} height={px()} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <use href={`/icons.svg#${local.name}`} />
+        <use href={`#${local.name}`} />
       </svg>
     </span>
   )
