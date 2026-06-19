@@ -1,73 +1,34 @@
 ---
 // /radios — Listado completo de radios en vivo.
 //
-// Página SSR para indexar todas las radios. El reproductor
-// persistente se monta desde <RadioPlayer /> en App.tsx y
-// se puede abrir desde cualquier página tocando el botón
-// flotante. Esta página es el "directorio" navegable.
+// Página SSR liviana: el directorio se carga client-side
+// desde <RadiosExplorer /> filtrado por el país del usuario
+// (resolución de cookie → cf-ipcountry → AR). El reproductor
+// persistente se monta desde <RadioPlayer /> en App.tsx y se
+// puede abrir desde cualquier página tocando el botón flotante.
 
 import Layout from '../layouts/Layout.astro';
 import SeoHead from '../components/SeoHead.astro';
-import RadioPlayer from '../components/common/RadioPlayer';
 import RadiosExplorer from '../components/radios/RadiosExplorer.tsx';
+import RadioPlayer from '../components/common/RadioPlayer';
 
 export const prerender = true;
 
 const SITE = 'https://www.antena.com.ar';
-const API_BASE_FALLBACK = 'https://akira-api.miclusty.workers.dev';
-
-const fromEnv = import.meta.env.PUBLIC_API_BASE;
-const apiBase = (!fromEnv || fromEnv.includes('localhost'))
-  ? API_BASE_FALLBACK
-  : fromEnv;
-
-interface Radio {
-  id: number;
-  name: string;
-  stream_url: string;
-  website: string | null;
-  city: string | null;
-  province: string | null;
-  codgl: string | null;
-  tags: string | null;
-  type: string;
-}
-
-let radios: Radio[] = [];
-try {
-  const res = await fetch(`${apiBase}/api/stats/radios?limit=2000`, {
-    headers: { 'User-Agent': 'AntenaRadiosPage/1.0' },
-  });
-  if (res.ok) {
-    const data = (await res.json()) as { items?: Radio[] };
-    radios = data.items ?? [];
-  }
-} catch {
-  radios = [];
-}
-
-// Province distribution
-const byProvince = new Map<string, number>();
-for (const r of radios) {
-  byProvince.set(r.province || 'Argentina', (byProvince.get(r.province || 'Argentina') ?? 0) + 1);
-}
-const topProvinces = Array.from(byProvince.entries())
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 6);
-const totalProvinces = byProvince.size;
 ---
+
 <Layout>
   <Fragment slot="head">
     <SeoHead
       title="Radios en vivo — Antena"
-      description={`Directorio de ${radios.length} radios argentinas en vivo. AM, FM, radios online de ${totalProvinces} provincias. Escuchá en vivo desde el reproductor integrado de Antena.`}
+      description="Directorio de radios en vivo de todo el mundo. AM, FM, radios online. Escuchá en vivo desde el reproductor integrado de Antena."
       canonical={`${SITE}/radios`}
       jsonLd={{
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         'name': 'Radios en vivo — Antena',
         'url': `${SITE}/radios`,
-        'description': `Directorio de ${radios.length} radios argentinas en vivo.`,
+        'description': 'Directorio de radios en vivo de todo el mundo.',
         'inLanguage': 'es-AR',
       }}
     />
@@ -79,42 +40,27 @@ const totalProvinces = byProvince.size;
         Radios en vivo
       </h1>
       <p class="text-base" style={{ color: 'var(--text-secondary)' }}>
-        Cobertura nacional, AM, FM y radios online.
+        Cobertura global. AM, FM y radios online.
       </p>
     </header>
 
-    {/* Stats */}
-    <section class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
       <div
         class="rounded-xl p-4 border"
         style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
       >
         <p class="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: 'var(--text-tertiary)' }}>
-          Emisoras
-        </p>
-        <p class="text-3xl font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
-          {radios.length}
-        </p>
-        <p class="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          en {totalProvinces} provincias
-        </p>
-      </div>
-      <div
-        class="rounded-xl p-4 border"
-        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
-      >
-        <p class="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: 'var(--text-tertiary)' }}>
-          Provincia con más radios
+          Cobertura
         </p>
         <p class="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          {topProvinces[0]?.[0] ?? '—'}
+          Mundial
         </p>
         <p class="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          {topProvinces[0]?.[1] ?? 0} emisoras
+          Filtramos por tu país automáticamente
         </p>
       </div>
       <div
-        class="rounded-xl p-4 border col-span-2 md:col-span-1"
+        class="rounded-xl p-4 border"
         style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
       >
         <p class="text-[10px] uppercase tracking-wider font-bold mb-1" style={{ color: 'var(--text-tertiary)' }}>
@@ -129,27 +75,12 @@ const totalProvinces = byProvince.size;
       </div>
     </section>
 
-    {/* Province chips */}
-    <div
-      class="rounded-xl border p-4 mb-6 flex flex-wrap gap-2"
-      style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
-    >
-      {topProvinces.map(([prov, count]) => (
-        <span
-          class="text-xs px-3 py-1.5 rounded-full font-medium"
-          style={{ background: 'var(--bg-base)', color: 'var(--text-secondary)' }}
-        >
-          {prov} <span style={{ color: 'var(--text-tertiary)' }}>({count})</span>
-        </span>
-      ))}
-    </div>
-
     {/* Full directory — client-side explorer (lighter page) */}
     <section class="mb-8">
       <h2 class="text-lg font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
         Directorio completo
       </h2>
-      <RadiosExplorer client:load radios={radios} />
+      <RadiosExplorer client:load radios={[]} />
     </section>
 
     <section

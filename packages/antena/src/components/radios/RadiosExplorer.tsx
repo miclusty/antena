@@ -1,6 +1,9 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createMemo, For, Show } from 'solid-js';
+import { createSignal, createMemo, onMount, onCleanup, For, Show } from 'solid-js';
 import MaterialIcon from '../common/MaterialIcon';
+import { loadUserCountry, country } from '../../lib/user-country';
+import { COUNTRIES } from '../../lib/countries';
+import CountrySelector from './CountrySelector';
 
 interface Radio {
   id: number;
@@ -19,6 +22,17 @@ interface Props {
 }
 
 const PAGE_SIZE = 50;
+const API_BASE_FALLBACK = 'https://akira-api.miclusty.workers.dev';
+
+function getApiBase(): string {
+  try {
+    const fromEnv = (import.meta as { env?: { PUBLIC_API_BASE?: string } }).env?.PUBLIC_API_BASE;
+    if (fromEnv && !fromEnv.includes('localhost')) return fromEnv;
+  } catch {
+    // ignore
+  }
+  return API_BASE_FALLBACK;
+}
 
 const formatTags = (raw: string | null): string[] => {
   if (!raw) return [];
@@ -34,10 +48,19 @@ export default function RadiosExplorer(props: Props) {
   const [query, setQuery] = createSignal('');
   const [provFilter, setProvFilter] = createSignal<string>('');
   const [page, setPage] = createSignal(1);
+  // Internal radios signal — initialized from props (so the
+  // component still works if a caller passes SSR-fetched radios)
+  // and then populated client-side filtered by the user's
+  // country via fetchRadios().
+  const [radios, setRadios] = createSignal<Radio[]>(props.radios);
+  const [total, setTotal] = createSignal<number>(props.radios.length);
+  const [loading, setLoading] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
+  const [showCountryPicker, setShowCountryPicker] = createSignal(false);
 
   const provinces = createMemo(() => {
     const m = new Map<string, number>();
-    for (const r of props.radios) {
+    for (const r of radios()) {
       const p = r.province || 'Argentina';
       m.set(p, (m.get(p) ?? 0) + 1);
     }
@@ -49,7 +72,7 @@ export default function RadiosExplorer(props: Props) {
   const filtered = createMemo(() => {
     const q = query().toLowerCase().trim();
     const p = provFilter();
-    return props.radios
+    return radios()
       .filter((r) => !p || (r.province || 'Argentina') === p)
       .filter(
         (r) =>
@@ -59,6 +82,42 @@ export default function RadiosExplorer(props: Props) {
           (r.province ?? '').toLowerCase().includes(q),
       )
       .sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  const fetchRadios = async () => {
+    if (loading()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const url = new URL(`${getApiBase()}/api/stats/radios`);
+      url.searchParams.set('country', country());
+      url.searchParams.set('limit', '2000');
+      const res = await fetch(url.toString(), {
+        headers: { 'User-Agent': 'AntenaRadiosPage/1.0' },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { items?: Radio[]; total?: number };
+      const items = data.items ?? [];
+      setRadios(items);
+      setTotal(data.total ?? items.length);
+    } catch (e) {
+      setError((e as Error).message || 'No se pudieron cargar las radios');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Resolve the user's country before the initial fetch so the
+  // first page already targets the right country. Refetch on
+  // country change.
+  onMount(() => {
+    void loadUserCountry().then(() => fetchRadios());
+    const onCountryChanged = () => {
+      setPage(1);
+      fetchRadios();
+    };
+    window.addEventListener('antena:country-changed', onCountryChanged);
+    onCleanup(() => window.removeEventListener('antena:country-changed', onCountryChanged));
   });
 
   // Reset to page 1 when filters change
@@ -138,11 +197,25 @@ export default function RadiosExplorer(props: Props) {
             {(p) => <option value={p.province}>{p.province} ({p.count})</option>}
           </For>
         </select>
+        <button
+          type="button"
+          class="px-3 py-2 rounded-lg text-sm border flex items-center gap-1.5 shrink-0 hover:bg-[var(--bg-elevated)]"
+          style={{
+            'border-color': 'var(--border-base)',
+            color: 'var(--text-primary)',
+            background: 'var(--bg-elevated)',
+          }}
+          onClick={() => setShowCountryPicker(true)}
+          aria-label="Cambiar país"
+        >
+          <span class="leading-none">{COUNTRIES[country()]?.flag ?? '🌍'}</span>
+          <span>{COUNTRIES[country()]?.name ?? country()}</span>
+        </button>
       </div>
 
       <p class="text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>
-        Mostrando {(page() - 1) * PAGE_SIZE + 1}–{Math.min(page() * PAGE_SIZE, filtered().length)} de {filtered().length}
-        {filtered().length !== props.radios.length ? ` (filtrado de ${props.radios.length})` : ''}
+        {filtered().length.toLocaleString('es-AR')} radios · {COUNTRIES[country()]?.flag ?? '🌍'} {COUNTRIES[country()]?.name ?? country()}
+        {loading() ? ' · cargando…' : ''}
       </p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -244,6 +317,10 @@ export default function RadiosExplorer(props: Props) {
             Siguiente →
           </button>
         </div>
+      </Show>
+
+      <Show when={showCountryPicker()}>
+        <CountrySelector onClose={() => setShowCountryPicker(false)} />
       </Show>
     </div>
   );

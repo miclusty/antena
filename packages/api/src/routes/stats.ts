@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env } from "../lib/types";
 import { getStats } from "../db/queries";
 import { withCache } from "../lib/cache";
+import { resolveCountry } from "../lib/country";
 
 export const statsRoutes = new Hono<{ Bindings: Env }>();
 
@@ -102,13 +103,18 @@ statsRoutes.get("/sources", async (c) => {
 // filters by city when the device is following a pueblo
 // (via /api/follows).
 //
-// Response shape: [{ id, name, stream_url, website,
-// city, province, codgl, tags, type, source }]
+// Country is resolved from cookie override → cf-ipcountry → "AR",
+// and AKIRA is called with ?country=XX so users outside Argentina
+// see the relevant subset (with AR as the universal fallback).
+//
+// Response shape: { items, total, cached, source, country, offset, limit }
 statsRoutes.get("/radios", async (c) => {
   const db = c.env.DB;
-  const limit = Math.min(Number(c.req.query("limit") ?? 2000), 5000);
+  const limit = Math.min(Number(c.req.query("limit") ?? 200), 5000);
+  const offset = Math.max(Number(c.req.query("offset") ?? 0), 0);
   const codgl = c.req.query("codgl");
   const province = c.req.query("province");
+  const country = resolveCountry(c.req.raw);
 
   // The radios live in a separate table (argentine_media) that
   // gets populated by media/link_sources.py and
@@ -117,10 +123,16 @@ statsRoutes.get("/radios", async (c) => {
   // ship them via AKIRA's /medios endpoint instead and cache
   // the result in Cloudflare cache.
   const cache = caches.default;
-  const cacheKey = new Request(`https://akira-api.miclusty.workers.dev/api/stats/radios?limit=${limit}&codgl=${codgl ?? ''}&province=${province ?? ''}`);
+  const cacheKey = new Request(
+    `https://akira-api.miclusty.workers.dev/api/stats/radios?` +
+    `country=${country}&offset=${offset}&limit=${limit}` +
+    `&codgl=${codgl ?? ''}&province=${province ?? ''}`,
+  );
   const cached = await cache.match(cacheKey);
   if (cached) {
-    const body = await cached.json() as { items: unknown[]; cached: boolean; source: string };
+    const body = await cached.json() as {
+      items: unknown[]; cached: boolean; source: string; total: number;
+    };
     body.cached = true;
     return c.json(body);
   }
@@ -129,26 +141,50 @@ statsRoutes.get("/radios", async (c) => {
   // table (where we only have ~22 radios with RSS).
   const akiraBase = c.env.AKIRA_URL;
   let items: unknown[] = [];
-  let source = 'd1';
+  let total = 0;
+  let source = "d1";
+
   if (akiraBase) {
     try {
       const url = new URL(`${akiraBase}/medios/radios`);
-      url.searchParams.set('limit', String(limit));
-      if (codgl) url.searchParams.set('codgl', codgl);
-      if (province) url.searchParams.set('province', province);
+      url.searchParams.set("country", country);
+      url.searchParams.set("limit", String(limit));
+      url.searchParams.set("offset", String(offset));
+      if (codgl) url.searchParams.set("codgl", codgl);
+      if (province) url.searchParams.set("province", province);
       const res = await fetch(url.toString(), {
-        headers: { 'User-Agent': 'AntenaRadiosProxy/1.0' },
+        headers: { "User-Agent": "AntenaRadiosProxy/1.0" },
         signal: AbortSignal.timeout(8000),
       });
       if (res.ok) {
-        const data = await res.json() as { items?: unknown[] };
+        const data = await res.json() as { items?: unknown[]; total?: number };
         items = data.items ?? [];
-        source = 'akira';
+        total = data.total ?? items.length;
+        source = "akira";
       }
     } catch {
       // fall through to D1
     }
   }
+
+  // Fallback: if AKIRA returned 0 items (country with no radios),
+  // try AR once so the UI never shows an empty list.
+  if (!items.length && country !== "AR" && akiraBase) {
+    try {
+      const url = new URL(`${akiraBase}/medios/radios?country=AR&limit=${limit}`);
+      const res = await fetch(url.toString(), {
+        headers: { "User-Agent": "AntenaRadiosProxy/1.0" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const data = await res.json() as { items?: unknown[]; total?: number };
+        items = data.items ?? [];
+        total = data.total ?? items.length;
+        source = "akira-fallback";
+      }
+    } catch { /* ignore */ }
+  }
+
   if (!items.length) {
     // Fallback: D1 sources table (only the 22 with RSS).
     const where: string[] = ["type = 'radio'", "is_active = 1"];
@@ -157,18 +193,78 @@ statsRoutes.get("/radios", async (c) => {
     const res = await db.prepare(`
       SELECT id, name, url, NULL as stream_url, NULL as website,
              NULL as city, province, NULL as codgl, NULL as tags,
-             'radio' as type, 'sources' as source
+             'radio' as type, 'sources' as source, NULL as country
       FROM sources
       WHERE ${where.join(' AND ')}
       ORDER BY news_count DESC
       LIMIT ?
     `).bind(...params, limit).all();
     items = res.results ?? [];
+    total = items.length;
   }
-  const body = { items, total: items.length, cached: false, source };
+  const body = {
+    items, total, cached: false, source,
+    country, offset, limit,
+  };
   const cacheRes = new Response(JSON.stringify(body), {
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=900' },
+    headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=900" },
   });
   await cache.put(cacheKey, cacheRes);
   return c.json(body);
+});
+
+// Country index for the radio selector UI. Reads from AKIRA and
+// annotates with the resolved country (cf-ipcountry + cookie override)
+// so the frontend can highlight the user's own country and surface
+// the override if any.
+statsRoutes.get("/radios/countries", async (c) => {
+  const cache = caches.default;
+  const cacheKey = new Request(
+    "https://akira-api.miclusty.workers.dev/api/stats/radios/countries",
+  );
+  const cached = await cache.match(cacheKey);
+  let data: { countries: unknown[]; total: number };
+
+  if (cached) {
+    data = await cached.json();
+  } else {
+    const akiraBase = c.env.AKIRA_URL;
+    if (!akiraBase) {
+      return c.json({ error: "AKIRA_URL not configured" }, 500);
+    }
+    try {
+      const res = await fetch(`${akiraBase}/medios/radios/countries`, {
+        headers: { "User-Agent": "AntenaRadiosProxy/1.0" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`AKIRA ${res.status}`);
+      data = await res.json();
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 502);
+    }
+    const cacheRes = new Response(JSON.stringify(data), {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=86400",
+      },
+    });
+    await cache.put(cacheKey, cacheRes);
+  }
+
+  const cookieHeader = c.req.raw.headers.get("cookie") ?? "";
+  const cookieMatch = cookieHeader.match(/(?:^|;\s*)antena_country=([A-Za-z]{2})(?:;|$)/);
+  const override = cookieMatch ? cookieMatch[1].toUpperCase() : null;
+
+  const cfHeader = c.req.raw.headers.get("cf-ipcountry")?.toUpperCase();
+  const detected =
+    cfHeader && /^[A-Z]{2}$/.test(cfHeader) && cfHeader !== "XX" && cfHeader !== "T1"
+      ? cfHeader
+      : "AR";
+
+  return c.json({
+    countries: data.countries,
+    total: data.total,
+    detected,
+    override,
+  });
 });

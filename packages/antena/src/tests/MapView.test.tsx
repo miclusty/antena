@@ -1,6 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, cleanup, fireEvent } from '@solidjs/testing-library';
-import { afterEach } from 'vitest';
 import MapView, { type MapPoint } from '../components/MapView';
 
 afterEach(cleanup);
@@ -51,6 +50,3 @@ describe('MapView', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 });
-
-// vi is globally available from vitest
-declare const vi: { fn: () => (...args: unknown[]) => void };

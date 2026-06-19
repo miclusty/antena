@@ -32,7 +32,7 @@ async function handleIndexNow(ctx: { request: Request; env: PagesEnv }): Promise
     return new Response("Forbidden", { status: 403 });
   }
 
-  const apiBase = ctx.env.PUBLIC_API_BASE || "https://akira-api.miclusty.workers.dev";
+  const apiBase = ctx.env.API_BASE || "https://akira-api.miclusty.workers.dev";
   const origin = new URL(ctx.request.url).origin;
 
   // Fetch the most recent article IDs from the feed. We need

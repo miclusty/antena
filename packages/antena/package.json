@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "generate:countries": "tsx scripts/generate-countries.ts",
     "prebuild": "tsx ../api/src/lib/redirects-generator.ts production",
     "build": "astro build",
     "preview": "astro preview",
