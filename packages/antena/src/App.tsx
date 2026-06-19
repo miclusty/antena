@@ -380,24 +380,41 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
                   <Show
                      when={feedHook.mappedNews().length > 0}
                      fallback={
-                       <div class="px-4 py-8">
-                         <EmptyState
-                           icon="inbox"
-                           title={`No hay noticias en ${activeCategory()}`}
-                           description={activeLocation()
-                             ? 'Probá con otra ubicación o quitá el filtro.'
-                             : 'Probá con otra categoría o esperá unos minutos.'}
-                           action={feedHook.searchQuery()
-                             ? { label: 'Limpiar búsqueda', onClick: () => feedHook.setSearchQuery('') }
-                             : { label: 'Ver todas', onClick: () => {
-                                 setActiveCategory('Todas');
-                                 updateURL({ cat: null });
-                                 feedHook.resetFeed();
-                               } }}
-                         />
-                       </div>
-                     }
-                     >
+                        <div class="px-4 py-8">
+                          <EmptyState
+                            icon={activeFeedTab() === 'following' && follows.followedIds().size === 0 ? 'person_add' : 'inbox'}
+                            title={
+                              activeFeedTab() === 'following' && follows.followedIds().size === 0
+                                ? 'Tu Siguiendo está vacío'
+                                : `No hay noticias en ${activeCategory()}`
+                            }
+                            description={
+                              activeFeedTab() === 'following' && follows.followedIds().size === 0
+                                ? 'Seguí medios para personalizar tu feed. Cuantos más sigas, mejores recomendaciones vas a ver.'
+                                : (activeLocation()
+                                  ? 'Probá con otra ubicación o quitá el filtro.'
+                                  : 'Probá con otra categoría o esperá unos minutos.')
+                            }
+                            action={(() => {
+                              if (activeFeedTab() === 'following' && follows.followedIds().size === 0) {
+                                return { label: 'Descubrir medios', onClick: () => nav.handleViewChange('feed') };
+                              }
+                              if (feedHook.searchQuery()) {
+                                return { label: 'Limpiar búsqueda', onClick: () => feedHook.setSearchQuery('') };
+                              }
+                              return {
+                                label: 'Ver todas',
+                                onClick: () => {
+                                  setActiveCategory('Todas');
+                                  updateURL({ cat: null });
+                                  feedHook.resetFeed();
+                                },
+                              };
+                            })()}
+                          />
+                        </div>
+                      }
+                      >
                     {/* Featured story hero — only when there's a multi-source story */}
                     <Show when={feedHook.featuredCluster()}>
                       {(cluster) => (
