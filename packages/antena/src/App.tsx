@@ -2,6 +2,7 @@
 import { createSignal, createResource, createEffect, createMemo, For, Show, onMount, onCleanup, lazy, Suspense, untrack } from 'solid-js';
 import type { NewsItem } from './lib/types';
 import NewsCard from './components/common/NewsCard';
+import FeedView from './components/feed/FeedView';
 import BottomNav, { type TabId } from './components/common/BottomNav';
 import FeedTabs from './components/common/FeedTabs';
 import Header from './components/layout/Header';
@@ -256,42 +257,26 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
         />
 
         <Show when={nav.currentView() === 'feed'}>
-          <FeedTabs
-            activeTab={activeFeedTab()}
-            onTabChange={(tabId) => {
-              haptic.vibrate('tap');
-              setActiveFeedTab(tabId);
-              // Custom category tabs (e.g. "cat:politica") filter
-              // the feed by that category. Built-in tabs (home,
-              // following, explore, for-you) clear the filter.
-              // Either way, switching tabs should reset the
-              // accumulated `allNews` so the user doesn't see a
-              // flash of the previous category's content while the
-              // new fetch is in flight.
-              const resolved = resolveCustomTabSelection(
-                tabId,
-                discovery.categories().map((c) => ({ name: c.name, slug: c.slug })),
-              );
-              if (resolved.categoryName) setActiveCategory(resolved.categoryName);
-              else if (tabId !== activeFeedTab()) setActiveCategory('Todas');
-              if (resolved.shouldReset) feedHook.resetFeed();
-            }}
-            customTabs={discovery.customTabs()}
-            onAddCustomTab={(cat) => {
-              discovery.onAddCustomTab(cat);
-              haptic.vibrate('tap');
-              setActiveFeedTab(`cat:${cat.slug}`);
-              setActiveCategory(cat.name);
-            }}
-            onRemoveCustomTab={(tabId) => {
-              discovery.onRemoveCustomTab(tabId);
-              // If the removed tab was active, fall back to 'home'.
-              if (activeFeedTab() === tabId) {
-                setActiveFeedTab("home");
-              }
-            }}
-            availableCategories={CATEGORIES.filter((c) => c.slug !== "all")}
-            visible={discovery.feedTabsVisible()}
+          <FeedView
+            activeCategory={activeCategory}
+            setActiveCategory={setActiveCategory}
+            activeLocation={activeLocation}
+            setActiveLocation={setActiveLocation}
+            activeFeedTab={activeFeedTab}
+            setActiveFeedTab={setActiveFeedTab}
+            density={density}
+            updateDensity={updateDensity}
+            feedHook={feedHook}
+            filters={filters}
+            discovery={discovery}
+            follows={follows}
+            chrome={chrome}
+            nav={nav}
+            haptic={haptic}
+            setObserverTarget={setObserverTarget}
+            updateURL={updateURL}
+            shareNews={shareNews}
+            toggleBookmark={toggleBookmark}
           />
         </Show>
 
@@ -304,333 +289,27 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
             {/* ── Feed view ── */}
             <Show when={nav.currentView() === 'feed'}>
-              {/* Mobile-only: location + category chips */}
-              <div class="xl:hidden">
-                <div class="px-4 py-2">
-                  <LocationSelector
-                    activeLocation={activeLocation()}
-                    onLocationChange={(locId) => {
-                      setActiveLocation(locId);
-                      updateURL({ loc: locId });
-                      nav.handleViewChange('feed');
-                      feedHook.resetFeed();
-                    }}
-                  />
-                </div>
-                <div class="px-4 pb-2 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                  {discovery.categories().map((cat) => {
-                    const color = CAT_COLORS[cat.name];
-                    const isActive = activeCategory() === cat.name;
-                    return (
-                      <button
-                        onClick={() => {
-                          haptic.vibrate('tap');
-                          setActiveCategory(cat.name);
-                          updateURL({ cat: cat.name === 'Todas' ? null : cat.name });
-                          feedHook.resetFeed();
-                        }}
-                        class="text-xs font-semibold px-3 py-1.5 rounded-full border whitespace-nowrap transition-all"
-                        style={isActive
-                          ? { 'background-color': color || 'var(--text-primary)', 'border-color': color || 'var(--text-primary)', color: 'var(--accent-fg)' }
-                          : { 'border-color': 'var(--border)', color: 'var(--text-secondary)' }
-                        }
-                      >
-                        {cat.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <Show
-                when={!feedHook.feed.error}
-                fallback={
-                  <div class="px-4 py-8">
-                    <EmptyState
-                      icon="wifi_off"
-                      title="No se pudieron cargar las noticias"
-                      description="Revisá tu conexión a internet y volvé a intentarlo."
-                      action={{ label: 'Reintentar', onClick: () => { feedHook.resetFeed(); } }}
-                    />
-                  </div>
-                }
-              >
-                <Show
-                  when={!feedHook.feed.loading || feedHook.offset() > 0}
-                  fallback={
-                    <div class="px-4">
-                      <div class="flex flex-col">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div class="border-b border-border-base px-4 py-4">
-                            <div class="flex items-center gap-3 mb-4">
-                              <div class="w-10 h-10 rounded-full bg-bg-hover animate-pulse" />
-                              <div class="flex-1">
-                                <div class="h-3 w-24 bg-bg-hover rounded animate-pulse mb-1.5" />
-                                <div class="h-2.5 w-16 bg-bg-hover rounded animate-pulse" />
-                              </div>
-                            </div>
-                            <div class="h-4 w-3/4 bg-bg-hover rounded animate-pulse mb-2" />
-                            <div class="h-3 w-1/2 bg-bg-hover rounded animate-pulse mb-3" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  }
-                >
-                  <Show
-                     when={feedHook.mappedNews().length > 0}
-                     fallback={
-                        <div class="px-4 py-8">
-                          <EmptyState
-                            icon={activeFeedTab() === 'following' && follows.followedIds().size === 0 ? 'person_add' : 'inbox'}
-                            title={
-                              activeFeedTab() === 'following' && follows.followedIds().size === 0
-                                ? 'Tu Siguiendo está vacío'
-                                : `No hay noticias en ${activeCategory()}`
-                            }
-                            description={
-                              activeFeedTab() === 'following' && follows.followedIds().size === 0
-                                ? 'Seguí medios para personalizar tu feed. Cuantos más sigas, mejores recomendaciones vas a ver.'
-                                : (activeLocation()
-                                  ? 'Probá con otra ubicación o quitá el filtro.'
-                                  : 'Probá con otra categoría o esperá unos minutos.')
-                            }
-                            action={(() => {
-                              if (activeFeedTab() === 'following' && follows.followedIds().size === 0) {
-                                return { label: 'Descubrir medios', onClick: () => nav.handleViewChange('feed') };
-                              }
-                              if (feedHook.searchQuery()) {
-                                return { label: 'Limpiar búsqueda', onClick: () => feedHook.setSearchQuery('') };
-                              }
-                              return {
-                                label: 'Ver todas',
-                                onClick: () => {
-                                  setActiveCategory('Todas');
-                                  updateURL({ cat: null });
-                                  feedHook.resetFeed();
-                                },
-                              };
-                            })()}
-                          />
-                        </div>
-                      }
-                      >
-                    {/* Featured story hero — only when there's a multi-source story */}
-                    <Show when={feedHook.featuredCluster()}>
-                      {(cluster) => (
-                        <div class="px-4 pt-3">
-                          <FeaturedStory
-                            primary={cluster().primary}
-                            clusterId={cluster().clusterId}
-                            sourcesCount={cluster().sourcesCount}
-                            sourceNames={cluster().sourceNames}
-                            onClick={() => nav.handleNewsClick(cluster().primary)}
-                          />
-                        </div>
-                      )}
-                    </Show>
-
-                    {/* Trending horizontal scroll */}
-                    <Show when={feedHook.trendingItems().length > 0 || feedHook.offset() === 0 /* show skeleton on first load */}>
-                      <TrendingSection
-                        items={feedHook.trendingItems().map(n => ({ id: n.id, title: n.title, category: n.category ?? 'General' }))}
-                        loading={feedHook.trendingItems().length === 0}
-                        onItemClick={(item) => {
-                          // Try the in-memory feed first (zero network
-                          // roundtrip). If the trending item isn't in the
-                          // current feed (filtered category, paginated
-                          // out, different time window, etc.), fall
-                          // through to nav.loadArticleFromId which fetches
-                          // it via the API. Without the fallback the
-                          // click was a silent no-op for any trending
-                          // item not in the visible feed.
-                          const full = feedHook.mappedNews().find(n => n.id === item.id);
-                          if (full) {
-                            nav.handleNewsClick(full);
-                          } else {
-                            nav.loadArticleFromId(item.id);
-                          }
-                        }}
-                      />
-                    </Show>
-
-                     {/* Blindspot: news from sources the user does NOT follow */}
-                    <BlindspotSection
-                      items={feedHook.blindspotItems()}
-                      loading={feedHook.blindspotLoading()}
-                      onItemClick={(item) => nav.handleNewsClick(item)}
-                    />
-
-                    {/* Map: removed in this iteration — wasn't adding value yet,
-                        keeping the slot here for a future geo-density viz
-                        built on real data. See MapView/MapSection for the
-                        parked components. */}
-
-                    <NewsletterSignup />
-
-
-                    <PersonalizationBanner
-                      showCityHint={!activeLocation() || activeLocation() === ''}
-                      showFollowHint={follows.follows().length === 0}
-                      showCategoryHint={!activeCategory() || activeCategory() === 'Todas'}
-                      onOpenOnboarding={() => chrome.setOnboardingVisible(true)}
-                    />
-
-                    {/* Feed toolbar: density toggle + Mate mode */}
-                    <div class="flex items-center justify-between px-4 pt-3 pb-1">
-                      <DensityToggle density={density()} onChange={updateDensity} />
-                      <div class="flex items-center gap-2">
-                        <button
-                          onClick={() => { haptic.vibrate('tap'); filters.setShowFilters(s => !s); }}
-                          class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
-                          style={filters.hasActiveFilters()
-                            ? { background: 'var(--accent)', color: 'var(--accent-fg)' }
-                            : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
-                          }
-                          aria-pressed={filters.showFilters()}
-                          aria-label="Filtros"
-                        >
-                          <MaterialIcon name="tune" size="base" class="text-base " style={{ }} aria-hidden="true" />
-                          Filtros
-                        </button>
-                        <button
-                          onClick={() => { haptic.vibrate('tap'); chrome.setMateMode(!chrome.mateMode()); }}
-                          class="flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-full transition-colors"
-                          style={chrome.mateMode()
-                            ? { background: 'var(--accent)', color: 'var(--accent-fg)' }
-                            : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }
-                          }
-                          aria-pressed={chrome.mateMode()}
-                        >
-                          <MaterialIcon name="record_voice_over" size="base" class="text-base " style={{ }} aria-hidden="true" />
-                          Modo Mate
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Filter panel (collapsible) */}
-                    <Show when={filters.showFilters()}>
-                      <div
-                        class="px-4 py-3 space-y-2 border-b border-border-base"
-                        style={{ background: 'var(--bg-elevated)' }}
-                      >
-                        <div class="flex items-center justify-between mb-1">
-                          <p class="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>
-                            Período
-                          </p>
-                          <Show when={filters.hasActiveFilters()}>
-                            <button
-                              onClick={() => { haptic.vibrate('tap'); filters.clearFilters(); }}
-                              class="text-[11px] font-semibold"
-                              style={{ color: 'var(--accent)' }}
-                            >
-                              Limpiar
-                            </button>
-                          </Show>
-                        </div>
-                        <TimeFilters activeFilter={filters.filterState().time} onFilterChange={filters.updateTime} />
-                        <p class="text-[10px] font-extrabold uppercase tracking-widest mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                          Calidad
-                        </p>
-                        <QualityFilters activeFilter={filters.filterState().quality} onFilterChange={filters.updateQuality} />
-                        <p class="text-[10px] font-extrabold uppercase tracking-widest mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                          Sesgo
-                        </p>
-                        <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
-                          {(['all', 'left', 'right', 'neutral'] as const).map((b) => {
-                            const labels: Record<BiasFilter, string> = {
-                              all: 'Todos', left: 'Opositor', right: 'Oficialista', neutral: 'Neutral',
-                            };
-                            const active = () => filters.filterState().bias === b;
-                            return (
-                              <button
-                                onClick={() => filters.updateBias(b)}
-                                class="px-3 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors border"
-                                style={active()
-                                  ? { background: 'var(--accent)', color: 'var(--accent-fg)', 'border-color': 'var(--accent)' }
-                                  : { background: 'var(--bg-elevated)', color: 'var(--text-tertiary)', 'border-color': 'var(--border-base)' }
-                                }
-                              >
-                                {labels[b]}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </Show>
-
-                    {/* City selector — mobile only, between trending and chips */}
-                    <div class="xl:hidden">
-                      <CitySelector
-                        cities={discovery.cities()}
-                        activeCityId={null /* we use activeLocation signal but for cities its id, kept null for now */}
-                        onSelect={(id) => {
-                          setActiveLocation(id ? String(id) : null);
-                          updateURL({ loc: id ? String(id) : null });
-                          feedHook.resetFeed();
-                        }}
-                      />
-                    </div>
-
-                    <PullToRefresh onRefresh={async () => { feedHook.resetFeed(); }}>
-                      <div>
-                        <div class="flex flex-col [&>article:last-child]:mb-0">
-                          <For each={feedHook.mappedNews()}>
-                            {(item, index) => (
-                              <NewsCard
-                                news={item}
-                                variant={density() === 'compact' ? 'compact' : 'default'}
-                                priority={index() === 0}
-                                onClick={() => nav.handleNewsClick(item)}
-                                onUpvote={(_id, current) => {
-                                  haptic.vibrate('tap');
-                                  // Fire-and-forget: the optimistic
-                                  // count is already shown in the UI.
-                                  // On error the local signal stays as
-                                  // is (the API may have applied it
-                                  // anyway); a real reconciliation
-                                  // pass is Sprint 5.
-                                  fetchVote(item.id, current).catch(() => {});
-                                }}
-                                onBookmark={() => { haptic.vibrate('tap'); toggleBookmark(item.id); }}
-                                onShare={() => shareNews(item)}
-                                onRepost={() => {
-                                  haptic.vibrate('success');
-                                  fetchRepost(item.id)
-                                    .then((res) => {
-                                      if (res) toast('Repost publicado', 'info');
-                                    })
-                                    .catch(() => toast('No se pudo republicar', 'error'));
-                                }}
-                                onOpenSource={() => {
-                                  if (item.sourceUrl) {
-                                    haptic.vibrate('tap');
-                                    window.open(item.sourceUrl, '_blank', 'noopener,noreferrer');
-                                  } else {
-                                    toast('Fuente sin enlace', 'warning');
-                                  }
-                                }}
-                                onViewCluster={() => nav.handleNewsClick(item)}
-                              />
-                            )}
-                          </For>
-                        </div>
-
-                        <div ref={setObserverTarget} class="h-1" />
-
-                        <Show when={feedHook.feed.loading && feedHook.offset() > 0}>
-                          <div class="flex justify-center py-6">
-                            <div class="flex items-center gap-2 text-text-tertiary text-[15px]">
-                              <span class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                              Cargando más...
-                            </div>
-                          </div>
-                        </Show>
-                      </div>
-                    </PullToRefresh>
-                  </Show>
-                </Show>
-              </Show>
+              <FeedView
+                activeCategory={activeCategory}
+                setActiveCategory={setActiveCategory}
+                activeLocation={activeLocation}
+                setActiveLocation={setActiveLocation}
+                activeFeedTab={activeFeedTab}
+                setActiveFeedTab={setActiveFeedTab}
+                density={density}
+                updateDensity={updateDensity}
+                feedHook={feedHook}
+                filters={filters}
+                discovery={discovery}
+                follows={follows}
+                chrome={chrome}
+                nav={nav}
+                haptic={haptic}
+                setObserverTarget={setObserverTarget}
+                updateURL={updateURL}
+                shareNews={shareNews}
+                toggleBookmark={toggleBookmark}
+              />
             </Show>
 
             {/* ── Article view (inline, sidebars visible on desktop) ── */}
