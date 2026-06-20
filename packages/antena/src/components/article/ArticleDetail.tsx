@@ -140,14 +140,26 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
   const cleanBody = () => stripHtml(n().body || n().summary || '');
 
+  const [bodyEl, setBodyEl] = createSignal<HTMLDivElement | null>(null);
+
   const media = createMemo(() => {
     const body = cleanBody();
     const images: string[] = [];
     const videos: string[] = [];
-    const imgMatches = body.match(/https?:\/\/[^\s"'<>]+\.(jpg|jpeg|png|gif|webp)/gi);
-    if (imgMatches) images.push(...imgMatches);
     const videoMatches = body.match(/https?:\/\/[^\s"'<>]*(youtube\.com|youtu\.be|vimeo\.com)[^\s"'<>]*/gi);
     if (videoMatches) videos.push(...videoMatches);
+    // Also pull <img src=...> URLs out of the rendered HTML so embedded
+    // photos reach the gallery (regex on stripped text finds nothing).
+    // Reading bodyEl() makes this memo re-evaluate after the body
+    // div mounts with the sanitized innerHTML.
+    const el = bodyEl();
+    if (el) {
+      const imgs = el.querySelectorAll<HTMLImageElement>("img[src]");
+      imgs.forEach((img) => {
+        const src = img.getAttribute("src");
+        if (src && src.startsWith("http")) images.push(src);
+      });
+    }
     return { images, videos };
   });
 
@@ -547,6 +559,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             </div>
           </Show>
           <div
+            ref={(el) => { setBodyEl(el); }}
             class="article-body text-[17px] leading-[1.65]"
             style={{ color: 'var(--text-primary)' }}
             innerHTML={sanitizeArticleHtmlForView(displayBodyHtml())}
