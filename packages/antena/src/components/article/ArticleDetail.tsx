@@ -776,14 +776,40 @@ export default function ArticleDetail(props: ArticleDetailProps) {
       />
 
       <Show when={clusterIds().length > 0}>
-        <div
-          class="flex items-center justify-center gap-2 py-4 text-[10px] uppercase tracking-wider select-none"
-          style={{ color: 'var(--text-tertiary)' }}
-          aria-label="Deslizá para navegar entre artículos relacionados"
+        <nav
+          aria-label="Navegar entre coberturas relacionadas"
+          class="flex items-center justify-center gap-3 py-4 select-none"
         >
-          <MaterialIcon name="swipe" size="base" class="text-base " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 16" }} aria-hidden="true" />
-          <span>Deslizá para ver {clusterIds().length === 1 ? '1 cobertura más' : `${clusterIds().length} coberturas más`}</span>
-        </div>
+          <button
+            type="button"
+            onClick={() => goPrev()}
+            disabled={clusterIds().length < 2}
+            aria-label="Cobertura anterior"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium min-h-[36px] disabled:opacity-50 transition-colors hover:bg-bg-hover"
+            style={{ color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }}
+          >
+            <MaterialIcon name="chevron_left" size="sm" class="text-base" aria-hidden="true" />
+            <span>Anterior</span>
+          </button>
+          <span
+            class="text-[10px] uppercase tracking-wider"
+            style={{ color: 'var(--text-tertiary)' }}
+            aria-live="polite"
+          >
+            {clusterIds().length === 1 ? '1 cobertura más' : `${clusterIds().length} coberturas más`}
+          </span>
+          <button
+            type="button"
+            onClick={() => goNext()}
+            disabled={clusterIds().length < 2}
+            aria-label="Siguiente cobertura"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium min-h-[36px] disabled:opacity-50 transition-colors hover:bg-bg-hover"
+            style={{ color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }}
+          >
+            <span>Siguiente</span>
+            <MaterialIcon name="chevron_right" size="sm" class="text-base" aria-hidden="true" />
+          </button>
+        </nav>
       </Show>
     </div>
   );
