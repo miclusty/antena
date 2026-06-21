@@ -174,6 +174,58 @@ crons/refresh.ts → /__cron/refresh
 queues/image-pipeline.ts → image-pipeline consumer
 ```
 
+### AKIRA module structure
+
+AKIRA's Python codebase uses a **flat layout** (modules live directly in `packages/akira/`, no `akira/` subdirectory). This keeps import paths stable without requiring `pip install -e .` for local dev. The 1954-line `main.py` was split into focused modules in iter 1.3:
+
+```
+packages/akira/
+├── main.py                   # 62-line shim: CORS + 9 include_router() calls
+├── config.py                 # Settings (env_prefix="AKIRA_")
+├── conftest.py               # pytest fixture: sets AKIRA_DB_PATH before any import
+├── core/
+│   ├── app_setup.py          # lifespan, GC loop, build_app(), check_admin()
+│   ├── engine.py             # ExtractionEngine (orchestrates 10 extractors)
+│   ├── cache.py              # MemoryBackend + CacheManager
+│   ├── cache_redis.py        # optional RedisBackend (if redis is installed)
+│   ├── llm_client.py         # unified LM Studio + MiniMax client
+│   ├── metrics.py            # Prometheus-format counters
+│   ├── rate_limiter.py       # 1.5s delay per domain
+│   ├── circuit_breaker.py    # 5+ failures pauses a source
+│   ├── garbage_collector.py  # cleanup stale news + seen_urls
+│   ├── synthesis.py          # MiniMax synthesis engine (master articles)
+│   ├── clustering.py         # title-similarity clustering
+│   ├── method_learner.py     # per-URL method success tracking
+│   ├── method_scorer.py      # scoring table for method selection
+│   ├── source_recovery.py    # auto-retry failed sources
+│   └── health_monitor.py     # /health/detailed aggregator
+├── routes/                   # 9 FastAPI routers, 44 endpoints
+│   ├── feed.py               # /api/news/feed, /blindspot, /{id}, /{id}/cluster
+│   ├── categories.py         # /api/categories
+│   ├── locations.py          # /api/locations, /api/locations/tree
+│   ├── sources.py            # /api/sources, /api/sources/{id}/profile
+│   ├── radios.py             # /medios/radios
+│   ├── extraction.py         # /, /health, /health/detailed, /extract, /extract/google-news/*
+│   ├── synthesis.py          # /cluster/*, /synthesis/*
+│   ├── admin.py              # /admin/* + /metrics + dashboards (15 endpoints)
+│   └── stats.py              # /api/stats/health
+├── services/                 # business logic shared across routes
+│   ├── source_resolver.py    # batch-resolve source names + URLs + bias
+│   ├── feed_service.py       # format_news_card + format_news_cards_batch
+│   └── google_news_service.py # Google News ingestion
+├── db/
+│   └── connection.py         # canonical get_db_connection() with WAL + mmap
+├── extractors/               # 10 extractor classes (RSS, WP, Newspaper, etc.)
+├── models/                   # pydantic schemas (request/response models)
+└── scripts/                  # one-shot scripts (most DEPRECATED — see scripts/DEPRECATED.md)
+```
+
+**Route registration order** in `main.py` matters because FastAPI matches wildcards. The feed router registers `/api/news/feed` BEFORE `/api/news/{news_id}` — reversing the order causes `/api/news/feed` to match the wildcard and return a 404-shaped payload.
+
+**Admin auth**: 15 admin endpoints require an `X-Admin-Key` header matching `AKIRA_ADMIN_KEY` env var. The check fires in `check_admin()` dependency before endpoint logic. `/metrics` and `/synthesis/master/{id}` are intentionally public (Prometheus scrape target + read-only master article fetch).
+
+**AKIRA tests**: 196 cases in `packages/akira/tests/`, run via `pytest`. CI runs them on every PR via the `test-akira` job in `.github/workflows/ci.yml`. Test isolation uses a temp `AKIRA_DB_PATH` set in `conftest.py` at package root (the `config.settings` singleton freezes `db_path` at first import, so env vars must be set BEFORE `main` is imported).
+
 ## State Management
 
 **Client-side** (Antena):
