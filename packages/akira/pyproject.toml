@@ -47,6 +47,8 @@ files = [
     "akira/core/llm_client.py",
     "akira/core/cache_redis.py",
     "akira/core/cache.py",
+    "akira/services/source_resolver.py",
+    "akira/services/feed_service.py",
     "akira/config.py",
 ]
 
