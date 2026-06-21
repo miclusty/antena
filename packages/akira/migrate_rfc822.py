@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: One-shot RFC 822 → ISO 8601 date migration + category keyword assignment.
+# Already applied to the production DB. Re-running has no effect.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """Migrate RFC 822 dates to ISO 8601 and backfill categories for news_cards."""
 import re
 import sqlite3

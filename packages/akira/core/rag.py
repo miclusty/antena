@@ -787,7 +787,7 @@ class RAGEngine:
             logger.warning(f"knn_embed_failed: {e}")
             return [], []
         # Brute-force cosine over the full embeddings table.
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             rows = conn.execute(
                 "SELECT card_id, embedding, model FROM news_embeddings"
             ).fetchall()
@@ -825,7 +825,7 @@ class RAGEngine:
         if not candidates:
             return [], []
         # Fetch titles+summaries to apply the token filter
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             placeholders = ",".join("?" * len(candidates))
             rows2 = conn.execute(
                 f"SELECT id, title, summary FROM news_cards WHERE id IN ({placeholders})",
@@ -938,7 +938,7 @@ class RAGEngine:
         cluster, dramatically reducing prompt noise and
         LLM hallucination on entity names.
         """
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             rows = conn.execute(
                 """
                 SELECT e.name, COUNT(*) AS cnt
@@ -968,7 +968,7 @@ class RAGEngine:
         """
         if not top_entities:
             return []
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             ids = [
                 r[0] for r in conn.execute(
                     "SELECT id FROM entities WHERE name IN ({})".format(
@@ -982,7 +982,7 @@ class RAGEngine:
         # For each top entity, pull its top co-occurrences and aggregate.
         # Only keep neighbors with card_count >= 3 (strong edges only).
         score: Dict[str, int] = {}
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             for eid in ids:
                 rows = conn.execute(
                     """
@@ -1026,7 +1026,7 @@ class RAGEngine:
         (joined from sources table). The source name is included
         so the LLM can cite "según X" in the synthesis output,
         which improves source_coverage in the eval."""
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """
@@ -1162,7 +1162,7 @@ class RAGEngine:
         """Write to rag_queries audit table. Best-effort: if the
         table doesn't exist yet, log a warning and skip."""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with get_db_connection(self.db_path) as conn:
                 conn.execute(
                     """
                     INSERT INTO rag_queries

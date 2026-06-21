@@ -16,11 +16,12 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 DEFAULT_DB = os.getenv(
     "AKIRA_DB_PATH",
-    "/Users/omatic/proyectos/news/packages/akira/data/akira.db",
+    str(Path(__file__).resolve().parent.parent.parent / "data" / "akira.db"),
 )
 
 # ─── City aliases ────────────────────────────────────────────────

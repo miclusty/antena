@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: One-shot date format fix.
+# Already applied. Re-running has no effect on already-ISO dates.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """Fix RFC 822 dates in akira.db"""
 import sqlite3
 from email.utils import parsedate_to_datetime

@@ -65,6 +65,7 @@ from core.method_scorer import MethodScorer
 from core.source_recovery import SourceRecovery
 from core.synthesis import SynthesisEngine
 from core.clustering import ClusteringService
+from db.connection import get_db_connection
 
 
 class JSONFormatter(logging.Formatter):
@@ -940,21 +941,20 @@ async def cluster_recent_news(
 @app.get("/cluster/stats")
 async def cluster_stats():
     """Get clustering statistics from the database."""
-    conn = sqlite3.connect(settings.db_path)
-    total = conn.execute("SELECT COUNT(*) FROM news_cards").fetchone()[0]
-    clustered = conn.execute(
-        "SELECT COUNT(*) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
-    ).fetchone()[0]
-    clusters = conn.execute(
-        "SELECT COUNT(DISTINCT cluster_id) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
-    ).fetchone()[0]
-    avg_size = (
-        conn.execute(
-            "SELECT AVG(cnt) FROM (SELECT COUNT(*) as cnt FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != '' GROUP BY cluster_id)"
+    with get_db_connection() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM news_cards").fetchone()[0]
+        clustered = conn.execute(
+            "SELECT COUNT(*) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
         ).fetchone()[0]
-        or 0
-    )
-    conn.close()
+        clusters = conn.execute(
+            "SELECT COUNT(DISTINCT cluster_id) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
+        ).fetchone()[0]
+        avg_size = (
+            conn.execute(
+                "SELECT AVG(cnt) FROM (SELECT COUNT(*) as cnt FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != '' GROUP BY cluster_id)"
+            ).fetchone()[0]
+            or 0
+        )
 
     return {
         "total_news": total,
@@ -1010,12 +1010,10 @@ async def get_master_article(cluster_id: str):
     RAG perspectives (neutral, pro_gov, anti_gov) if they were
     synthesized by the RAG engine."""
 
-    conn = sqlite3.connect(settings.db_path)
-    conn.row_factory = sqlite3.Row
-    row = conn.execute(
-        "SELECT * FROM master_articles WHERE cluster_id = ?", (cluster_id,)
-    ).fetchone()
-    conn.close()
+    with get_db_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM master_articles WHERE cluster_id = ?", (cluster_id,)
+        ).fetchone()
 
     if not row:
         return {
@@ -1129,16 +1127,15 @@ async def synthesize_cluster_rag(cluster_id: str, _auth=Depends(_check_admin)):
 async def synthesis_stats():
     """Get synthesis statistics."""
 
-    conn = sqlite3.connect(settings.db_path)
-    total_master = conn.execute("SELECT COUNT(*) FROM master_articles").fetchone()[0]
-    total_clusters = conn.execute(
-        "SELECT COUNT(DISTINCT cluster_id) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
-    ).fetchone()[0]
-    avg_sources = (
-        conn.execute("SELECT AVG(sources_count) FROM master_articles").fetchone()[0]
-        or 0
-    )
-    conn.close()
+    with get_db_connection() as conn:
+        total_master = conn.execute("SELECT COUNT(*) FROM master_articles").fetchone()[0]
+        total_clusters = conn.execute(
+            "SELECT COUNT(DISTINCT cluster_id) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
+        ).fetchone()[0]
+        avg_sources = (
+            conn.execute("SELECT AVG(sources_count) FROM master_articles").fetchone()[0]
+            or 0
+        )
 
     return {
         "master_articles": total_master,
@@ -1155,64 +1152,36 @@ async def synthesis_stats():
 # ═══════════════════════════════════════════
 
 
-def get_db_connection():
-    """Get SQLite connection with row factory and WAL mode for concurrent reads."""
-    conn = sqlite3.connect(settings.db_path, timeout=5)
-    # Enable WAL mode for better concurrent read performance
-    conn.execute("PRAGMA journal_mode=WAL")
-    # Reduce synchronous level for better performance (still safe with WAL)
-    conn.execute("PRAGMA synchronous=NORMAL")
-    # Increase cache size (negative = KB)
-    conn.execute("PRAGMA cache_size=-64000")
-    # Enable memory-mapped I/O
-    conn.execute("PRAGMA mmap_size=268435456")
-    conn.row_factory = sqlite3.Row
-    conn.create_function(
-        "to_ascii",
-        1,
-        lambda s: (
-            unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode("ascii")
-            if s
-            else s
-        ),
-    )
-    return conn
-
-
 def resolve_source_names(source_ids_csv: str) -> list:
     """Resolve comma-separated source IDs to names."""
     if not source_ids_csv:
         return []
-    conn = get_db_connection()
     ids = [int(x.strip()) for x in source_ids_csv.split(",") if x.strip().isdigit()]
     if not ids:
-        conn.close()
         return []
     placeholders = ",".join("?" * len(ids))
-    rows = conn.execute(
-        f"SELECT id, name FROM sources WHERE id IN ({placeholders})", ids
-    ).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            f"SELECT id, name FROM sources WHERE id IN ({placeholders})", ids
+        ).fetchall()
     name_map = {row["id"]: row["name"] for row in rows}
-    return [name_map.get(sid, f"Fuente {sid}") for sid in ids]
+    return [name_map.get(sid, f"Fuente {sid}") for sid in ids]\
 
 
 def resolve_source_urls(source_ids_csv: str) -> list:
     """Resolve comma-separated source IDs to URLs."""
     if not source_ids_csv:
         return []
-    conn = get_db_connection()
     ids = [int(x.strip()) for x in source_ids_csv.split(",") if x.strip().isdigit()]
     if not ids:
-        conn.close()
         return []
     placeholders = ",".join("?" * len(ids))
-    rows = conn.execute(
-        f"SELECT id, url FROM sources WHERE id IN ({placeholders})", ids
-    ).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            f"SELECT id, url FROM sources WHERE id IN ({placeholders})", ids
+        ).fetchall()
     url_map = {row["id"]: row["url"] for row in rows}
-    return [url_map.get(sid, None) for sid in ids]
+    return [url_map.get(sid, None) for sid in ids]\
 
 
 def calculate_cluster_bias(source_ids_csv: str) -> float:
@@ -1223,21 +1192,19 @@ def calculate_cluster_bias(source_ids_csv: str) -> float:
     """
     if not source_ids_csv:
         return 0.0
-    conn = get_db_connection()
     ids = [int(x.strip()) for x in source_ids_csv.split(",") if x.strip().isdigit()]
     if not ids:
-        conn.close()
         return 0.0
     placeholders = ",".join("?" * len(ids))
-    rows = conn.execute(
-        f"SELECT avg_bias FROM sources WHERE id IN ({placeholders}) AND avg_bias IS NOT NULL",
-        ids,
-    ).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            f"SELECT avg_bias FROM sources WHERE id IN ({placeholders}) AND avg_bias IS NOT NULL",
+            ids,
+        ).fetchall()
     biases = [row["avg_bias"] for row in rows if row["avg_bias"] is not None]
     if biases:
         return sum(biases) / len(biases)
-    return 0.0
+    return 0.0\
 
 
 def get_heuristic_bias(source_ids_csv: str) -> float:
@@ -1248,17 +1215,15 @@ def get_heuristic_bias(source_ids_csv: str) -> float:
     """
     if not source_ids_csv:
         return 0.0
-    conn = get_db_connection()
     ids = [int(x.strip()) for x in source_ids_csv.split(",") if x.strip().isdigit()]
     if not ids:
-        conn.close()
         return 0.0
     placeholders = ",".join("?" * len(ids))
-    rows = conn.execute(
-        f"SELECT reliability_score FROM sources WHERE id IN ({placeholders}) AND reliability_score IS NOT NULL",
-        ids,
-    ).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            f"SELECT reliability_score FROM sources WHERE id IN ({placeholders}) AND reliability_score IS NOT NULL",
+            ids,
+        ).fetchall()
     scores = [
         row["reliability_score"] for row in rows if row["reliability_score"] is not None
     ]
@@ -1294,13 +1259,12 @@ def _batch_resolve_sources(rows: List) -> List[dict]:
             for _ in rows
         ]
 
-    conn = get_db_connection()
     placeholders = ",".join("?" * len(all_ids))
-    db_rows = conn.execute(
-        f"SELECT id, name, url, avg_bias, reliability_score FROM sources WHERE id IN ({placeholders})",
-        list(all_ids),
-    ).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        db_rows = conn.execute(
+            f"SELECT id, name, url, avg_bias, reliability_score FROM sources WHERE id IN ({placeholders})",
+            list(all_ids),
+        ).fetchall()
 
     sources_by_id = {row["id"]: row for row in db_rows}
 
@@ -1406,8 +1370,6 @@ async def get_news_feed(
     offset: int = Query(default=0, ge=0),
 ):
     """Paginated news feed with filters."""
-    conn = get_db_connection()
-
     query = """
         SELECT nc.*, l.name as location_name, l.province as location_province
         FROM news_cards nc
@@ -1454,12 +1416,10 @@ async def get_news_feed(
         "SELECT nc.*, l.name as location_name, l.province as location_province",
         "SELECT COUNT(*) as count",
     )
-    total = conn.execute(count_query, params).fetchone()["count"]
-
-    query += " ORDER BY nc.created_at DESC LIMIT ? OFFSET ?"
-    params.extend([limit, offset])
-    rows = conn.execute(query, params).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        total = conn.execute(count_query, params).fetchone()["count"]
+        query += " ORDER BY nc.created_at DESC LIMIT ? OFFSET ?"
+        rows = conn.execute(query, params + [limit, offset]).fetchall()
 
     # Batch-resolve all source data in a single query
     source_resolve_list = _batch_resolve_sources(rows)
@@ -1482,37 +1442,34 @@ async def get_blindspot(
     limit: int = Query(default=10, ge=1, le=50),
 ):
     """Stories covered by only one side of the political spectrum — 'blindspots'."""
-    conn = get_db_connection()
-
-    rows = conn.execute("""
-        SELECT nc.cluster_id,
-               nc.title,
-               nc.summary,
-               nc.category,
-               nc.image_url,
-               nc.bias_score,
-               nc.published_at,
-               nc.created_at,
-               nc.source_ids,
-               l.name as location_name,
-               l.province as location_province,
-               COUNT(*) as source_count,
-               SUM(CASE WHEN nc.bias_score > 0.1 THEN 1 ELSE 0 END) as officialist_count,
-               SUM(CASE WHEN nc.bias_score < -0.1 THEN 1 ELSE 0 END) as opposition_count
-        FROM news_cards nc
-        LEFT JOIN locations l ON l.id = nc.location_id
-        WHERE nc.cluster_id IS NOT NULL AND nc.cluster_id != ''
-          AND nc.bias_score IS NOT NULL
-        GROUP BY nc.cluster_id
-        HAVING (SUM(CASE WHEN nc.bias_score > 0.1 THEN 1 ELSE 0 END) >= 3
-                AND SUM(CASE WHEN nc.bias_score < -0.1 THEN 1 ELSE 0 END) = 0)
-            OR (SUM(CASE WHEN nc.bias_score < -0.1 THEN 1 ELSE 0 END) >= 3
-                AND SUM(CASE WHEN nc.bias_score > 0.1 THEN 1 ELSE 0 END) = 0)
-        ORDER BY MAX(nc.created_at) DESC
-        LIMIT ?
-    """, (limit,)).fetchall()
-
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT nc.cluster_id,
+                   nc.title,
+                   nc.summary,
+                   nc.category,
+                   nc.image_url,
+                   nc.bias_score,
+                   nc.published_at,
+                   nc.created_at,
+                   nc.source_ids,
+                   l.name as location_name,
+                   l.province as location_province,
+                   COUNT(*) as source_count,
+                   SUM(CASE WHEN nc.bias_score > 0.1 THEN 1 ELSE 0 END) as officialist_count,
+                   SUM(CASE WHEN nc.bias_score < -0.1 THEN 1 ELSE 0 END) as opposition_count
+            FROM news_cards nc
+            LEFT JOIN locations l ON l.id = nc.location_id
+            WHERE nc.cluster_id IS NOT NULL AND nc.cluster_id != ''
+              AND nc.bias_score IS NOT NULL
+            GROUP BY nc.cluster_id
+            HAVING (SUM(CASE WHEN nc.bias_score > 0.1 THEN 1 ELSE 0 END) >= 3
+                    AND SUM(CASE WHEN nc.bias_score < -0.1 THEN 1 ELSE 0 END) = 0)
+                OR (SUM(CASE WHEN nc.bias_score < -0.1 THEN 1 ELSE 0 END) >= 3
+                    AND SUM(CASE WHEN nc.bias_score > 0.1 THEN 1 ELSE 0 END) = 0)
+            ORDER BY MAX(nc.created_at) DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
 
     results = []
     for row in rows:
@@ -1547,17 +1504,16 @@ async def get_blindspot(
 @app.get("/api/news/{news_id}")
 async def get_news_by_id(news_id: str):
     """Single news card by ID."""
-    conn = get_db_connection()
-    row = conn.execute(
-        """
-        SELECT nc.*, l.name as location_name, l.province as location_province
-        FROM news_cards nc
-        LEFT JOIN locations l ON l.id = nc.location_id
-        WHERE nc.id = ?
-    """,
-        (news_id,),
-    ).fetchone()
-    conn.close()
+    with get_db_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT nc.*, l.name as location_name, l.province as location_province
+            FROM news_cards nc
+            LEFT JOIN locations l ON l.id = nc.location_id
+            WHERE nc.id = ?
+        """,
+            (news_id,),
+        ).fetchone()
 
     if not row:
         return {"error": "Not found"}
@@ -1571,28 +1527,25 @@ async def get_news_by_id(news_id: str):
 @app.get("/api/news/{news_id}/cluster")
 async def get_news_cluster(news_id: str):
     """All news cards in the same cluster."""
-    conn = get_db_connection()
+    with get_db_connection() as conn:
+        news_row = conn.execute(
+            "SELECT cluster_id FROM news_cards WHERE id = ?", (news_id,)
+        ).fetchone()
+        if not news_row or not news_row["cluster_id"]:
+            return {"error": "Not found or no cluster"}
 
-    news_row = conn.execute(
-        "SELECT cluster_id FROM news_cards WHERE id = ?", (news_id,)
-    ).fetchone()
-    if not news_row or not news_row["cluster_id"]:
-        conn.close()
-        return {"error": "Not found or no cluster"}
+        cluster_id = news_row["cluster_id"]
 
-    cluster_id = news_row["cluster_id"]
-
-    rows = conn.execute(
-        """
-        SELECT nc.*, l.name as location_name, l.province as location_province
-        FROM news_cards nc
-        LEFT JOIN locations l ON l.id = nc.location_id
-        WHERE nc.cluster_id = ?
-        ORDER BY nc.created_at DESC
-    """,
-        (cluster_id,),
-    ).fetchall()
-    conn.close()
+        rows = conn.execute(
+            """
+            SELECT nc.*, l.name as location_name, l.province as location_province
+            FROM news_cards nc
+            LEFT JOIN locations l ON l.id = nc.location_id
+            WHERE nc.cluster_id = ?
+            ORDER BY nc.created_at DESC
+        """,
+            (cluster_id,),
+        ).fetchall()
 
     news = []
     for row in rows:
@@ -1610,23 +1563,21 @@ async def get_news_cluster(news_id: str):
 @app.get("/api/locations")
 async def get_locations():
     """All locations from the locations table."""
-    conn = get_db_connection()
-    rows = conn.execute(
-        "SELECT * FROM locations ORDER BY type, province, name"
-    ).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM locations ORDER BY type, province, name"
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
 @app.get("/api/locations/tree")
 async def get_locations_tree():
     """All locations ordered by type, province, name."""
-    conn = get_db_connection()
-    rows = conn.execute(
-        "SELECT * FROM locations ORDER BY type, province, name"
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    with get_db_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM locations ORDER BY type, province, name"
+        ).fetchall()
+    return [dict(r) for r in rows]\
 
 
 @app.get("/api/categories")
@@ -1644,15 +1595,14 @@ async def get_categories():
         "culturales": "theater_comedy",
     }
 
-    conn = get_db_connection()
-    rows = conn.execute("""
-        SELECT DISTINCT category, COUNT(*) as count
-        FROM news_cards
-        WHERE category IS NOT NULL AND category != ''
-        GROUP BY category
-        ORDER BY count DESC
-    """).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT DISTINCT category, COUNT(*) as count
+            FROM news_cards
+            WHERE category IS NOT NULL AND category != ''
+            GROUP BY category
+            ORDER BY count DESC
+        """).fetchall()
 
     categories = []
     for i, row in enumerate(rows):
@@ -1678,22 +1628,19 @@ async def get_categories():
 @app.get("/api/stats/health")
 async def get_stats_health():
     """Pipeline health stats."""
-    conn = get_db_connection()
-
-    total_news = conn.execute("SELECT COUNT(*) as count FROM news_cards").fetchone()[
-        "count"
-    ]
-    active_sources = conn.execute(
-        "SELECT COUNT(*) as count FROM sources WHERE is_active = 1"
-    ).fetchone()["count"]
-    total_locations = conn.execute(
-        "SELECT COUNT(*) as count FROM locations"
-    ).fetchone()["count"]
-    news_last_hour = conn.execute(
-        "SELECT COUNT(*) as count FROM news_cards WHERE created_at > datetime('now', '-1 hour')"
-    ).fetchone()["count"]
-
-    conn.close()
+    with get_db_connection() as conn:
+        total_news = conn.execute("SELECT COUNT(*) as count FROM news_cards").fetchone()[
+            "count"
+        ]
+        active_sources = conn.execute(
+            "SELECT COUNT(*) as count FROM sources WHERE is_active = 1"
+        ).fetchone()["count"]
+        total_locations = conn.execute(
+            "SELECT COUNT(*) as count FROM locations"
+        ).fetchone()["count"]
+        news_last_hour = conn.execute(
+            "SELECT COUNT(*) as count FROM news_cards WHERE created_at > datetime('now', '-1 hour')"
+        ).fetchone()["count"]  # noqa: E501
 
     return {
         "status": "ok",
@@ -1710,14 +1657,13 @@ async def get_stats_health():
 @app.get("/api/sources")
 async def get_sources():
     """List all active sources with bias info."""
-    conn = get_db_connection()
-    rows = conn.execute("""
-        SELECT id, name, url, domain, avg_bias, news_count, is_active, reliability_score
-        FROM sources
-        WHERE is_active = 1
-        ORDER BY news_count DESC
-    """).fetchall()
-    conn.close()
+    with get_db_connection() as conn:
+        rows = conn.execute("""
+            SELECT id, name, url, domain, avg_bias, news_count, is_active, reliability_score
+            FROM sources
+            WHERE is_active = 1
+            ORDER BY news_count DESC
+        """).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -1733,65 +1679,58 @@ async def get_radios(request: Request):
       - codgl: filter to a specific pueblo (5-digit gov-loc code)
       - province: filter to a specific province name
     """
-    conn = get_db_connection()
-    try:
-        limit = min(int(request.query_params.get("limit", "2000")), 5000)
-        codgl = request.query_params.get("codgl")
-        province = request.query_params.get("province")
+    limit = min(int(request.query_params.get("limit", "2000")), 5000)
+    codgl = request.query_params.get("codgl")
+    province = request.query_params.get("province")
 
-        where = ["type = 'radio'", "stream_url IS NOT NULL", "stream_url != ''"]
-        params: list = []
-        if codgl:
-            where.append("codgl = ?")
-            params.append(codgl)
-        if province:
-            where.append("LOWER(province) = LOWER(?)")
-            params.append(province)
+    where = ["type = 'radio'", "stream_url IS NOT NULL", "stream_url != ''"]
+    params: list = []
+    if codgl:
+        where.append("codgl = ?")
+        params.append(codgl)
+    if province:
+        where.append("LOWER(province) = LOWER(?)")
+        params.append(province)
 
-        sql = f"""
-            SELECT id, name, stream_url, website, city, province,
-                   codgl, tags, type, source
-            FROM argentine_media
-            WHERE {' AND '.join(where)}
-            ORDER BY
-              CASE WHEN codgl IS NOT NULL THEN 0 ELSE 1 END,
-              name ASC
-            LIMIT ?
-        """
-        params.append(limit)
+    sql = f"""
+        SELECT id, name, stream_url, website, city, province,
+               codgl, tags, type, source
+        FROM argentine_media
+        WHERE {' AND '.join(where)}
+        ORDER BY
+          CASE WHEN codgl IS NOT NULL THEN 0 ELSE 1 END,
+          name ASC
+        LIMIT ?
+    """
+    params.append(limit)
+    with get_db_connection() as conn:
         rows = conn.execute(sql, params).fetchall()
-        items = [dict(r) for r in rows]
-        return {"items": items, "total": len(items)}
-    finally:
-        conn.close()
+    items = [dict(r) for r in rows]
+    return {"items": items, "total": len(items)}
 
 
 @app.get("/api/sources/{source_id}/profile")
 async def get_source_profile(source_id: int):
     """Source bias profile with recent bias history."""
-    conn = get_db_connection()
+    with get_db_connection() as conn:
+        source = conn.execute(
+            "SELECT * FROM sources WHERE id = ?", (source_id,)
+        ).fetchone()
 
-    source = conn.execute(
-        "SELECT * FROM sources WHERE id = ?", (source_id,)
-    ).fetchone()
+        if not source:
+            return {"error": "Source not found"}
 
-    if not source:
-        conn.close()
-        return {"error": "Source not found"}
-
-    bias_history = conn.execute("""
-        SELECT DATE(created_at) as day,
-               AVG(bias_score) as avg_bias,
-               COUNT(*) as article_count
-        FROM news_cards
-        WHERE source_ids LIKE '%' || ? || '%'
-          AND bias_score IS NOT NULL
-          AND created_at > datetime('now', '-30 days')
-        GROUP BY DATE(created_at)
-        ORDER BY day DESC
-    """, (str(source_id),)).fetchall()
-
-    conn.close()
+        bias_history = conn.execute("""
+            SELECT DATE(created_at) as day,
+                   AVG(bias_score) as avg_bias,
+                   COUNT(*) as article_count
+            FROM news_cards
+            WHERE source_ids LIKE '%' || ? || '%'
+              AND bias_score IS NOT NULL
+              AND created_at > datetime('now', '-30 days')
+            GROUP BY DATE(created_at)
+            ORDER BY day DESC
+        """, (str(source_id),)).fetchall()
 
     return {
         "id": source["id"],
@@ -1817,63 +1756,60 @@ async def get_source_profile(source_id: int):
 @app.get("/admin/dashboard")
 async def admin_dashboard(_auth=Depends(_check_admin)):
     """Full system dashboard — all key metrics in one call."""
-    conn = sqlite3.connect(settings.db_path)
+    with get_db_connection() as conn:
+        # Core stats
+        total_sources = conn.execute(
+            "SELECT COUNT(*) FROM sources WHERE is_active = 1"
+        ).fetchone()[0]
+        total_news = conn.execute("SELECT COUNT(*) FROM news_cards").fetchone()[0]
+        total_locations = conn.execute("SELECT COUNT(*) FROM locations").fetchone()[0]
+        total_seen_urls = conn.execute("SELECT COUNT(*) FROM seen_urls").fetchone()[0]
+        total_master = conn.execute("SELECT COUNT(*) FROM master_articles").fetchone()[0]
+        total_clusters = conn.execute(
+            "SELECT COUNT(DISTINCT cluster_id) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
+        ).fetchone()[0]
 
-    # Core stats
-    total_sources = conn.execute(
-        "SELECT COUNT(*) FROM sources WHERE is_active = 1"
-    ).fetchone()[0]
-    total_news = conn.execute("SELECT COUNT(*) FROM news_cards").fetchone()[0]
-    total_locations = conn.execute("SELECT COUNT(*) FROM locations").fetchone()[0]
-    total_seen_urls = conn.execute("SELECT COUNT(*) FROM seen_urls").fetchone()[0]
-    total_master = conn.execute("SELECT COUNT(*) FROM master_articles").fetchone()[0]
-    total_clusters = conn.execute(
-        "SELECT COUNT(DISTINCT cluster_id) FROM news_cards WHERE cluster_id IS NOT NULL AND cluster_id != ''"
-    ).fetchone()[0]
+        # Source health
+        healthy = conn.execute(
+            "SELECT COUNT(*) FROM sources s JOIN source_health h ON s.id = h.source_id WHERE s.is_active = 1 AND h.consecutive_failures < 3"
+        ).fetchone()[0]
+        degraded = conn.execute(
+            "SELECT COUNT(*) FROM sources s JOIN source_health h ON s.id = h.source_id WHERE s.is_active = 1 AND h.consecutive_failures BETWEEN 3 AND 4"
+        ).fetchone()[0]
+        failed = conn.execute(
+            "SELECT COUNT(*) FROM sources s JOIN source_health h ON s.id = h.source_id WHERE s.is_active = 1 AND h.consecutive_failures >= 5"
+        ).fetchone()[0]
 
-    # Source health
-    healthy = conn.execute(
-        "SELECT COUNT(*) FROM sources s JOIN source_health h ON s.id = h.source_id WHERE s.is_active = 1 AND h.consecutive_failures < 3"
-    ).fetchone()[0]
-    degraded = conn.execute(
-        "SELECT COUNT(*) FROM sources s JOIN source_health h ON s.id = h.source_id WHERE s.is_active = 1 AND h.consecutive_failures BETWEEN 3 AND 4"
-    ).fetchone()[0]
-    failed = conn.execute(
-        "SELECT COUNT(*) FROM sources s JOIN source_health h ON s.id = h.source_id WHERE s.is_active = 1 AND h.consecutive_failures >= 5"
-    ).fetchone()[0]
+        # Bias distribution
+        bias_dist = conn.execute("""
+            SELECT
+                CASE
+                    WHEN bias_score < -0.5 THEN 'strong_opposition'
+                    WHEN bias_score < -0.1 THEN 'mild_opposition'
+                    WHEN bias_score <= 0.1 THEN 'neutral'
+                    WHEN bias_score < 0.5 THEN 'mild_officialist'
+                    ELSE 'strong_officialist'
+                END as bucket,
+                COUNT(*) as count
+            FROM news_cards
+            WHERE bias_score IS NOT NULL
+            GROUP BY bucket
+        """).fetchall()
 
-    # Bias distribution
-    bias_dist = conn.execute("""
-        SELECT 
-            CASE 
-                WHEN bias_score < -0.5 THEN 'strong_opposition'
-                WHEN bias_score < -0.1 THEN 'mild_opposition'
-                WHEN bias_score <= 0.1 THEN 'neutral'
-                WHEN bias_score < 0.5 THEN 'mild_officialist'
-                ELSE 'strong_officialist'
-            END as bucket,
-            COUNT(*) as count
-        FROM news_cards
-        WHERE bias_score IS NOT NULL
-        GROUP BY bucket
-    """).fetchall()
-
-    # Quality distribution
-    quality_dist = conn.execute("""
-        SELECT 
-            CASE 
-                WHEN quality_score >= 0.7 THEN 'high'
-                WHEN quality_score >= 0.4 THEN 'medium'
-                WHEN quality_score >= 0.2 THEN 'low'
-                ELSE 'very_low'
-            END as bucket,
-            COUNT(*) as count
-        FROM news_cards
-        WHERE quality_score IS NOT NULL
-        GROUP BY bucket
-    """).fetchall()
-
-    conn.close()
+        # Quality distribution
+        quality_dist = conn.execute("""
+            SELECT
+                CASE
+                    WHEN quality_score >= 0.7 THEN 'high'
+                    WHEN quality_score >= 0.4 THEN 'medium'
+                    WHEN quality_score >= 0.2 THEN 'low'
+                    ELSE 'very_low'
+                END as bucket,
+                COUNT(*) as count
+            FROM news_cards
+            WHERE quality_score IS NOT NULL
+            GROUP BY bucket
+        """).fetchall()
 
     return {
         "sources": {
@@ -1900,32 +1836,28 @@ async def admin_dashboard(_auth=Depends(_check_admin)):
 @app.get("/admin/failed-sources-detail")
 async def failed_sources_detail(_auth=Depends(_check_admin)):
     """Detailed list of failed/degraded sources with recovery suggestions."""
-    conn = sqlite3.connect(settings.db_path)
-    conn.row_factory = sqlite3.Row
+    with get_db_connection() as conn:
+        # Failed sources (5+ consecutive failures)
+        failed = conn.execute("""
+            SELECT s.id, s.name, s.url, s.domain, s.last_fetch, s.fetch_count, s.error_count,
+                   h.consecutive_failures, h.last_success_method, h.is_circuit_open
+            FROM sources s
+            JOIN source_health h ON s.id = h.source_id
+            WHERE s.is_active = 1 AND h.consecutive_failures >= 5
+            ORDER BY h.consecutive_failures DESC
+            LIMIT 50
+        """).fetchall()
 
-    # Failed sources (5+ consecutive failures)
-    failed = conn.execute("""
-        SELECT s.id, s.name, s.url, s.domain, s.last_fetch, s.fetch_count, s.error_count,
-               h.consecutive_failures, h.last_success_method, h.is_circuit_open
-        FROM sources s
-        JOIN source_health h ON s.id = h.source_id
-        WHERE s.is_active = 1 AND h.consecutive_failures >= 5
-        ORDER BY h.consecutive_failures DESC
-        LIMIT 50
-    """).fetchall()
-
-    # Degraded sources (3-4 failures)
-    degraded = conn.execute("""
-        SELECT s.id, s.name, s.url, s.domain, s.last_fetch, s.fetch_count, s.error_count,
-               h.consecutive_failures, h.last_success_method, h.is_circuit_open
-        FROM sources s
-        JOIN source_health h ON s.id = h.source_id
-        WHERE s.is_active = 1 AND h.consecutive_failures BETWEEN 3 AND 4
-        ORDER BY h.consecutive_failures DESC
-        LIMIT 50
-    """).fetchall()
-
-    conn.close()
+        # Degraded sources (3-4 failures)
+        degraded = conn.execute("""
+            SELECT s.id, s.name, s.url, s.domain, s.last_fetch, s.fetch_count, s.error_count,
+                   h.consecutive_failures, h.last_success_method, h.is_circuit_open
+            FROM sources s
+            JOIN source_health h ON s.id = h.source_id
+            WHERE s.is_active = 1 AND h.consecutive_failures BETWEEN 3 AND 4
+            ORDER BY h.consecutive_failures DESC
+            LIMIT 50
+        """).fetchall()
 
     return {
         "failed": [dict(r) for r in failed],
@@ -1938,12 +1870,11 @@ async def failed_sources_detail(_auth=Depends(_check_admin)):
 @app.get("/admin/image-stats")
 async def image_stats(_auth=Depends(_check_admin)):
     """Image extraction statistics."""
-    conn = sqlite3.connect(settings.db_path)
-    total = conn.execute("SELECT COUNT(*) FROM news_cards").fetchone()[0]
-    with_image = conn.execute(
-        "SELECT COUNT(*) FROM news_cards WHERE image_url IS NOT NULL AND image_url != ''"
-    ).fetchone()[0]
-    conn.close()
+    with get_db_connection() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM news_cards").fetchone()[0]
+        with_image = conn.execute(
+            "SELECT COUNT(*) FROM news_cards WHERE image_url IS NOT NULL AND image_url != ''"
+        ).fetchone()[0]
 
     return {
         "total_news": total,
