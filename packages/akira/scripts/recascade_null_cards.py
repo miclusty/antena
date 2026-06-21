@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Re-cascade classification for null cluster_id cards.
+# Superseded by scripts/recluster_all_semantic.py --recluster which covers all cards including nulls.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """
 recascade_null_cards.py - Re-cascade 65 most recent NULL category/bias_score cards through AKIRA.
 

@@ -32,10 +32,11 @@ import os
 import sqlite3
 import sys
 import time
+from pathlib import Path
 
 logger = logging.getLogger("akira.build_kb")
 
-DB_PATH_DEFAULT = "/Users/omatic/proyectos/news/packages/akira/data/akira.db"
+DB_PATH_DEFAULT = os.getenv("AKIRA_DB", str(Path(__file__).parent.parent / "data" / "akira.db"))
 
 
 def parse_args() -> argparse.Namespace:

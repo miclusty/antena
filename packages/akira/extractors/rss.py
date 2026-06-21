@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import List, Optional
 from urllib.parse import urljoin
 
-import sqlite3
 
 from core.db_helpers import filter_new_urls
 
@@ -28,7 +27,7 @@ _last_fetch: dict[str, float] = {}
 def _get_last_harvest(db_path: str, feed_url: str) -> float:
     """Get last harvest time from DB (persistent across restarts)."""
     try:
-        with sqlite3.connect(db_path) as conn:
+        with get_db_connection(db_path) as conn:
             row = conn.execute(
                 "SELECT last_harvest_at FROM sources WHERE rss_url = ? OR url = ?",
                 (feed_url, feed_url),

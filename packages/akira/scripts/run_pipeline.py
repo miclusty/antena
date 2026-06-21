@@ -35,6 +35,7 @@ in production if needed.
 
 import argparse
 import os
+import subprocess
 import sys
 import time
 
@@ -46,7 +47,12 @@ SCRIPTS = HERE
 
 
 def step(title, cmd, env=None):
-    """Run a pipeline step. Returns (returncode, elapsed_seconds)."""
+    """Run a pipeline step. Returns (returncode, elapsed_seconds).
+
+    Uses subprocess.run with shell=True so multi-word commands (with env-var
+    prefixes) work the same way os.system did. We don't check=True because
+    the pipeline continues on per-step failure and reports at the end.
+    """
     print()
     print("=" * 70)
     print(f"STEP: {title}")
@@ -57,10 +63,21 @@ def step(title, cmd, env=None):
     full_env = os.environ.copy()
     if env:
         full_env.update(env)
-    rc = os.system(cmd)
+    result = subprocess.run(
+        cmd,
+        shell=True,
+        env=full_env,
+        capture_output=True,
+        text=True,
+    )
     elapsed = time.monotonic() - t0
-    print(f"\n[{title}] exit={rc} elapsed={elapsed:.1f}s")
-    return rc, elapsed
+    # Stream the child process's output so failures are visible.
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(result.stderr, file=sys.stderr)
+    print(f"\n[{title}] exit={result.returncode} elapsed={elapsed:.1f}s")
+    return result.returncode, elapsed
 
 
 def main():

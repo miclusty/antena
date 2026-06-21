@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Keyword-based bias classifier.
+# Replaced by core.llm_client via synthesis.py / pipeline LLM calls.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """
 backfill_bias.py - Retroactively compute bias_score for news_cards with bias_score=0.0 or NULL.
 

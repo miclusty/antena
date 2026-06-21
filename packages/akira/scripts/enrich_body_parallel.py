@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Parallel article body enrichment (older version).
+# Superseded by scripts/enrich_body_trafilatura.py which uses trafilatura for better extraction quality.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """Parallel body enrichment with trafilatura.
 
 Like enrich_body_trafilatura.py but uses a thread

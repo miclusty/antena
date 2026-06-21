@@ -3,8 +3,13 @@
 Architecture:
 1. Fact Extraction (no AI, ~50ms/cluster) — regex + frequency counting
 2. Perspective Summary (no AI, ~20ms/cluster) — group by bias
-3. Synthesis (MiniMax, ~30s/cluster, ~$0.01) — generate neutral article
+3. Synthesis (LLM, ~30s/cluster) — generate neutral article via LLMClient
 4. Save to master_articles table
+
+LLM provider selection is delegated to core.llm_client.LLMClient. By default
+this uses LM Studio (local); set AKIRA_USE_MINIMAX=1 to use MiniMax cloud API.
+The legacy `minimax_api_key` parameter is kept for backward compat — it now
+just configures the LLMClient to use MiniMax.
 """
 
 import re
@@ -12,9 +17,11 @@ import json
 import sqlite3
 import logging
 import hashlib
-import urllib.request
 from typing import List, Dict, Optional
 from datetime import datetime
+
+from core.db_helpers import get_db_connection
+from core.llm_client import LLMClient, LLMError
 
 logger = logging.getLogger("akira")
 
@@ -48,7 +55,7 @@ class FactExtractor:
 
     def get_cluster_articles(self, cluster_id: str) -> List[Dict]:
         """Get all articles in a cluster with their bias info."""
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """
@@ -272,10 +279,25 @@ class FactExtractor:
 class SynthesisEngine:
     """Generates neutral master articles from cluster analysis."""
 
-    def __init__(self, db_path: str, minimax_api_key: Optional[str] = None):
+    def __init__(
+        self,
+        db_path: str,
+        minimax_api_key: Optional[str] = None,
+        llm_client: Optional[LLMClient] = None,
+    ):
         self.db_path = db_path
         self.fact_extractor = FactExtractor(db_path)
-        self.minimax_api_key = minimax_api_key
+        # Backward compat: if a minimax_api_key is provided but no explicit
+        # llm_client, build one that targets MiniMax. Otherwise default to
+        # LM Studio (or AKIRA_USE_MINIMAX=1).
+        if llm_client is not None:
+            self.llm_client = llm_client
+        elif minimax_api_key:
+            self.llm_client = LLMClient(
+                provider="minimax", minimax_api_key=minimax_api_key
+            )
+        else:
+            self.llm_client = LLMClient()
 
     def synthesize_cluster(self, cluster_id: str) -> Optional[Dict]:
         """
@@ -299,8 +321,8 @@ class SynthesisEngine:
         # Step 3: Get perspectives (no AI, fast)
         perspectives = self.fact_extractor.get_perspectives(articles)
 
-        # Step 4: Generate synthesis via MiniMax
-        synthesis = self._call_minimax(cluster_id, articles, facts, perspectives)
+        # Step 4: Generate synthesis via LLM (LM Studio or MiniMax)
+        synthesis = self._call_llm(cluster_id, articles, facts, perspectives)
         if not synthesis:
             return None
 
@@ -322,14 +344,13 @@ class SynthesisEngine:
             "verified_facts_count": len(facts["verified_facts"]),
         }
 
-    def _call_minimax(
+    def _call_llm(
         self, cluster_id: str, articles: List[Dict], facts: Dict, perspectives: Dict
     ) -> Optional[Dict]:
-        """Call MiniMax to generate neutral synthesis."""
-        if not self.minimax_api_key:
-            logger.warning("synthesis_no_api_key cluster=%s", cluster_id)
-            return self._fallback_synthesis(articles, facts, perspectives)
-
+        """Call the configured LLM (LM Studio by default; MiniMax if configured)
+        to generate a neutral synthesis. Returns parsed {title, summary} dict,
+        or None if the LLM is unavailable and we fall back to keyword synthesis.
+        """
         # Build verified facts text
         facts_text = "\n".join(
             f"- {f['text']} (mencionado por {f['frequency']} fuentes)"
@@ -374,48 +395,49 @@ Responde SOLO en formato JSON:
 {{"title": "...", "summary": "..."}}"""
 
         try:
-            payload = {
-                "model": "MiniMax-M2.7",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 2000,
-                "temperature": 0.1,
-            }
-
-            req = urllib.request.Request(
-                "https://api.minimax.io/v1/text/chatcompletion_v2",
-                data=json.dumps(payload).encode(),
-                headers={
-                    "Authorization": f"Bearer {self.minimax_api_key}",
-                    "Content-Type": "application/json",
-                },
-                method="POST",
+            content = self.llm_client.chat(
+                [{"role": "user", "content": prompt}],
+                max_tokens=2000,
+                temperature=0.1,
+                timeout=60.0,
             )
-
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                raw = json.loads(resp.read())
-                content = raw["choices"][0]["message"].get("content", "")
-
-            # Parse JSON from response
-            content = (
-                re.sub(r"^```json\s*", "", content.strip())
-                .strip()
-                .rstrip("```")
-                .strip()
+        except LLMError as e:
+            logger.error(
+                f"synthesis_llm_failed cluster={cluster_id} provider={self.llm_client.provider} error={e}"
             )
-            start = content.find("{")
-            end = content.rfind("}") + 1
-            if start != -1 and end > start:
-                return json.loads(content[start:end])
-
-            # Fallback: use first two sentences as summary
-            sentences = re.split(r"[.!?]+", content)
-            title = sentences[0].strip()[:200] if sentences else "Noticia sintetizada"
-            summary = ". ".join(sentences[:3]).strip()[:1000]
-            return {"title": title, "summary": summary}
-
-        except Exception as e:
-            logger.error(f"synthesis_minimax_failed cluster={cluster_id} error={e}")
             return self._fallback_synthesis(articles, facts, perspectives)
+
+        return self._parse_llm_response(content, articles, facts, perspectives)
+
+    @staticmethod
+    def _parse_llm_response(
+        content: str,
+        articles: List[Dict],
+        facts: Dict,
+        perspectives: Dict,
+    ) -> Dict:
+        """Parse the LLM response into {title, summary}. Tolerates markdown
+        fences around the JSON, falls back to first sentences if no JSON."""
+        # Strip markdown ```json fences if present
+        content = (
+            re.sub(r"^```json\s*", "", content.strip())
+            .strip()
+            .rstrip("```")
+            .strip()
+        )
+        start = content.find("{")
+        end = content.rfind("}") + 1
+        if start != -1 and end > start:
+            try:
+                return json.loads(content[start:end])
+            except json.JSONDecodeError:
+                pass  # fall through to sentence-split fallback
+
+        # Fallback: use first two sentences as title + summary
+        sentences = re.split(r"[.!?]+", content)
+        title = sentences[0].strip()[:200] if sentences else "Noticia sintetizada"
+        summary = ". ".join(sentences[:3]).strip()[:1000]
+        return {"title": title, "summary": summary}
 
     def _fallback_synthesis(
         self, articles: List[Dict], facts: Dict, perspectives: Dict
@@ -477,7 +499,7 @@ Responde SOLO en formato JSON:
 
         biases = [a["bias_score"] for a in articles]
 
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO master_articles
@@ -510,7 +532,7 @@ Responde SOLO en formato JSON:
         self, cluster_ids: Optional[List[str]] = None, limit: int = 100
     ) -> Dict:
         """Synthesize multiple clusters in batch."""
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             if cluster_ids:
                 placeholders = ",".join("?" for _ in cluster_ids)
                 rows = conn.execute(

@@ -42,10 +42,11 @@ from typing import List, Sequence, Tuple
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core.lmstudio import LMStudioClient, LMStudioError
+from pathlib import Path
 
 logger = logging.getLogger("akira.embed_cards")
 
-DB_PATH_DEFAULT = "/Users/omatic/proyectos/news/packages/akira/data/akira.db"
+DB_PATH_DEFAULT = os.getenv("AKIRA_DB", str(Path(__file__).parent.parent / "data" / "akira.db"))
 DEFAULT_MODEL = "text-embedding-nomic-embed-text-v1.5"
 BATCH_COMMIT = 50
 DEFAULT_WORKERS = 4

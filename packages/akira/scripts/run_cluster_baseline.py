@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Cluster quality baseline metric.
+# Superseded by core/eval/ which tracks the same metrics continuously.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """
 Pure-clustering baseline — measures cluster quality WITHOUT
 requiring LM Studio. Useful when the embedding model is
@@ -27,7 +34,6 @@ at 0.32) has 2/3 of its cards being noise.
 import argparse
 import json
 import os
-import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -62,7 +68,7 @@ def main():
         print("ERROR: empty golden set", file=sys.stderr)
         sys.exit(1)
 
-    with sqlite3.connect(args.db) as conn:
+    with get_db_connection(args.db) as conn:
         per_cluster = []
         total_relevant = 0
         total_relevant_in_cluster = 0
