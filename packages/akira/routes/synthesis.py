@@ -24,16 +24,11 @@ from typing import List
 from fastapi import APIRouter, Depends, Request
 
 from config import settings
+from core.app_setup import check_admin
 from db.connection import get_db_connection
 from models.schemas import MasterArticle, SynthesisResult
 
 router = APIRouter(tags=["synthesis"])
-
-
-# Stub auth dependency (replaced in main.py shim — see iter 1.3 PR 7).
-def _check_admin_stub():
-    """Placeholder — real auth is wired in main.py."""
-    pass
 
 
 @router.post("/cluster")
@@ -41,7 +36,7 @@ async def cluster_news_card_ids(
     request: Request,
     card_ids: List[str],
     limit: int = 100,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Cluster specific news card IDs by title similarity."""
     clustering = getattr(request.app.state, "clustering_service", None)
@@ -62,7 +57,7 @@ async def cluster_recent_news(
     request: Request,
     hours: int = 24,
     limit: int = 500,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Cluster recent unclustered news cards."""
     clustering = getattr(request.app.state, "clustering_service", None)
@@ -114,7 +109,7 @@ async def cluster_stats():
 async def synthesize_cluster(
     request: Request,
     cluster_id: str,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Synthesize a single cluster into a neutral master article."""
     synthesis_engine = getattr(request.app.state, "synthesis_engine", None)
@@ -144,7 +139,7 @@ async def synthesize_cluster(
 async def batch_synthesize(
     request: Request,
     limit: int = 100,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Synthesize multiple clusters in batch (runs in executor to avoid blocking event loop)."""
     synthesis_engine = getattr(request.app.state, "synthesis_engine", None)
@@ -244,7 +239,7 @@ async def get_master_article(cluster_id: str):
 async def synthesize_cluster_rag(
     request: Request,
     cluster_id: str,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Synthesize a single cluster into 3 RAG perspectives
     (neutral / pro_gov / anti_gov). Slower than the legacy

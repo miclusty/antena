@@ -29,6 +29,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Request
 
+from core.app_setup import check_admin
 from core.metrics import metrics
 from db.connection import get_db_connection
 from models.schemas import (
@@ -45,18 +46,13 @@ logger = logging.getLogger("akira")
 router = APIRouter(tags=["admin"])
 
 
-# Stub auth — real auth wired in main.py shim.
-def _check_admin_stub():
-    pass
-
-
 # Counter state for /metrics deltas (was a module-level side-effect in main.py).
 _metrics_state: dict = {"_cache_hits": 0, "_cache_misses": 0}
 
 
 @router.get("/admin/method-stats", response_model=MethodStats)
 async def method_statistics(
-    request: Request, _auth=Depends(_check_admin_stub)
+    request: Request, _auth=Depends(check_admin)
 ):
     """Return URL-based method learning statistics."""
     method_learner = getattr(request.app.state, "method_learner", None)
@@ -73,7 +69,7 @@ async def method_statistics(
 async def reset_learning(
     request: Request,
     url: Optional[str] = None,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Reset method learning for specific URL or all URLs (omit url to reset all)."""
     method_learner = getattr(request.app.state, "method_learner", None)
@@ -92,7 +88,7 @@ async def reset_learning(
 async def get_method_scores(
     request: Request,
     url: Optional[str] = None,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Get method scores for a URL or all URLs."""
     method_scorer = getattr(request.app.state, "method_scorer", None)
@@ -123,7 +119,7 @@ async def get_method_scores(
 async def reset_method_scores(
     request: Request,
     url: Optional[str] = None,
-    _auth=Depends(_check_admin_stub),
+    _auth=Depends(check_admin),
 ):
     """Reset method scores for specific URL or all URLs."""
     method_scorer = getattr(request.app.state, "method_scorer", None)
@@ -135,7 +131,7 @@ async def reset_method_scores(
 
 @router.post("/admin/recover-source", response_model=RecoveryResult)
 async def recover_source(
-    request: Request, url: str, _auth=Depends(_check_admin_stub)
+    request: Request, url: str, _auth=Depends(check_admin)
 ):
     """Attempt to recover a single failed source."""
     source_recovery = getattr(request.app.state, "source_recovery", None)
@@ -156,7 +152,7 @@ async def recover_source(
 
 
 @router.post("/admin/scan-failed-sources")
-async def scan_failed_sources(request: Request, _auth=Depends(_check_admin_stub)):
+async def scan_failed_sources(request: Request, _auth=Depends(check_admin)):
     """Scan all failed sources and attempt recovery."""
     source_recovery = getattr(request.app.state, "source_recovery", None)
     if not source_recovery:
@@ -179,7 +175,7 @@ async def scan_failed_sources(request: Request, _auth=Depends(_check_admin_stub)
 
 
 @router.get("/admin/failed-sources")
-async def get_failed_sources(request: Request, _auth=Depends(_check_admin_stub)):
+async def get_failed_sources(request: Request, _auth=Depends(check_admin)):
     """List all sources with 5+ errors that need recovery."""
     source_recovery = getattr(request.app.state, "source_recovery", None)
     if not source_recovery:
@@ -189,7 +185,7 @@ async def get_failed_sources(request: Request, _auth=Depends(_check_admin_stub))
 
 
 @router.get("/admin/recovery-stats", response_model=RecoveryStats)
-async def get_recovery_stats(request: Request, _auth=Depends(_check_admin_stub)):
+async def get_recovery_stats(request: Request, _auth=Depends(check_admin)):
     """Get recovery statistics."""
     source_recovery = getattr(request.app.state, "source_recovery", None)
     if not source_recovery:
@@ -198,7 +194,7 @@ async def get_recovery_stats(request: Request, _auth=Depends(_check_admin_stub))
 
 
 @router.post("/admin/gc", response_model=GCStats)
-async def garbage_collect(request: Request, _auth=Depends(_check_admin_stub)):
+async def garbage_collect(request: Request, _auth=Depends(check_admin)):
     """Trigger garbage collection on cache and circuit breaker."""
     gc = getattr(request.app.state, "gc", None)
 
@@ -221,7 +217,7 @@ async def garbage_collect(request: Request, _auth=Depends(_check_admin_stub)):
 
 
 @router.post("/admin/autoheal", response_model=AutoHealResult)
-async def auto_heal(request: Request, _auth=Depends(_check_admin_stub)):
+async def auto_heal(request: Request, _auth=Depends(check_admin)):
     """Run auto-heal to recover from degraded state."""
     engine = getattr(request.app.state, "engine", None)
     health_monitor = getattr(request.app.state, "health_monitor", None)
@@ -243,7 +239,7 @@ async def auto_heal(request: Request, _auth=Depends(_check_admin_stub)):
 
 
 @router.get("/admin/stats")
-async def admin_stats(request: Request, _auth=Depends(_check_admin_stub)):
+async def admin_stats(request: Request, _auth=Depends(check_admin)):
     """Return system statistics (memory, cache, circuit breaker, extractors)."""
     engine = getattr(request.app.state, "engine", None)
     gc = getattr(request.app.state, "gc", None)
@@ -322,7 +318,7 @@ async def prometheus_metrics(request: Request):
 
 
 @router.get("/admin/dashboard")
-async def admin_dashboard(request: Request, _auth=Depends(_check_admin_stub)):
+async def admin_dashboard(request: Request, _auth=Depends(check_admin)):
     """Full system dashboard — all key metrics in one call."""
     with get_db_connection() as conn:
         # Core stats
@@ -410,7 +406,7 @@ async def admin_dashboard(request: Request, _auth=Depends(_check_admin_stub)):
 
 
 @router.get("/admin/failed-sources-detail")
-async def failed_sources_detail(request: Request, _auth=Depends(_check_admin_stub)):
+async def failed_sources_detail(request: Request, _auth=Depends(check_admin)):
     """Detailed list of failed/degraded sources with recovery suggestions."""
     with get_db_connection() as conn:
         conn.row_factory = None
@@ -446,7 +442,7 @@ async def failed_sources_detail(request: Request, _auth=Depends(_check_admin_stu
 
 
 @router.get("/admin/image-stats")
-async def image_stats(request: Request, _auth=Depends(_check_admin_stub)):
+async def image_stats(request: Request, _auth=Depends(check_admin)):
     """Image extraction statistics (count cards with image_url)."""
     with get_db_connection() as conn:
         total = conn.execute("SELECT COUNT(*) FROM news_cards").fetchone()[0]
