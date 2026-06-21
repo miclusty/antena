@@ -4,6 +4,7 @@ import json
 import time
 import asyncio
 import hashlib
+import os
 from abc import ABC, abstractmethod
 from typing import Optional
 from collections import OrderedDict
@@ -39,7 +40,8 @@ class MemoryBackend(CacheBackend):
             if key in self._cache:
                 if self._expiry.get(key, 0) > time.time():
                     self._cache.move_to_end(key)
-                    return self._cache[key]
+                    cached: bytes = self._cache[key]
+                    return cached
                 else:
                     try:
                         del self._cache[key]
@@ -80,10 +82,37 @@ class NullBackend(CacheBackend):
 
 
 class CacheManager:
-    """Cache manager with hit/miss tracking."""
+    """Cache manager with hit/miss tracking.
 
-    def __init__(self, backend: Optional[CacheBackend] = None, l1_size: int = 1000):
-        self.backend = backend or MemoryBackend(maxsize=l1_size)
+    Backend selection (in priority order):
+    1. Explicit `backend=` argument
+    2. AKIRA_CACHE_BACKEND env var: "memory" (default) or "redis"
+    3. Fallback: MemoryBackend
+    """
+
+    def __init__(
+        self,
+        backend: Optional[CacheBackend] = None,
+        l1_size: int = 1000,
+        backend_name: Optional[str] = None,
+        redis_url: Optional[str] = None,
+    ):
+        if backend is not None:
+            chosen: CacheBackend = backend
+        elif backend_name == "redis" or (
+            backend_name is None
+            and os.getenv("AKIRA_CACHE_BACKEND", "memory").lower() == "redis"
+        ):
+            from core.cache_redis import RedisBackend
+            resolved_url: str = (
+                redis_url
+                or os.getenv("AKIRA_REDIS_URL")
+                or "redis://localhost:6379/0"
+            )
+            chosen = RedisBackend(url=resolved_url)
+        else:
+            chosen = MemoryBackend(maxsize=l1_size)
+        self.backend = chosen
         self._stats = {"hits": 0, "misses": 0}
 
     def _make_key(self, url: str) -> str:
@@ -96,7 +125,8 @@ class CacheManager:
 
         if data:
             self._stats["hits"] += 1
-            return json.loads(data)
+            parsed: dict = json.loads(data)
+            return parsed
 
         self._stats["misses"] += 1
         return None
