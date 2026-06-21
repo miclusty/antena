@@ -418,6 +418,27 @@ const biasLabel =
         if (savedMode === '1') document.documentElement.classList.add('reading-mode');
       } catch (e) {}
 
+      // Pillar 4: save-data mode. Replace inline body images with a
+      // placeholder so users on metered connections don't burn data.
+      var saveData = false;
+      try {
+        var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn && conn.saveData) saveData = true;
+      } catch (e) {}
+      try {
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-data: reduce)').matches) saveData = true;
+      } catch (e) {}
+      if (saveData) {
+        document.querySelectorAll('.article-prose img').forEach(function(img) {
+          var ph = document.createElement('details');
+          ph.className = 'my-4 text-center';
+          ph.innerHTML = '<summary class="cursor-pointer text-sm" style="color:var(--text-tertiary)">📷 Imagen (tap para cargar)</summary>';
+          // Re-attach the img inside the details so the user can opt in.
+          ph.appendChild(img.cloneNode(true));
+          img.replaceWith(ph);
+        });
+      }
+
       // Pillar 3: vote buttons
       document.querySelectorAll('[data-vote]').forEach(function(btn) {
         btn.addEventListener('click', function() {
