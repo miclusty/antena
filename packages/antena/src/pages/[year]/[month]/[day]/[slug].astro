@@ -12,6 +12,13 @@
 
 import Layout from '../../../../layouts/Layout.astro';
 import SeoHead from '../../../../components/SeoHead.astro';
+import { extractHeadings, addHeadingIds } from '../../../../lib/article-toc';
+import '../../../../styles/article-prose.css';
+
+// ── Pillar 4: Reading-mode font-scale persistence ──────
+// Apply persisted scale on first render so the SSR HTML reflects
+// the user's last choice. localStorage is unavailable at build time;
+// we read it in the inline <script> below and apply it client-side.
 
 export const prerender = true;
 
@@ -30,6 +37,13 @@ interface SsrArticle {
   slug: string;
   slug_date: string;
   sources?: { name: string; url: string }[];
+  // Optional fields surfaced for the mobile reading polish.
+  // The API exposes them via /api/news/<id>/extended; we treat
+  // them as optional so older / leaner payloads still render.
+  upvotes?: number;
+  downvotes?: number;
+  sources_count?: number;
+  bias_score?: number;
 }
 
 const SITE = 'https://www.antena.com.ar';
@@ -140,6 +154,16 @@ const slugify = (s: string) => s
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '');
+
+const headings = extractHeadings(article.body ?? '');
+const bodyWithIds = addHeadingIds(article.body ?? '');
+// 1200 chars/min for Spanish casual reading. Floor at 1 min so a
+// short summary doesn't show "0 min".
+const readingMinutes = Math.max(1, Math.round(((article.body?.length ?? 0) + (article.summary?.length ?? 0)) / 1200));
+const biasLabel =
+  typeof article.bias_score === 'number'
+    ? article.bias_score > 0.1 ? 'Of.' : article.bias_score < -0.1 ? 'Op.' : 'Neutro'
+    : null;
 ---
 <Layout>
   <Fragment slot="head">
@@ -223,7 +247,15 @@ const slugify = (s: string) => s
     />
   </Fragment>
 
-  <main id="main-content" class="max-w-[680px] mx-auto px-4 py-8">
+  <main
+    id="main-content"
+    class="max-w-[68ch] mx-auto px-4 pt-[max(env(safe-area-inset-top),1.5rem)] pb-[max(env(safe-area-inset-bottom),2rem)]"
+    tabindex="-1"
+  >
+    <div class="article-progress" aria-hidden="true">
+      <div class="article-progress-bar"></div>
+    </div>
+
     <nav aria-label="Breadcrumb" class="mb-6">
       <ol class="flex items-center gap-1.5 text-xs flex-wrap" style={{ color: 'var(--text-tertiary)' }}>
         <li><a href="/" class="hover:underline" style={{ color: 'var(--accent)' }}>Inicio</a></li>
@@ -243,13 +275,14 @@ const slugify = (s: string) => s
         <li class="truncate max-w-[200px]" style={{ color: 'var(--text-secondary)' }} aria-current="page">{title}</li>
       </ol>
     </nav>
+
     <article class="mt-6">
       <header>
         <p class="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-tertiary)' }}>
           {article.category || 'General'}
           {article.location_name && <> · {article.location_name}</>}
         </p>
-        <h1 class="text-[28px] font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
+        <h1 class="text-[30px] sm:text-[32px] font-bold leading-[1.2]" style={{ color: 'var(--text-primary)' }}>
           {title}
         </h1>
         <p class="mt-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>
@@ -258,6 +291,23 @@ const slugify = (s: string) => s
           <time datetime={publishedAt}>
             {new Date(publishedAt).toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' })}
           </time>
+        </p>
+
+        {/* Pillar 2: meta line with reading time + cluster + bias */}
+        <p class="mt-3 text-sm flex items-center gap-3 flex-wrap" style={{ color: 'var(--text-tertiary)' }}>
+          <span aria-label="Tiempo de lectura">⏱ {readingMinutes} min de lectura</span>
+          {(article.sources_count ?? 0) > 1 && (
+            <a
+              href={`/2026/${(article.slug_date ?? '').split('-').join('/')}/${article.slug}/cluster`}
+              class="hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              📰 {article.sources_count} fuentes cubren esto
+            </a>
+          )}
+          {biasLabel && (
+            <span title={`Bias score: ${article.bias_score?.toFixed(2)}`}>⚖ {biasLabel} {(article.bias_score! > 0 ? '+' : '') + article.bias_score!.toFixed(2)}</span>
+          )}
         </p>
       </header>
 
@@ -282,21 +332,182 @@ const slugify = (s: string) => s
         </figure>
       )}
 
-      <p class="mt-6 text-lg leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+      <p class="mt-6 text-[19px] sm:text-lg leading-[1.7]" style={{ color: 'var(--text-primary)' }}>
         {article.summary}
       </p>
 
-      {article.body && (
-        <div class="mt-4 text-base leading-relaxed prose" style={{ color: 'var(--text-secondary)' }}>
-          {article.body}
-        </div>
+      {/* Pillar 2: TOC — only if 2+ headings */}
+      {headings.length >= 2 && (
+        <details class="mt-6 rounded-xl border p-4" style={{ borderColor: 'var(--border-base)', background: 'var(--bg-elevated)' }}>
+          <summary class="cursor-pointer font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+            📑 Contenido ({headings.length} secciones)
+          </summary>
+          <ol class="mt-3 space-y-1.5 text-sm">
+            {headings.map(h => (
+              <li class={h.level === 3 ? 'ml-4' : ''}>
+                <a href={`#${h.id}`} class="hover:underline" style={{ color: 'var(--text-secondary)' }}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </details>
       )}
 
-      <p class="mt-8 text-sm">
-        <a href={url} class="font-semibold" style={{ color: 'var(--accent)' }}>Leer en Antena →</a>
-        {' · '}
-        <a href={markdownUrl} class="text-sm underline" style={{ color: 'var(--accent)' }}>📄 Ver como markdown</a>
-      </p>
+      {bodyWithIds && (
+        <div class="article-prose mt-6 text-[17px] sm:text-base leading-[1.7]" set:html={bodyWithIds} />
+      )}
+
+      {/* Pillar 3: inline vote + search-redirect */}
+      <div class="mt-8 pt-6 border-t flex items-center justify-between flex-wrap gap-4" style={{ borderColor: 'var(--border-base)' }}>
+        <div class="flex items-center gap-2">
+          <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>¿Te resultó útil?</span>
+          <button
+            class="px-3 py-1.5 rounded-full text-sm font-medium hover:bg-bg-hover transition-colors"
+            data-vote="1"
+            data-news-id={article.id}
+            aria-label="Voto positivo"
+          >👍 <span data-vote-count="up">{article.upvotes ?? 0}</span></button>
+          <button
+            class="px-3 py-1.5 rounded-full text-sm font-medium hover:bg-bg-hover transition-colors"
+            data-vote="-1"
+            data-news-id={article.id}
+            aria-label="Voto negativo"
+          >👎 <span data-vote-count="down">{article.downvotes ?? 0}</span></button>
+        </div>
+        <a
+          href={`/buscar?q=${encodeURIComponent(article.title)}`}
+          class="px-3 py-1.5 rounded-full text-sm hover:bg-bg-hover transition-colors"
+          style={{ color: 'var(--text-secondary)' }}
+        >🔍 Cobertura completa</a>
+      </div>
+
+      {/* Pillar 3: source line at end */}
+      <footer class="mt-8 pt-6 border-t" style={{ borderColor: 'var(--border-base)' }}>
+        <p class="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+          Fuente original:{' '}
+          {article.source_url ? (
+            <a href={article.source_url} target="_blank" rel="noopener noreferrer" class="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>{article.source_name}</a>
+          ) : (
+            <span class="font-semibold" style={{ color: 'var(--text-secondary)' }}>{article.source_name}</span>
+          )}
+        </p>
+        <p class="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+          Sintetizado por AKIRA · {article.sources_count ?? 1} {(article.sources_count ?? 1) === 1 ? 'fuente' : 'fuentes'}
+        </p>
+      </footer>
     </article>
   </main>
+
+  {/* Pillar 3: floating action bar (mobile only) */}
+  <nav class="article-fab sm:hidden" aria-label="Acciones rápidas">
+    <button type="button" data-action="share" aria-label="Compartir">📤</button>
+    <button type="button" data-action="bookmark" aria-label="Guardar">🔖</button>
+    <button type="button" data-action="read-mode" aria-label="Modo lectura">📖</button>
+    <button type="button" data-action="back-to-top" aria-label="Volver arriba" hidden>🔝</button>
+  </nav>
+
+  {/* Pillar 3 + 4: inline scripts. No external deps. No CSP yet
+      (Antena has none); when one is added, script-src 'unsafe-inline'
+      is needed for this block. */}
+  <script is:inline>
+    (function() {
+      // Pillar 4: restore persisted font-scale
+      try {
+        var savedScale = localStorage.getItem('antena-article-font-scale');
+        if (savedScale) document.documentElement.style.setProperty('--article-font-scale', savedScale);
+        var savedMode = localStorage.getItem('antena-article-reading-mode');
+        if (savedMode === '1') document.documentElement.classList.add('reading-mode');
+      } catch (e) {}
+
+      // Pillar 3: vote buttons
+      document.querySelectorAll('[data-vote]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = btn.getAttribute('data-news-id');
+          var value = btn.getAttribute('data-vote');
+          if (!id || !value) return;
+          fetch('/api/news/' + encodeURIComponent(id) + '/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vote: Number(value) }),
+            keepalive: true,
+          }).then(function(res) {
+            if (!res.ok) throw new Error('vote failed');
+            return res.json();
+          }).then(function(data) {
+            var upSpan = btn.parentElement?.querySelector('[data-vote-count="up"]');
+            var downSpan = btn.parentElement?.querySelector('[data-vote-count="down"]');
+            if (upSpan && data && typeof data.upvotes === 'number') upSpan.textContent = String(data.upvotes);
+            if (downSpan && data && typeof data.downvotes === 'number') downSpan.textContent = String(data.downvotes);
+          }).catch(function() {
+            // silent fail — no toast wired here; the FAB area doesn't have
+            // a toast mount. Vote buttons gracefully do nothing on error.
+          });
+        });
+      });
+
+      // Pillar 3: FAB
+      var fabBackToTop = document.querySelector('[data-action="back-to-top"]');
+      function onScroll() {
+        if (!fabBackToTop) return;
+        var halfway = document.documentElement.scrollHeight * 0.5;
+        fabBackToTop.hidden = window.scrollY < halfway;
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      document.querySelectorAll('.article-fab [data-action]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var action = btn.getAttribute('data-action');
+          if (action === 'share') {
+            var url = window.location.href;
+            var shareTitle = document.title;
+            if (navigator.share) {
+              navigator.share({ title: shareTitle, url: url }).catch(function() {});
+            } else if (navigator.clipboard) {
+              navigator.clipboard.writeText(url).then(function() {
+                btn.textContent = '✅';
+                setTimeout(function() { btn.textContent = '📤'; }, 1500);
+              }).catch(function() {});
+            }
+          } else if (action === 'bookmark') {
+            // Use the existing antena-db IndexedDB store (same schema
+            // as the SPA). Best-effort write; silently ignore errors.
+            try {
+              var req = indexedDB.open('antena-db', 1);
+              req.onsuccess = function() {
+                var db = req.result;
+                if (!db.objectStoreNames.contains('bookmarks')) return;
+                var tx = db.transaction('bookmarks', 'readwrite');
+                tx.objectStore('bookmarks').put({
+                  newsId: window.location.pathname,
+                  title: document.title,
+                  savedAt: Date.now(),
+                });
+                btn.textContent = '✅';
+                setTimeout(function() { btn.textContent = '🔖'; }, 1500);
+              };
+              req.onerror = function() {};
+            } catch (e) {}
+          } else if (action === 'read-mode') {
+            // Pillar 4: cycle 1 → 1.125 → 1.25 → 1
+            var sizes = [1, 1.125, 1.25];
+            var current = parseFloat(document.documentElement.style.getPropertyValue('--article-font-scale')) || 1;
+            var idx = sizes.indexOf(current);
+            var next = sizes[(idx + 1) % sizes.length];
+            document.documentElement.style.setProperty('--article-font-scale', String(next));
+            try { localStorage.setItem('antena-article-font-scale', String(next)); } catch (e) {}
+            // Toggle reading-mode class on the 1.25 step so the user
+            // gets a paper-like theme at the largest size.
+            if (next === 1.25) {
+              document.documentElement.classList.add('reading-mode');
+              try { localStorage.setItem('antena-article-reading-mode', '1'); } catch (e) {}
+            } else {
+              document.documentElement.classList.remove('reading-mode');
+              try { localStorage.setItem('antena-article-reading-mode', '0'); } catch (e) {}
+            }
+          } else if (action === 'back-to-top') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
 </Layout>
