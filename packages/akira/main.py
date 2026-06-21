@@ -287,9 +287,13 @@ app = FastAPI(
 from routes import feed as feed_routes  # noqa: E402
 from routes import categories as categories_routes  # noqa: E402
 from routes import locations as locations_routes  # noqa: E402
+from routes import sources as sources_routes  # noqa: E402
+from routes import radios as radios_routes  # noqa: E402
 app.include_router(feed_routes.router)
 app.include_router(categories_routes.router)
 app.include_router(locations_routes.router)
+app.include_router(sources_routes.router)
+app.include_router(radios_routes.router)
 
 ALLOWED_ORIGINS = [
     "http://localhost:4321",
@@ -1188,100 +1192,6 @@ async def get_stats_health():
             "news_last_hour": news_last_hour,
         },
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-    }
-
-
-@app.get("/api/sources")
-async def get_sources():
-    """List all active sources with bias info."""
-    with get_db_connection() as conn:
-        rows = conn.execute("""
-            SELECT id, name, url, domain, avg_bias, news_count, is_active, reliability_score
-            FROM sources
-            WHERE is_active = 1
-            ORDER BY news_count DESC
-        """).fetchall()
-    return [dict(r) for r in rows]
-
-
-@app.get("/medios/radios")
-async def get_radios(request: Request):
-    """Live radio directory for the persistent player.
-
-    Returns all radios with stream_url from argentine_media.
-    Used by the Antena /radios page and the floating play bar.
-
-    Query params:
-      - limit: max rows (default 2000, max 5000)
-      - codgl: filter to a specific pueblo (5-digit gov-loc code)
-      - province: filter to a specific province name
-    """
-    limit = min(int(request.query_params.get("limit", "2000")), 5000)
-    codgl = request.query_params.get("codgl")
-    province = request.query_params.get("province")
-
-    where = ["type = 'radio'", "stream_url IS NOT NULL", "stream_url != ''"]
-    params: list = []
-    if codgl:
-        where.append("codgl = ?")
-        params.append(codgl)
-    if province:
-        where.append("LOWER(province) = LOWER(?)")
-        params.append(province)
-
-    sql = f"""
-        SELECT id, name, stream_url, website, city, province,
-               codgl, tags, type, source
-        FROM argentine_media
-        WHERE {' AND '.join(where)}
-        ORDER BY
-          CASE WHEN codgl IS NOT NULL THEN 0 ELSE 1 END,
-          name ASC
-        LIMIT ?
-    """
-    params.append(limit)
-    with get_db_connection() as conn:
-        rows = conn.execute(sql, params).fetchall()
-    items = [dict(r) for r in rows]
-    return {"items": items, "total": len(items)}
-
-
-@app.get("/api/sources/{source_id}/profile")
-async def get_source_profile(source_id: int):
-    """Source bias profile with recent bias history."""
-    with get_db_connection() as conn:
-        source = conn.execute(
-            "SELECT * FROM sources WHERE id = ?", (source_id,)
-        ).fetchone()
-
-        if not source:
-            return {"error": "Source not found"}
-
-        bias_history = conn.execute("""
-            SELECT DATE(created_at) as day,
-                   AVG(bias_score) as avg_bias,
-                   COUNT(*) as article_count
-            FROM news_cards
-            WHERE source_ids LIKE '%' || ? || '%'
-              AND bias_score IS NOT NULL
-              AND created_at > datetime('now', '-30 days')
-            GROUP BY DATE(created_at)
-            ORDER BY day DESC
-        """, (str(source_id),)).fetchall()
-
-    return {
-        "id": source["id"],
-        "name": source["name"],
-        "url": source["url"],
-        "domain": source["domain"],
-        "avg_bias": source["avg_bias"],
-        "reliability_score": source["reliability_score"],
-        "news_count": source["news_count"],
-        "is_active": source["is_active"],
-        "bias_history": [
-            {"day": r["day"], "avg_bias": r["avg_bias"], "article_count": r["article_count"]}
-            for r in bias_history
-        ] if bias_history else [],
     }
 
 
