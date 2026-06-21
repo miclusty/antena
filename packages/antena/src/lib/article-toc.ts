@@ -2,8 +2,12 @@
  * Parse h2/h3 headings out of a sanitized HTML article body.
  * Returns an array of { level, text, id } for use in the SSR
  * table-of-contents. IDs are slugified and deduplicated so they
- * are stable as both anchor targets and keys in the React/Solid
- * overlay (ArticleDetail.tsx) on the SPA path.
+ * are stable as anchor targets in the rendered article.
+ *
+ * Note: the SPA path (ArticleDetail.tsx) uses lib/headings.ts with
+ * sequential h-N IDs. The two helpers intentionally diverge; SSR
+ * ships slug IDs so the TOC and anchor links share the same scheme,
+ * while the SPA generates IDs dynamically per mount.
  */
 export interface ArticleHeading {
   level: 2 | 3;
