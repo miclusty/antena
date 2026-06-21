@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Manual feed discovery for sources without RSS.
+# Superseded by the feed auto-discovery logic in RSSExtractor._discover_feed.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """Auto-discover RSS / Atom feeds for sources that don't have one.
 
 For every active source with rss_url IS NULL OR rss_url = '',

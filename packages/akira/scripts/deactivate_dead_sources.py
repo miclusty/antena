@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Mark sources with too many consecutive errors as inactive.
+# Replaced by auto-deactivation in source_recovery.SourceRecovery.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """Deactivate dead sources and fix double-slash RSS URLs.
 
 Run once to clean up the sources table:

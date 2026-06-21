@@ -5,7 +5,6 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Optional
 import aiohttp
-import sqlite3
 
 from core.db_helpers import filter_new_urls
 from .base import BaseExtractor, ExtractedItem
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 def _get_last_harvest(db_path: str, source_url: str) -> Optional[str]:
     """Get last harvest time as ISO date for WP API ?after param."""
     try:
-        with sqlite3.connect(db_path) as conn:
+        with get_db_connection(db_path) as conn:
             row = conn.execute(
                 "SELECT last_harvest_at FROM sources WHERE wp_api_url = ? OR url = ?",
                 (source_url, source_url),

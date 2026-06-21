@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Location ID backfill.
+# Location resolution is now handled at harvest time via source.city → locations lookup.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """
 Backfill news_cards.location_id based on:
   1. Source's location_id (most specific)

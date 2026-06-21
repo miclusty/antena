@@ -49,7 +49,6 @@ import hashlib
 import json
 import logging
 import re
-import sqlite3
 import time
 from typing import Dict, List, Tuple
 
@@ -146,7 +145,7 @@ class SemanticClusterer:
             an existing cluster
           - n_noise_singleton: how many became singletons
         """
-        with sqlite3.connect(self.db_path) as conn:
+        with get_db_connection(self.db_path) as conn:
             # Step 1: load all cards with embeddings + cluster
             rows = conn.execute(
                 """

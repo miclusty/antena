@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# DEPRECATED 2026-06-20: Article URL backfill via fuzzy title matching.
+# Harvest now captures article_url at INSERT time (see scripts/harvest_run.py). Re-running only matches old cards missing article_url.
+# Do NOT run this script unless you know what you're doing. See git history
+# for the implementation if you need to revive it.
+#
+# Original docstring preserved below for reference.
+#
 """Backfill article_url for cards that have body=0.
 
 The harvest_run.py captures article_url at INSERT time
