@@ -42,6 +42,7 @@ class GoogleNewsResult(BaseModel):
     items_count: int
     items: List[dict]
     duration_ms: int
+    error: Optional[str] = None
 
 
 class GoogleNewsBatchResult(BaseModel):
@@ -52,6 +53,7 @@ class GoogleNewsBatchResult(BaseModel):
     total_items: int
     results: List[dict]
     duration_ms: int
+    error: Optional[str] = None
 
 
 class MethodStats(BaseModel):

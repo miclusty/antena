@@ -29,7 +29,13 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
-include = ["akira*"]
+# AKIRA uses a flat layout: source modules live directly in
+# packages/akira/ (main.py, config.py, db/, core/, services/, routes/,
+# models/, extractors/, scripts/). There's no akira/ subdirectory.
+# This is intentional — it makes sys.path-based imports work without
+# `pip install -e .` and keeps the legacy import paths stable.
+include = ["*"]
+exclude = ["tests*", "data*"]
 
 [tool.mypy]
 # AKIRA mypy configuration. Scope: only modules created in Iter 1-3 plus
@@ -43,19 +49,28 @@ explicit_package_bases = true
 mypy_path = "."
 
 files = [
-    "akira/db/connection.py",
-    "akira/core/llm_client.py",
-    "akira/core/cache_redis.py",
-    "akira/core/cache.py",
-    "akira/services/source_resolver.py",
-    "akira/services/feed_service.py",
-    "akira/config.py",
+    "db/connection.py",
+    "core/llm_client.py",
+    "core/cache_redis.py",
+    "core/cache.py",
+    "core/app_setup.py",
+    "services/source_resolver.py",
+    "services/feed_service.py",
+    "config.py",
+    "routes/admin.py",
+    "routes/feed.py",
+    "routes/synthesis.py",
+    "routes/extraction.py",
+    "routes/sources.py",
+    "routes/categories.py",
+    "routes/locations.py",
+    "routes/radios.py",
+    "routes/stats.py",
 ]
 
 exclude = [
-    "akira/main.py",
-    "akira/scripts/",
-    "akira/extractors/",
-    "akira/services/",
-    "akira/data/",
-]
+    "main.py",
+    "scripts/",
+    "extractors/",
+    "data/",
+] 

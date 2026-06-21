@@ -36,6 +36,36 @@ jobs:
         env:
           CI: true
 
+  test-akira:
+    name: Test AKIRA (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Install AKIRA dependencies
+        working-directory: packages/akira
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -e ".[dev]"
+      - name: Run pytest
+        working-directory: packages/akira
+        run: |
+          source .venv/bin/activate
+          # Use a temp AKIRA_DB_PATH so tests don't touch any real DB.
+          AKIRA_DB_PATH=/tmp/ci-akira.db pytest tests/ -v
+      - name: Run mypy
+        working-directory: packages/akira
+        run: |
+          source .venv/bin/activate
+          mypy .
+        continue-on-error: true  # mypy not yet green across all routes/
+        env:
+          CI: true
+
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
