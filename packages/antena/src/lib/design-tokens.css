@@ -7,6 +7,7 @@
   /* ── User-controlled font scale (0.875..1.25, default 1) ── */
   /* Set on <html> by the settings page + on mount in App.tsx. */
   --font-scale: 1;
+  --article-font-scale: 1; /* Pillar 4 reading-mode size multiplier (1 / 1.125 / 1.25) */
 
   /* ── Backgrounds ── */
   --bg-base:      #F7F5F2;
