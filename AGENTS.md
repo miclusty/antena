@@ -93,11 +93,13 @@ Frontend routes:
 packages/
 ├── akira/                          # Python/FastAPI extraction engine
 │   ├── core/                       # engine, cache, circuit_breaker, synthesis, clustering
+│   ├── db/                         # canonical SQLite connection (connection.py) + dedup
 │   ├── extractors/                 # 10 extractor classes
 │   ├── skills/                     # 8 Hermes skills
 │   ├── tests/                      # 15 pytest files
 │   ├── models/                     # schemas
-│   └── main.py                     # ~40 endpoints
+│   ├── routes/                     # FastAPI route modules (split from main.py)
+│   └── main.py                     # thin bootstrap, ~60 lines
 ├── api/                            # Node/Hono Cloudflare Worker
 │   ├── src/
 │   │   ├── routes/                 # news, locations, categories, image, search, track, …
@@ -174,7 +176,7 @@ wrangler d1 migrations apply DB --env=production --remote
 - **Extractors are classes** (not functions) with `NAME` and `PRIORITY` class attributes
 - **10 extractors cascade order** (main.py lifespan): RSS → WP → Newspaper → Goose → Sitemap → Playwright → Jina → Video → Social → GoogleNews
 - **Batch source resolution**: `_batch_resolve_sources()` does single-query lookup
-- **URL dedup**: `filter_new_urls()` in `core/db_helpers.py` is shared by rss.py, wordpress.py, engine.py
+- **URL dedup**: `filter_new_urls()` in `db/dedup.py` is shared by rss.py, wordpress.py, engine.py
 - **Zod validation**: every API route validates input with Zod schemas in `packages/api/src/lib/schemas.ts`
 - **Cache strategy**: `withCache()` wrapper uses `caches.default` with TTL + SWR; never write to cache on errors
 - **R2 image hash**: `sha256(url)` is the canonical key — `c.env.IMAGES.get(hash)`

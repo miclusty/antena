@@ -400,7 +400,7 @@ class ExtractionEngine:
         if not urls:
             return []
 
-        # Use shared db_helpers for batch dedup
+        # Use shared filter_new_urls for batch dedup
         new_urls = set(filter_new_urls(db_path, urls, source_id))
         new_items = [
             item for item in items if item.url and item.url in new_urls
