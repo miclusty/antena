@@ -54,6 +54,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 import numpy as np
 
 from .lmstudio import LMStudioClient, LMStudioError
+from db.connection import get_db_connection
 
 # Spanish stopwords for token-overlap filtering. Hard-coded here
 # (not loaded from NLTK) to keep the dep tree small. Covers the

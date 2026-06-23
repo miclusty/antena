@@ -7,6 +7,7 @@ from typing import List, Optional
 import aiohttp
 
 from core.db_helpers import filter_new_urls
+from db.connection import get_db_connection
 from .base import BaseExtractor, ExtractedItem
 from core.http_client import get_user_agent
 
