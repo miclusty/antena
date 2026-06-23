@@ -21,7 +21,7 @@ from typing import List, Dict, Set, Optional, Tuple
 from collections import defaultdict, Counter
 from urllib.parse import urlparse
 
-from core.db_helpers import get_db_connection
+from db.connection import get_db_connection
 
 logger = logging.getLogger("akira")
 

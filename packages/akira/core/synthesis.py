@@ -20,7 +20,7 @@ import hashlib
 from typing import List, Dict, Optional
 from datetime import datetime
 
-from core.db_helpers import get_db_connection
+from db.connection import get_db_connection
 from core.llm_client import LLMClient, LLMError
 
 logger = logging.getLogger("akira")

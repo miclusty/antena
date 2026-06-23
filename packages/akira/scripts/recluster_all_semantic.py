@@ -64,7 +64,7 @@ HERE = Path(__file__).resolve().parent
 AKIRA_ROOT = HERE.parent
 sys.path.insert(0, str(AKIRA_ROOT))
 
-from core.db_helpers import get_db_connection
+from db.connection import get_db_connection
 from core.clustering import (
     compute_title_signature, MIN_CLUSTER_SIZE, tokenize, merge_score,
 )

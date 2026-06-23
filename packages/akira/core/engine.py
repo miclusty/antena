@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 from typing import List, Optional, Type, Tuple
 from datetime import datetime
 
-from core.db_helpers import filter_new_urls, get_db_connection
+from db.connection import get_db_connection
+from db.dedup import filter_new_urls
 
 from extractors.base import BaseExtractor, ExtractedItem
 from models.schemas import ExtractResult, MethodName, NewsItem
