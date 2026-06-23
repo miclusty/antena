@@ -188,7 +188,7 @@ async def get_master_article(cluster_id: str):
     rag_entities = 0
     rag_model = ""
     try:
-        with sqlite3.connect(settings.db_path) as rag_conn:
+        with get_db_connection() as rag_conn:
             rag_row = rag_conn.execute(
                 """
                 SELECT neighbors_used, entities_used, model

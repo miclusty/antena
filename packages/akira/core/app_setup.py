@@ -16,6 +16,7 @@ import os
 import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -120,16 +121,18 @@ async def lifespan(app: FastAPI):
     start_time = time.time()
     app.state.start_time = start_time
 
-    # Initialize Google News Service
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+    # Initialize Google News Service.
+    # Derive locations.db from settings.db_path so it lives alongside
+    # akira.db (the canonical dir) and honors AKIRA_DB_PATH overrides.
+    akira_db_path = settings.db_path
+    data_dir = Path(akira_db_path).parent
     os.makedirs(data_dir, exist_ok=True)
 
-    locations_db_path = os.path.join(data_dir, "locations.db")
+    locations_db_path = str(data_dir / "locations.db")
     google_news_service = GoogleNewsService(locations_db_path)
     app.state.google_news_service = google_news_service
 
     # Initialize Method Learner, Scorer, Source Recovery
-    akira_db_path = os.path.join(data_dir, "akira.db")
     method_learner = MethodLearner(akira_db_path)
     app.state.method_learner = method_learner
 

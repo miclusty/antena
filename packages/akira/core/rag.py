@@ -53,6 +53,7 @@ from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 
+from config import settings
 from .lmstudio import LMStudioClient, LMStudioError
 from db.connection import get_db_connection
 
@@ -89,7 +90,7 @@ logger = logging.getLogger("akira.rag")
 
 # ─── Configuration ──────────────────────────────────────────────
 
-DB_PATH_DEFAULT = "/Users/omatic/proyectos/news/packages/akira/data/akira.db"
+DB_PATH_DEFAULT = settings.db_path
 VECTOR_DIM = 768  # text-embedding-nomic-embed-text-v1.5
 TOP_K_NEIGHBORS = 5
 TOP_N_ENTITIES = 5
