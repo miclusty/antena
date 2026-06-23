@@ -8,9 +8,8 @@ Endpoints that perform extraction (vs. read-only feed/location routes):
   - POST /extract/google-news         — extract by location or query
   - POST /extract/google-news/batch    — extract for many locations in parallel
 
-Uses `getattr(app.state, ...)` for service access. The state attributes
-are populated by the lifespan in main.py. DI migration (Depends) is a
-separate future PR — see iter 1.3 plan.
+Uses FastAPI's `Depends(get_service("name"))` pattern for service access.
+The state attributes are populated by the lifespan in main.py.
 """
 from __future__ import annotations
 
@@ -20,9 +19,10 @@ import resource
 import time
 from dataclasses import asdict
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends
 
 from config import settings
+from core.app_setup import get_service
 from models.schemas import (
     ExtractRequest,
     ExtractResult,
@@ -74,11 +74,12 @@ async def root():
 
 
 @router.get("/health", response_model=HealthResponse)
-async def health_check(request: Request):
+async def health_check(
+    engine = Depends(get_service("engine")),
+    start_time = Depends(get_service("start_time")),
+):
     """Health check endpoint."""
-    app = request.app
-    engine = getattr(app.state, "engine", None)
-    start_time = getattr(app.state, "start_time", time.time())
+    start_time = start_time or time.time()
 
     mem_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
@@ -99,12 +100,11 @@ async def health_check(request: Request):
 
 
 @router.get("/health/detailed", response_model=HealthReport)
-async def health_detailed(request: Request):
+async def health_detailed(
+    engine = Depends(get_service("engine")),
+    health_monitor = Depends(get_service("health_monitor")),
+):
     """Detailed health check with full system report."""
-    app = request.app
-    engine = getattr(app.state, "engine", None)
-    health_monitor = getattr(app.state, "health_monitor", None)
-
     if not health_monitor:
         return HealthReport(
             extractor_health={},
@@ -126,7 +126,10 @@ async def health_detailed(request: Request):
 
 
 @router.post("/extract", response_model=ExtractResult)
-async def extract(request: Request, body: ExtractRequest):
+async def extract(
+    body: ExtractRequest,
+    engine = Depends(get_service("engine")),
+):
     """Extract news from URL using intelligent cascade.
 
     Cascade order:
@@ -140,7 +143,6 @@ async def extract(request: Request, body: ExtractRequest):
       8. Playwright - JS-heavy sites
       9. Jina - last resort
     """
-    engine = getattr(request.app.state, "engine", None)
     if not engine:
         return ExtractResult(
             success=False,
@@ -161,11 +163,11 @@ async def extract(request: Request, body: ExtractRequest):
 
 
 @router.post("/extract/google-news", response_model=GoogleNewsResult)
-async def extract_google_news(request: Request, body: GoogleNewsRequest):
+async def extract_google_news(
+    body: GoogleNewsRequest,
+    google_news_service = Depends(get_service("google_news_service")),
+):
     """Extract news from Google News for a single location or query."""
-    app = request.app
-    google_news_service = getattr(app.state, "google_news_service", None)
-
     if not google_news_service:
         return GoogleNewsResult(
             success=False,
@@ -224,11 +226,11 @@ async def extract_google_news(request: Request, body: GoogleNewsRequest):
 
 
 @router.post("/extract/google-news/batch", response_model=GoogleNewsBatchResult)
-async def extract_google_news_batch(request: Request, body: GoogleNewsBatchRequest):
+async def extract_google_news_batch(
+    body: GoogleNewsBatchRequest,
+    google_news_service = Depends(get_service("google_news_service")),
+):
     """Extract news from Google News for multiple locations in parallel."""
-    app = request.app
-    google_news_service = getattr(app.state, "google_news_service", None)
-
     if not google_news_service:
         return GoogleNewsBatchResult(
             success=False,

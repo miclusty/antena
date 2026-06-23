@@ -21,10 +21,10 @@ import json as _json
 import sqlite3
 from typing import List
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
 from config import settings
-from core.app_setup import check_admin
+from core.app_setup import check_admin, get_service
 from db.connection import get_db_connection
 from models.schemas import MasterArticle, SynthesisResult
 
@@ -33,13 +33,12 @@ router = APIRouter(tags=["synthesis"])
 
 @router.post("/cluster")
 async def cluster_news_card_ids(
-    request: Request,
     card_ids: List[str],
     limit: int = 100,
+    clustering = Depends(get_service("clustering_service")),
     _auth=Depends(check_admin),
 ):
     """Cluster specific news card IDs by title similarity."""
-    clustering = getattr(request.app.state, "clustering_service", None)
     if not clustering:
         return {"error": "Clustering service not initialized"}
 
@@ -54,13 +53,12 @@ async def cluster_news_card_ids(
 
 @router.post("/cluster/recent")
 async def cluster_recent_news(
-    request: Request,
     hours: int = 24,
     limit: int = 500,
+    clustering = Depends(get_service("clustering_service")),
     _auth=Depends(check_admin),
 ):
     """Cluster recent unclustered news cards."""
-    clustering = getattr(request.app.state, "clustering_service", None)
     if not clustering:
         return {"error": "Clustering service not initialized"}
 
@@ -107,12 +105,11 @@ async def cluster_stats():
 
 @router.post("/cluster/{cluster_id}/synthesize", response_model=SynthesisResult)
 async def synthesize_cluster(
-    request: Request,
     cluster_id: str,
+    synthesis_engine = Depends(get_service("synthesis_engine")),
     _auth=Depends(check_admin),
 ):
     """Synthesize a single cluster into a neutral master article."""
-    synthesis_engine = getattr(request.app.state, "synthesis_engine", None)
     if not synthesis_engine:
         return {
             "master_id": "",
@@ -137,12 +134,11 @@ async def synthesize_cluster(
 
 @router.post("/synthesis/batch")
 async def batch_synthesize(
-    request: Request,
     limit: int = 100,
+    synthesis_engine = Depends(get_service("synthesis_engine")),
     _auth=Depends(check_admin),
 ):
     """Synthesize multiple clusters in batch (runs in executor to avoid blocking event loop)."""
-    synthesis_engine = getattr(request.app.state, "synthesis_engine", None)
     if not synthesis_engine:
         return {"total": 0, "success": 0, "failed": 0, "skipped": 0}
 
@@ -237,7 +233,6 @@ async def get_master_article(cluster_id: str):
 
 @router.post("/cluster/{cluster_id}/synthesize-rag")
 async def synthesize_cluster_rag(
-    request: Request,
     cluster_id: str,
     _auth=Depends(check_admin),
 ):

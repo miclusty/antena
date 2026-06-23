@@ -17,6 +17,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -286,6 +287,27 @@ def check_admin(request: Request) -> None:
     auth = request.headers.get("X-Admin-Key", "")
     if auth != key:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def get_service(name: str):
+    """FastAPI dependency factory that returns a service stored on app.state, or None.
+
+    Unlike a strict Depends that raises 503 on missing service, this returns
+    None so handlers can implement graceful degradation (return empty stats,
+    fallback defaults, or error dicts). This matches the existing behavior
+    across routes/admin.py and routes/synthesis.py where each endpoint
+    already has a `if not service: return <fallback>` block.
+
+    Usage:
+        @router.get("/foo")
+        async def foo(engine = Depends(get_service("engine"))):
+            if not engine:
+                return {"error": "Engine not initialized"}
+            result = engine.method()
+    """
+    def _dep(request: Request) -> Optional[Any]:
+        return getattr(request.app.state, name, None)
+    return _dep
 
 
 def setup_logging_json() -> None:
