@@ -1,8 +1,9 @@
 """Google News Service - Location-aware query builder."""
 
-import sqlite3
 import logging
 from typing import Optional, List, Dict
+
+from db.connection import get_locations_connection
 
 logger = logging.getLogger("akira")
 
@@ -14,15 +15,16 @@ class GoogleNewsService:
     Uses local SQLite database with Argentine locations (provinces, cities, towns).
     """
 
-    def __init__(self, locations_db_path: str):
+    def __init__(self, locations_db_path: Optional[str] = None):
         """
         Initialize service with locations database.
 
         Args:
-            locations_db_path: Path to locations SQLite database
+            locations_db_path: Path to locations SQLite database. If
+                None, uses the canonical path derived from
+                settings.db_path (see db.connection.get_locations_connection).
         """
-        self.locations_db = sqlite3.connect(locations_db_path)
-        self.locations_db.row_factory = sqlite3.Row
+        self.locations_db = get_locations_connection(locations_db_path)
         logger.info(f"google_news_service_initialized db={locations_db_path}")
 
     def get_location(self, location_id: int) -> Optional[Dict]:

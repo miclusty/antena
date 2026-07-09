@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 from typing import List, Optional, Type, Tuple
 from datetime import datetime
 
-from core.db_helpers import filter_new_urls, get_db_connection
+from db.connection import get_db_connection
+from db.dedup import filter_new_urls
 
 from extractors.base import BaseExtractor, ExtractedItem
 from models.schemas import ExtractResult, MethodName, NewsItem
@@ -399,7 +400,7 @@ class ExtractionEngine:
         if not urls:
             return []
 
-        # Use shared db_helpers for batch dedup
+        # Use shared filter_new_urls for batch dedup
         new_urls = set(filter_new_urls(db_path, urls, source_id))
         new_items = [
             item for item in items if item.url and item.url in new_urls

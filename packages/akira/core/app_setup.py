@@ -16,6 +16,8 @@ import os
 import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -120,16 +122,18 @@ async def lifespan(app: FastAPI):
     start_time = time.time()
     app.state.start_time = start_time
 
-    # Initialize Google News Service
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+    # Initialize Google News Service.
+    # Derive locations.db from settings.db_path so it lives alongside
+    # akira.db (the canonical dir) and honors AKIRA_DB_PATH overrides.
+    akira_db_path = settings.db_path
+    data_dir = Path(akira_db_path).parent
     os.makedirs(data_dir, exist_ok=True)
 
-    locations_db_path = os.path.join(data_dir, "locations.db")
+    locations_db_path = str(data_dir / "locations.db")
     google_news_service = GoogleNewsService(locations_db_path)
     app.state.google_news_service = google_news_service
 
     # Initialize Method Learner, Scorer, Source Recovery
-    akira_db_path = os.path.join(data_dir, "akira.db")
     method_learner = MethodLearner(akira_db_path)
     app.state.method_learner = method_learner
 
@@ -283,6 +287,27 @@ def check_admin(request: Request) -> None:
     auth = request.headers.get("X-Admin-Key", "")
     if auth != key:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def get_service(name: str):
+    """FastAPI dependency factory that returns a service stored on app.state, or None.
+
+    Unlike a strict Depends that raises 503 on missing service, this returns
+    None so handlers can implement graceful degradation (return empty stats,
+    fallback defaults, or error dicts). This matches the existing behavior
+    across routes/admin.py and routes/synthesis.py where each endpoint
+    already has a `if not service: return <fallback>` block.
+
+    Usage:
+        @router.get("/foo")
+        async def foo(engine = Depends(get_service("engine"))):
+            if not engine:
+                return {"error": "Engine not initialized"}
+            result = engine.method()
+    """
+    def _dep(request: Request) -> Optional[Any]:
+        return getattr(request.app.state, name, None)
+    return _dep
 
 
 def setup_logging_json() -> None:

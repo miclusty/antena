@@ -29,7 +29,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Request
 
-from core.app_setup import check_admin
+from core.app_setup import check_admin, get_service
 from core.metrics import metrics
 from db.connection import get_db_connection
 from models.schemas import (
@@ -52,11 +52,10 @@ _metrics_state: dict = {"_cache_hits": 0, "_cache_misses": 0}
 
 @router.get("/admin/method-stats", response_model=MethodStats)
 async def method_statistics(
-    request: Request, _auth=Depends(check_admin)
+    method_learner = Depends(get_service("method_learner")),
+    _auth=Depends(check_admin),
 ):
     """Return URL-based method learning statistics."""
-    method_learner = getattr(request.app.state, "method_learner", None)
-
     if not method_learner:
         return MethodStats(
             total_sources_tracked=0, circuit_open_sources=0, method_distribution={}
@@ -67,13 +66,11 @@ async def method_statistics(
 
 @router.post("/admin/reset-learning")
 async def reset_learning(
-    request: Request,
     url: Optional[str] = None,
+    method_learner = Depends(get_service("method_learner")),
     _auth=Depends(check_admin),
 ):
     """Reset method learning for specific URL or all URLs (omit url to reset all)."""
-    method_learner = getattr(request.app.state, "method_learner", None)
-
     if not method_learner:
         return {"success": False, "error": "Method learner not initialized"}
 
@@ -86,12 +83,11 @@ async def reset_learning(
 
 @router.get("/admin/method-scores")
 async def get_method_scores(
-    request: Request,
     url: Optional[str] = None,
+    method_scorer = Depends(get_service("method_scorer")),
     _auth=Depends(check_admin),
 ):
     """Get method scores for a URL or all URLs."""
-    method_scorer = getattr(request.app.state, "method_scorer", None)
     if not method_scorer:
         return {"scores": []}
     if url:
@@ -117,12 +113,11 @@ async def get_method_scores(
 
 @router.post("/admin/reset-method-scores")
 async def reset_method_scores(
-    request: Request,
     url: Optional[str] = None,
+    method_scorer = Depends(get_service("method_scorer")),
     _auth=Depends(check_admin),
 ):
     """Reset method scores for specific URL or all URLs."""
-    method_scorer = getattr(request.app.state, "method_scorer", None)
     if not method_scorer:
         return {"success": False, "error": "Method scorer not initialized"}
     method_scorer.reset_scores(url)
@@ -131,10 +126,11 @@ async def reset_method_scores(
 
 @router.post("/admin/recover-source", response_model=RecoveryResult)
 async def recover_source(
-    request: Request, url: str, _auth=Depends(check_admin)
+    url: str,
+    source_recovery = Depends(get_service("source_recovery")),
+    _auth=Depends(check_admin),
 ):
     """Attempt to recover a single failed source."""
-    source_recovery = getattr(request.app.state, "source_recovery", None)
     if not source_recovery:
         return RecoveryResult(
             url=url,
@@ -152,9 +148,11 @@ async def recover_source(
 
 
 @router.post("/admin/scan-failed-sources")
-async def scan_failed_sources(request: Request, _auth=Depends(check_admin)):
+async def scan_failed_sources(
+    source_recovery = Depends(get_service("source_recovery")),
+    _auth=Depends(check_admin),
+):
     """Scan all failed sources and attempt recovery."""
-    source_recovery = getattr(request.app.state, "source_recovery", None)
     if not source_recovery:
         return {"error": "Source recovery not initialized"}
     results = await source_recovery.scan_failed_sources()
@@ -175,9 +173,11 @@ async def scan_failed_sources(request: Request, _auth=Depends(check_admin)):
 
 
 @router.get("/admin/failed-sources")
-async def get_failed_sources(request: Request, _auth=Depends(check_admin)):
+async def get_failed_sources(
+    source_recovery = Depends(get_service("source_recovery")),
+    _auth=Depends(check_admin),
+):
     """List all sources with 5+ errors that need recovery."""
-    source_recovery = getattr(request.app.state, "source_recovery", None)
     if not source_recovery:
         return {"sources": []}
     sources = source_recovery.get_failed_sources()
@@ -185,19 +185,22 @@ async def get_failed_sources(request: Request, _auth=Depends(check_admin)):
 
 
 @router.get("/admin/recovery-stats", response_model=RecoveryStats)
-async def get_recovery_stats(request: Request, _auth=Depends(check_admin)):
+async def get_recovery_stats(
+    source_recovery = Depends(get_service("source_recovery")),
+    _auth=Depends(check_admin),
+):
     """Get recovery statistics."""
-    source_recovery = getattr(request.app.state, "source_recovery", None)
     if not source_recovery:
         return RecoveryStats(total_failed=0, recovered=0, permanently_dead=0)
     return RecoveryStats(**source_recovery.get_recovery_stats())
 
 
 @router.post("/admin/gc", response_model=GCStats)
-async def garbage_collect(request: Request, _auth=Depends(check_admin)):
+async def garbage_collect(
+    gc = Depends(get_service("gc")),
+    _auth=Depends(check_admin),
+):
     """Trigger garbage collection on cache and circuit breaker."""
-    gc = getattr(request.app.state, "gc", None)
-
     if not gc:
         return GCStats(
             items_collected=0,
@@ -217,11 +220,12 @@ async def garbage_collect(request: Request, _auth=Depends(check_admin)):
 
 
 @router.post("/admin/autoheal", response_model=AutoHealResult)
-async def auto_heal(request: Request, _auth=Depends(check_admin)):
+async def auto_heal(
+    engine = Depends(get_service("engine")),
+    health_monitor = Depends(get_service("health_monitor")),
+    _auth=Depends(check_admin),
+):
     """Run auto-heal to recover from degraded state."""
-    engine = getattr(request.app.state, "engine", None)
-    health_monitor = getattr(request.app.state, "health_monitor", None)
-
     if not health_monitor:
         return AutoHealResult(
             actions_taken=[],
@@ -239,12 +243,15 @@ async def auto_heal(request: Request, _auth=Depends(check_admin)):
 
 
 @router.get("/admin/stats")
-async def admin_stats(request: Request, _auth=Depends(check_admin)):
+async def admin_stats(
+    engine = Depends(get_service("engine")),
+    gc = Depends(get_service("gc")),
+    health_monitor = Depends(get_service("health_monitor")),
+    start_time = Depends(get_service("start_time")),
+    _auth=Depends(check_admin),
+):
     """Return system statistics (memory, cache, circuit breaker, extractors)."""
-    engine = getattr(request.app.state, "engine", None)
-    gc = getattr(request.app.state, "gc", None)
-    health_monitor = getattr(request.app.state, "health_monitor", None)
-    start_time = getattr(request.app.state, "start_time", time.time())
+    start_time = start_time or time.time()
 
     mem_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
@@ -276,13 +283,14 @@ async def admin_stats(request: Request, _auth=Depends(check_admin)):
 
 
 @router.get("/metrics")
-async def prometheus_metrics(request: Request):
+async def prometheus_metrics(
+    engine = Depends(get_service("engine")),
+):
     """Prometheus-compatible metrics endpoint.
 
     Uses module-level _metrics_state to compute deltas since last call (avoids
     double-counting on repeated scrapes).
     """
-    engine = getattr(request.app.state, "engine", None)
     if engine:
         metrics.set_gauge("akira_active_extractions", engine.active_extractions)
         metrics.set_gauge("akira_cache_hit_rate", engine.cache.hit_rate)
@@ -318,8 +326,12 @@ async def prometheus_metrics(request: Request):
 
 
 @router.get("/admin/dashboard")
-async def admin_dashboard(request: Request, _auth=Depends(check_admin)):
+async def admin_dashboard(
+    start_time = Depends(get_service("start_time")),
+    _auth=Depends(check_admin),
+):
     """Full system dashboard — all key metrics in one call."""
+    start_time = start_time or time.time()
     with get_db_connection() as conn:
         # Core stats
         total_sources = conn.execute(
@@ -399,9 +411,7 @@ async def admin_dashboard(request: Request, _auth=Depends(check_admin)):
         },
         "bias_distribution": {row[0]: row[1] for row in bias_dist},
         "quality_distribution": {row[0]: row[1] for row in quality_dist},
-        "uptime_seconds": int(
-            time.time() - getattr(request.app.state, "start_time", time.time())
-        ),
+        "uptime_seconds": int(time.time() - start_time),
     }
 
 

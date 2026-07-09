@@ -27,6 +27,7 @@ import logging
 import sqlite3
 import unicodedata
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Iterator, Optional
 
 logger = logging.getLogger(__name__)
@@ -75,3 +76,33 @@ def get_db_connection(db_path: Optional[str] = None, timeout: int = 5) -> Iterat
         yield conn
     finally:
         conn.close()
+
+
+def get_locations_connection(db_path: Optional[str] = None, timeout: int = 5) -> sqlite3.Connection:
+    """Open the locations SQLite database with WAL + synchronous=NORMAL.
+
+    Used by services.google_news_service (and any other module that
+    reads `data/locations.db`, a separate DB from akira.db). Mirrors
+    the connection style of get_db_connection() but for the locations
+    DB, and returns the connection directly (caller manages close()).
+
+    Args:
+        db_path: Path to locations.db. If None, derives
+                 `<settings.db_path parent>/locations.db` so the
+                 locations DB sits alongside akira.db in the canonical
+                 data dir and honors AKIRA_DB_PATH overrides.
+        timeout: Lock acquisition timeout in seconds (default 5).
+
+    Returns:
+        sqlite3.Connection with WAL + synchronous=NORMAL PRAGMAs
+        and sqlite3.Row row factory.
+    """
+    if db_path is None:
+        from config import settings
+        db_path = str(Path(settings.db_path).parent / "locations.db")
+
+    conn = sqlite3.connect(db_path, timeout=timeout)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.row_factory = sqlite3.Row
+    return conn

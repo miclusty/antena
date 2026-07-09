@@ -10,7 +10,8 @@ from typing import List, Optional
 from urllib.parse import urljoin
 
 
-from core.db_helpers import filter_new_urls
+from db.dedup import filter_new_urls
+from db.connection import get_db_connection
 
 import feedparser
 import aiohttp

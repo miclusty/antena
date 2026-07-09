@@ -12,7 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.clustering import ClusteringService
-from core.db_helpers import get_db_connection
+from db.connection import get_db_connection
 
 
 def cluster_all_unclustered(db_path: str, batch_size: int = 500):

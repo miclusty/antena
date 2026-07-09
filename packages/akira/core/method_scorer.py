@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, List
 from datetime import datetime
 
-from core.db_helpers import get_db_connection
+from db.connection import get_db_connection
 
 logger = logging.getLogger("akira")
 

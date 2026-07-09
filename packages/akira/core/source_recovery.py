@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Optional, List, Dict
 from datetime import datetime
 
-from core.db_helpers import get_db_connection
+from db.connection import get_db_connection
 
 logger = logging.getLogger("akira")
 
