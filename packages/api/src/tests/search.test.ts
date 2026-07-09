@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 const SCHEMA = `
 CREATE TABLE news_cards (id TEXT PRIMARY KEY, location_id INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT NOT NULL, body TEXT, image_url TEXT, source_name TEXT, category TEXT, published_at TEXT, source_id INTEGER, source_ids TEXT, bias_score REAL DEFAULT 0, is_gacetilla INTEGER DEFAULT 0, sources_count INTEGER DEFAULT 1, quality_score REAL, cluster_id TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE VIRTUAL TABLE IF NOT EXISTS news_cards_fts USING fts5(id, title, summary, image_url, source_name, category, published_at, content='')
+CREATE VIRTUAL TABLE IF NOT EXISTS news_cards_fts USING fts5(id UNINDEXED, title, summary, image_url UNINDEXED, source_name, category, published_at UNINDEXED)
 `;
 
 async function createSchema() {
