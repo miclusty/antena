@@ -1,36 +1,70 @@
 import type { Env } from "../lib/types";
 import { runSeoHealthCheck } from "../lib/seo-monitor";
 
-export async function handleRefreshCron(env: Env): Promise<void> {
-  const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+async function discordAlert(env: Env, ctx: ExecutionContext, msg: string): Promise<void> {
+  const url = env.DISCORD_WEBHOOK_URL;
+  if (!url) return;
+  ctx.waitUntil(
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: `**[Antena refresh] ${msg}**` }),
+    }).catch((e) => console.error("[refresh] Discord webhook failed:", e))
+  );
+}
 
-  const updated = await env.DB.prepare(
-    "SELECT id, title, summary FROM news_cards WHERE updated_at > ? OR updated_at IS NULL LIMIT 500"
-  )
-    .bind(cutoff)
-    .all<{ id: string; title: string; summary: string | null }>();
+export async function handleRefreshCron(env: Env, ctx: ExecutionContext): Promise<void> {
+  try {
+    const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
 
-  const rows = updated.results ?? [];
-  const vectors = rows.map((n) => ({
-    id: n.id,
-    values: new Array(384).fill(0).map(() => Math.random() * 0.01),
-    metadata: { title: n.title, summary: n.summary?.slice(0, 200) ?? "" },
-  }));
+    const updated = await env.DB.prepare(
+      "SELECT id, title, summary FROM news_cards WHERE created_at > ? ORDER BY created_at DESC LIMIT 500"
+    )
+      .bind(cutoff)
+      .all<{ id: string; title: string; summary: string | null }>();
 
-  if (vectors.length > 0) {
-    await env.VECTORS.upsert(vectors);
+    const rows = updated.results ?? [];
+
+    let vectors: Array<{ id: string; values: number[]; metadata: { title: string; summary: string } }> = [];
+    if (env.AI) {
+      for (const n of rows) {
+        const text = `${n.title} ${n.summary ?? ""}`.trim().slice(0, 1000);
+        try {
+          const embeddingResponse = (await env.AI.run(
+            "@cf/baai/bge-small-en-v1.5",
+            { text }
+          )) as { data: number[][] };
+          const values = embeddingResponse.data?.[0];
+          if (values && values.length > 0) {
+            vectors.push({
+              id: n.id,
+              values,
+              metadata: { title: n.title, summary: n.summary?.slice(0, 200) ?? "" },
+            });
+          }
+        } catch (e) {
+          console.warn(`[refresh] Workers AI embedding failed for ${n.id}:`, e);
+        }
+      }
+    } else {
+      console.warn("[refresh] env.AI not bound; skipping Vectorize upsert");
+    }
+
+    if (vectors.length > 0) {
+      await env.VECTORS.upsert(vectors);
+    }
+
+    env.ANALYTICS.writeDataPoint({
+      blobs: ["cron", "refresh", String(vectors.length), String(rows.length)],
+      doubles: [Date.now()],
+      indexes: ["cron-refresh"],
+    });
+
+    const seo = await runSeoHealthCheck(env);
+    console.log(`[cron:refresh] seo-monitor ${seo.ok}/${seo.ok + seo.fail} passed`);
+  } catch (e) {
+    console.error("[refresh] cron failed:", e);
+    await discordAlert(env, ctx, `cron failed: ${(e as Error).message ?? String(e)}`);
+    throw e;
   }
-
-  env.ANALYTICS.writeDataPoint({
-    blobs: ["cron", "refresh", String(vectors.length)],
-    doubles: [Date.now()],
-    indexes: ["cron-refresh"],
-  });
-
-  // SEO health check piggybacks on the same scheduled tick.
-  // Writes a row per check to the same Analytics Engine dataset
-  // (so a dashboard can graph pass/fail over time) and posts
-  // to Discord on any failure.
-  const seo = await runSeoHealthCheck(env);
-  console.log(`[cron:refresh] seo-monitor ${seo.ok}/${seo.ok + seo.fail} passed`);
 }

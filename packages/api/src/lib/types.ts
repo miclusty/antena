@@ -1,3 +1,13 @@
+import type {
+  D1Database,
+  KVNamespace,
+  R2Bucket,
+  VectorizeIndex,
+  AnalyticsEngineDataset,
+  Queue,
+  Ai,
+} from "@cloudflare/workers-types";
+
 export interface Location {
   id: number;
   name: string;
@@ -96,11 +106,14 @@ export interface Env {
   VECTORS: VectorizeIndex;
   ANALYTICS: AnalyticsEngineDataset;
   IMAGE_QUEUE: Queue;
+  AI?: Ai;
   ENVIRONMENT: "development" | "staging" | "production";
   API_KEY?: string;
   PULSO_API_KEY?: string;
   MINIMAX_API_KEY?: string;
   AKIRA_URL?: string;
+  AKIRA_ADMIN_KEY?: string;
+  DISCORD_WEBHOOK_URL?: string;
 }
 
 export type Bindings = Env;

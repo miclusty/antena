@@ -64,14 +64,19 @@ searchRoutes.get("/", async (c) => {
 
     let vectorResults: unknown[] = [];
     try {
-      const queryVec = { data: [[] as number[]] };
-      const vector = (queryVec as { data?: number[][] }).data?.[0] ?? [];
-      if (vector.length > 0) {
-        const matches = await c.env.VECTORS.query(vector, {
-          topK: limit,
-          returnMetadata: "all",
-        });
-        vectorResults = matches.matches ?? [];
+      if (c.env.AI && c.env.VECTORS) {
+        const embeddingResponse = (await c.env.AI.run(
+          "@cf/baai/bge-small-en-v1.5",
+          { text: q }
+        )) as { data: number[][] };
+        const vector = embeddingResponse.data?.[0];
+        if (vector && vector.length > 0) {
+          const matches = await c.env.VECTORS.query(vector, {
+            topK: limit,
+            returnMetadata: "all",
+          });
+          vectorResults = matches.matches ?? [];
+        }
       }
     } catch (e) {
       if ((c.env as { ENVIRONMENT?: string }).ENVIRONMENT === "development") {

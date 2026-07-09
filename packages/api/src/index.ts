@@ -117,7 +117,7 @@ app.get("/api/health", (c) => c.json({
 }));
 
 app.get("/__cron/refresh", async (c) => {
-  await handleRefreshCron(c.env);
+  await handleRefreshCron(c.env, c.executionCtx);
   return c.json({ ok: true });
 });
 
@@ -128,8 +128,8 @@ app.get("/__cron/seo-monitor", async (c) => {
 
 export default {
   fetch: app.fetch,
-  async scheduled(_event: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
-    await handleRefreshCron(env);
+  async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    await handleRefreshCron(env, ctx);
   },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     // The worker only ever produces ImagePipelineMessage,

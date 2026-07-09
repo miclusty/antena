@@ -18,17 +18,13 @@ export async function handleImagePipeline(
     }
     try {
       const card = await env.DB.prepare(
-        "SELECT image_url FROM news_cards WHERE id = ? OR image_hash = ?"
+        "SELECT image_url FROM news_cards WHERE id = ?"
       )
-        .bind(data.hash, data.hash)
+        .bind(data.hash)
         .first<{ image_url: string | null }>();
 
       const sourceUrl = card?.image_url;
       if (!sourceUrl) {
-        // Defensive: enqueue at routes/image.ts now skips enqueueing
-        // when image_url is missing, so this branch should be rare.
-        // Keeping the warn + ack as a safety net for direct enqueues
-        // (e.g. admin tools, future migrations).
         console.warn(`image-pipeline: no source URL for hash=${data.hash}`);
         msg.ack();
         continue;
@@ -39,7 +35,7 @@ export async function handleImagePipeline(
         console.warn(
           `image-pipeline: upstream returned ${response.status} for ${sourceUrl}`
         );
-        msg.ack();
+        msg.retry({ delaySeconds: 30 });
         continue;
       }
 
@@ -50,7 +46,15 @@ export async function handleImagePipeline(
         httpMetadata: { contentType },
       });
     } catch (e) {
-      console.error("image-pipeline error:", e);
+      const attempts = msg.attempts ?? 1;
+      console.error(`image-pipeline error (attempt ${attempts}):`, e);
+      if (attempts >= 3) {
+        console.error(`image-pipeline giving up after ${attempts} attempts`);
+        msg.ack();
+      } else {
+        msg.retry({ delaySeconds: Math.pow(2, attempts) * 10 });
+      }
+      continue;
     }
     msg.ack();
   }

@@ -109,9 +109,9 @@ imageRoutes.get("/:hash", async (c) => {
     // before enqueueing. Otherwise the worker logs a warning and
     // acks the message immediately — wasted work and log noise.
     const card = await c.env.DB.prepare(
-      "SELECT image_url FROM news_cards WHERE id = ? OR image_hash = ?"
+      "SELECT image_url FROM news_cards WHERE id = ?"
     )
-      .bind(hash, hash)
+      .bind(hash)
       .first<{ image_url: string | null }>();
 
     if (card?.image_url) {
