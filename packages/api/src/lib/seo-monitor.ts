@@ -114,6 +114,7 @@ async function runCheck(check: Check): Promise<CheckResult> {
 
 export interface SeoMonitorEnv {
   ANALYTICS?: AnalyticsEngineDataset;
+  DISCORD_WEBHOOK_URL?: string;
 }
 
 export interface SeoHealthSummary {
@@ -149,6 +150,21 @@ export async function runSeoHealthCheck(
       `🚨 SEO Health Check FAILED (${fail}/${results.length})\n` +
       failed.map((r) => `  ❌ ${r.name}: ${r.detail}`).join("\n");
     console.error(summary);
+
+    const webhookUrl = env.DISCORD_WEBHOOK_URL;
+    if (webhookUrl) {
+      try {
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: `**[Antena SEO Monitor] ${fail} failure(s)**\n\`\`\`\n${summary}\n\`\`\``,
+          }),
+        });
+      } catch (e) {
+        console.error("[seo-monitor] Discord webhook failed:", e);
+      }
+    }
   } else {
     console.log(`✅ SEO Health Check OK (${ok}/${results.length})`);
   }

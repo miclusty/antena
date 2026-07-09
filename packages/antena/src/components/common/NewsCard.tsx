@@ -1,10 +1,10 @@
 /** @jsxImportSource solid-js */
-import { createSignal, createMemo, Show } from 'solid-js';
+import { createSignal, createMemo, Show, onMount, onCleanup } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import { useHaptic } from '../../lib/haptic';
 import { isRead } from '../../lib/db';
 import { buildWhatsAppUrl } from '../../lib/share';
-import { trackEvent } from '../../lib/analytics';
+import { trackEvent, trackCardView, trackBookmark } from '../../lib/analytics';
 import SourceLogo from './SourceLogo';
 import FollowButton from './FollowButton';
 import MaterialIcon from '../common/MaterialIcon';
@@ -143,6 +143,7 @@ export default function NewsCard(props: NewsCardProps) {
   const handleBookmark = () => {
     haptic.vibrate('success');
     closeSheet();
+    trackBookmark(props.news.id);
     props.onBookmark?.(props.news.id);
   };
   const handleOpenSource = () => {
@@ -227,8 +228,29 @@ export default function NewsCard(props: NewsCardProps) {
   const showThumb = () => !!props.news.imageUrl;
   const trending = () => props.news.sourcesCount >= 5;
 
+  let cardRef: HTMLElement | undefined;
+  let hasFiredCardView = false;
+  onMount(() => {
+    if (!cardRef || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !hasFiredCardView) {
+            hasFiredCardView = true;
+            trackCardView(props.news.id, props.news.category);
+            observer.disconnect();
+          }
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(cardRef);
+    onCleanup(() => observer.disconnect());
+  });
+
   return (
     <article
+      ref={cardRef}
       onClick={onCardClick}
       onTouchStart={(e) => onPressStart(e.touches[0].clientX, e.touches[0].clientY)}
       onTouchMove={(e) => onPressMove(e.touches[0].clientX, e.touches[0].clientY)}
@@ -353,7 +375,7 @@ export default function NewsCard(props: NewsCardProps) {
               <span class="w-[20px] h-[20px] flex items-center justify-center" innerHTML={SVG_DOWN_20} />
             </button>
             <button
-              onClick={(e)=>{e.stopPropagation();haptic.vibrate('tap');props.onBookmark?.(props.news.id);}}
+              onClick={(e)=>{e.stopPropagation();haptic.vibrate('tap');trackBookmark(props.news.id);props.onBookmark?.(props.news.id);}}
               aria-label="Guardar"
               class="flex items-center justify-center min-h-[44px] min-w-[44px] px-2 py-2 rounded-full hover:bg-bg-hover active:scale-90 transition-all text-text-tertiary hover:text-accent"
             >

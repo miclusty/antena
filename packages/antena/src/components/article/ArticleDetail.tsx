@@ -1,7 +1,8 @@
 /** @jsxImportSource solid-js */
-import { createResource, For, Show, createMemo, createSignal, onMount } from 'solid-js';
+import { createResource, For, Show, createMemo, createSignal, onMount, onCleanup } from 'solid-js';
 import type { NewsItem, VoiceBreakdown } from '../../lib/types';
 import { fetchNewsByCluster, fetchMasterArticle, fetchFeedback, fetchReport, type MasterArticle, type ReportReason } from '../../lib/api';
+import { trackArticleOpen, trackArticleComplete } from '../../lib/analytics';
 import { mapNewsCard, stripHtml } from '../../lib/mappers';
 import { sanitizeArticleHtmlForView } from '../../lib/sanitize-html';
 import ClusterView from './ClusterView';
@@ -302,16 +303,24 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
   onMount(() => {
     if (typeof window === "undefined") return;
+    const articleId = n()?.id ?? "";
+    trackArticleOpen(articleId, n()?.source ?? undefined);
+
+    const mountTime = Date.now();
+    let fired75 = false;
     const onScroll = () => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       setScrollPct(computeScrollPct(window.scrollY, max));
+      if (!fired75 && max > 0 && window.scrollY / max > 0.75) {
+        fired75 = true;
+        const dwellTime = Math.round((Date.now() - mountTime) / 1000);
+        const scrollDepth = Math.round((window.scrollY / max) * 100);
+        trackArticleComplete(articleId, dwellTime, scrollDepth);
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    // Cleanup. Solid's onMount returns a cleanup fn when
-    // called without onCleanup; the parent already wraps
-    // the component in a way that disposes on unmount.
-    return () => window.removeEventListener("scroll", onScroll);
+    onCleanup(() => window.removeEventListener("scroll", onScroll));
   });
 
   const signalColor = () => n().signalLevel >= 7 ? 'var(--accent)' : n().signalLevel >= 4 ? 'var(--warning)' : 'var(--text-tertiary)';
