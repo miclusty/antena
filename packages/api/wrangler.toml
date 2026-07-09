@@ -69,8 +69,16 @@ index_name = "news_embeddings"
 binding = "AI"
 
 # ── Cron Triggers ─────────────────────────────────────────────────
-[triggers]
-crons = ["0 */2 * * *"]
+# NOTE 2026-07-09: The Cloudflare Workers free plan allows only 5 cron
+# triggers per account and all 5 slots are taken. The refresh handler
+# is wired in code (src/crons/refresh.ts) and exposed via GET /__cron/refresh
+# for manual triggers, but [triggers] is commented out. To activate, free
+# a slot in the Cloudflare dashboard → Workers → Triggers and re-enable.
+#
+# [triggers]
+# crons = ["0 */2 * * *"]
+
+
 
 # ── Queues (image pipeline) ───────────────────────────────────────
 # NOTE: wrangler deploy fails with "Queue already has a consumer" if

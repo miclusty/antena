@@ -33,7 +33,7 @@ routes = [
 
 # [triggers]
 # crons = ["0 */2 * * *"]
-
+# NOTE 2026-07-09: All 5 cron trigger slots are full on this account. See wrangler.toml.
 [vars]
 ENVIRONMENT = "staging"
 PUBLIC_WEB_BASE = "https://staging.antena.com.ar"

@@ -43,8 +43,13 @@ index_name = "news_embeddings"
 binding = "AI"
 
 # ── Cron Triggers ─────────────────────────────────────────────────
-[triggers]
-crons = ["0 */2 * * *"]
+# NOTE 2026-07-09: All 5 cron trigger slots are full on this account.
+# See wrangler.toml for the comment explaining the constraint.
+#
+# [triggers]
+# crons = ["0 */2 * * *"]
+
+
 
 # ── Vars ──────────────────────────────────────────────────────────
 [vars]
