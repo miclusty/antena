@@ -38,30 +38,31 @@ Análisis completo del proyecto, ordenado por impacto y esfuerzo. Items en **roj
 
 ## 🔴 ALTO — Riesgos en producción
 
-### #2. CLOUDFLARE_API_TOKEN sin `dns:write` — apex `antena.com.ar` y custom `api.antena.com.ar`
-**Costo**: 
-- `antena.com.ar` (apex) sin resolver (today: NXDOMAIN).
-- `api.antena.com.ar` (que sí usaría el frontend cuando esté) tampoco resuelve.
+### #2. CLOUDFLARE_API_TOKEN sin `dns:write` — solo `api.antena.com.ar` falta
+**Costo (actualizado 2026-07-09)**: 
+- `antena.com.ar` (apex) **YA resuelve** vía apex→www 301 en Worker routes (`packages/api/wrangler.toml:22-23`).
+- `api.antena.com.ar` (que usaría el frontend para una URL limpia en vez del worker URL) **sigue sin resolver**.
 
-El user tiene que:
+El user tiene que (si quiere `api.antena.com.ar`):
 - Abrir dash.cloudflare.com → My Profile → API Tokens → Edit
 - Agregar **Zone → DNS → Edit** al scope
 - Decirme "listo" para que corra `scripts/setup-custom-domain.py`
 
-**Status actual**: `www.antena.com.ar` ✓ (funciona con CORS). El frontend usa `akira-api.miclusty.workers.dev` (worker URL). Una vez `dns:write` esté, podemos wirear tanto `antena.com.ar` apex como `api.antena.com.ar` y actualizar el workflow en una sola ronda.
+**Status actual**: `www.antena.com.ar` ✓ (funciona con CORS). El frontend usa `https://akira-api.miclusty.workers.dev` como `PUBLIC_API_BASE`. Tan pronto `dns:write` esté, podemos wirear `api.antena.com.ar` y actualizar el workflow.
 
 ### #4. AKIRA no está scrapeando en vivo
-**Costo**: Los datos en D1 son del sync inicial (2026-05-08, hace 35+ días). El sitio muestra noticias reales, pero no se actualiza. Health check: `news_last_hour: 0, news_today: 0, news_week: 0`.
+**Costo**: Los datos en D1 son del sync inicial (2026-05-08, hace 60+ días). El sitio muestra noticias reales pero no se actualiza. Health check: `news_last_hour: 0, news_today: 0, news_week: 0`.
 
-**Opciones**:
-- **Container en Cloudflare** (bloqueado: 5/5 cron triggers usados)
-- **HTTP manual** `POST /api/admin/refresh` desde un cron local en tu Mac via `cloudflared`
-- **Cloudflare Worker cron** con un alias del existente
+**Estado 2026-07-09**: en proceso de automatización — `/admin/dump` endpoint creado en AKIRA, Worker refresh cron configurado para llamarlo cada 2h vía `[triggers] crons = ["0 */2 * * *"]` en `packages/api/wrangler.toml`. Caveat: AKIRA_URL es un trycloudflare tunnel que rota cuando la Mac duerme. Alternativa: deployar AKIRA en VM con URL fija.
 
-### #5. R2 bucket no creado
-**Costo**: El binding `IMAGES` está comentado en `wrangler.production.toml`. Si algún día queremos subir imágenes (profile pics, etc.), R2 no está habilitado en la cuenta (error 10042). **Workaround**: comentar el binding hasta que se active R2 desde el dashboard.
+### #5. R2 bucket no creado (deferred per user decision 2026-07-09)
+**Costo**: El binding `IMAGES` está comentado en `packages/api/wrangler.toml` y `packages/api/wrangler.production.toml` (cuenta no tiene R2 habilitado, error 10042). User decidió diferir hasta segunda ronda.
 
-**Status actual**: el image-pipeline (#17) ya valida al enqueue, así que cuando R2 se active, todo está listo para re-bindear y empezar a ingestar.
+**Workaround actual**: el image-pipeline funciona en proxy mode (`packages/api/src/routes/image.ts` con `r2Url` fallback). Frontend degrada gracefully. Cuando R2 se active desde el dashboard, hay que:
+1. Crear bucket `antena-images`
+2. Uncomment binding en wrangler.toml
+3. Re-enable queue producer (línea 63-65 en wrangler.toml)
+4. Uncomment IMAGE_QUEUE en Env (Task 16 ya fixó el consumer con retry+DLQ)
 
 ---
 

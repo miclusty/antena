@@ -85,7 +85,7 @@ The Antena frontend uses different `PUBLIC_API_BASE` per environment:
 |-----|-------------------|
 | dev | `http://localhost:8787` |
 | staging | `https://akira-api-staging.<account>.workers.dev` |
-| production | `https://api.antena.com.ar` |
+| production | `https://akira-api.miclusty.workers.dev` |
 
 ## CI/CD Flow
 

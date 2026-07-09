@@ -2,7 +2,7 @@
 
 The Antena API runs as a Cloudflare Worker (Hono). All endpoints are edge-cached via `caches.default` and use Drizzle + Zod for type-safe, validated reads.
 
-- **Base URL (production)**: `https://api.antena.com.ar`
+- **Base URL (production)**: `https://akira-api.miclusty.workers.dev` (current; `api.antena.com.ar` planned once `dns:write` token scope is added)
 - **Base URL (preview)**: `https://antena-api.<branch>.workers.dev`
 - **Base URL (local)**: `http://localhost:8787`
 
