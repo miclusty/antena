@@ -1,0 +1,38 @@
+name = "akira-api-staging"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Staging env routes
+routes = [
+  { pattern = "staging.antena.com.ar/*", zone_name = "antena.com.ar" },
+]
+
+# NOTE: Provision these via docs/cloudflare-setup.md, then fill IDs.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "antena-staging"
+# database_id = "<to-fill>"
+#
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "<to-fill>"
+#
+# [[vectorize]]
+# binding = "VECTORS"
+# index_name = "news_embeddings_staging"
+#
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "feed_events_staging"
+#
+# [[ai]]
+# binding = "AI"
+
+# [triggers]
+# crons = ["0 */2 * * *"]
+
+[vars]
+ENVIRONMENT = "staging"
+PUBLIC_WEB_BASE = "https://staging.antena.com.ar"

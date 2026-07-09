@@ -4,35 +4,15 @@ compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
-# Phase 3 Task 32: route the legacy /noticia/<uuid> path to this
-# worker (which has the 11K overflow redirects in KV) BEFORE
-# Cloudflare Pages sees the request. The worker's
-# legacyRedirectMiddleware returns 301 to the canonical slug
-# URL, so the request never reaches Pages.
-# Only /noticia/* is routed — the rest of www.antena.com.ar
-# (homepage, /buscar, /ciudad/*, /categoria/*, /<year>/<month>/*)
-# continues to be served by Pages.
+# Production env routes (apex → www, /noticia/* legacy)
 routes = [
   { pattern = "www.antena.com.ar/noticia/*", zone_name = "antena.com.ar" },
   { pattern = "www.antena.com.ar/noticia",  zone_name = "antena.com.ar" },
-  # Apex → www 301. Intercepts every request to antena.com.ar
-  # (the bare domain) and 301s it to www.antena.com.ar/<path>.
-  # Necessary because the Pages _redirects file can't redirect
-  # from one host to another when Pages is bound to that host.
   { pattern = "antena.com.ar/*", zone_name = "antena.com.ar" },
   { pattern = "antena.com.ar",   zone_name = "antena.com.ar" },
 ]
 
-# Production bindings. Local dev uses wrangler dev with
-# --local flag, which uses Miniflare's sqlite/R2/KV
-# emulators and doesn't need real IDs.
-#
-# The `name = "akira-api"` (no env suffix) keeps the
-# deployment at https://akira-api.miclusty.workers.dev,
-# which is the URL the frontend calls.
-
 # ── D1 ────────────────────────────────────────────────────────────
-# Production database. Created 2026-06-12 in WEUR region.
 [[d1_databases]]
 binding = "DB"
 database_name = "antena-prod"
@@ -43,11 +23,6 @@ migrations_dir = "migrations"
 [[kv_namespaces]]
 binding = "CACHE"
 id = "df27599523364a02bd294ff97acb1f5c"
-
-# ── R2 (image storage) ────────────────────────────────────────────
-# [[r2_buckets]]
-# binding = "IMAGES"
-# bucket_name = "antena-images"
 
 # ── Vectorize (semantic search) ───────────────────────────────────
 [[vectorize]]
@@ -67,24 +42,11 @@ binding = "AI"
 [triggers]
 crons = ["0 */2 * * *"]
 
-# ── Queues (image pipeline) ───────────────────────────────────────
-# NOTE: wrangler deploy fails with "Queue already has a consumer" if
-# these are uncommented (because the consumer was registered manually
-# via the dashboard). The existing consumer is correct and functional.
-# To re-deploy the worker, temporarily comment this section, deploy,
-# then re-enable. See deploy docs.
-# [[queues.producers]]
-# binding = "IMAGE_QUEUE"
-# queue = "image-pipeline"
-#
-# [[queues.consumers]]
-# queue = "image-pipeline"
-# max_batch_size = 10
-# max_batch_timeout = 30
-
 # ── Vars ──────────────────────────────────────────────────────────
 [vars]
 ENVIRONMENT = "production"
-API_BASE = "https://api.antena.com.ar"
+API_BASE = "https://www.antena.com.ar"
 PUBLIC_WEB_BASE = "https://www.antena.com.ar"
-AKIRA_URL = "https://tries-critical-donald-rand.trycloudflare.com"
+# AKIRA_URL set via: wrangler secret put AKIRA_URL --env=production
+# AKIRA_ADMIN_KEY set via: wrangler secret put AKIRA_ADMIN_KEY --env=production
+# DISCORD_WEBHOOK_URL set via: wrangler secret put DISCORD_WEBHOOK_URL --env=production

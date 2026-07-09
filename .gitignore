@@ -88,6 +88,17 @@ __pycache__/
 
 # AKIRA/API runtime cache (not source)
 packages/api/.redirects-cache.json
+packages/api/.redirects-kv-pending-upload.json
 
 # AKIRA pipeline runtime reports (clustering baselines, harvest stats, etc.)
 packages/akira/.reports/
+
+# Pages Functions build outputs
+packages/antena/functions-built/
+packages/antena/.functions-build/
+packages/antena/dist/functions/
+
+# Python bytecode caches
+packages/akira/**/__pycache__/
+packages/akira/**/*.pyc
+packages/akira/**/*.pyo
