@@ -98,6 +98,9 @@ packages/antena/functions-built/
 packages/antena/.functions-build/
 packages/antena/dist/functions/
 
+# Compiled .js in Pages Functions source dir (paired with .ts source)
+packages/antena/functions/**/*.js
+
 # Python bytecode caches
 packages/akira/**/__pycache__/
 packages/akira/**/*.pyc
