@@ -27,7 +27,7 @@ routes = [
 # binding = "ANALYTICS"
 # dataset = "feed_events_staging"
 #
-# [[ai]]
+# [ai]
 # binding = "AI"
 
 # [triggers]
