@@ -2,6 +2,53 @@
 
 All notable changes to Antena are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] — 2026-07-09 — Production Readiness Remediation
+
+Comprehensive cleanup before next deploy. Driven by 5-agent parallel audit + frontend state review. Plan at `docs/superpowers/plans/2026-07-09-antena-prod-readiness.md`.
+
+### Fixed
+- 4 typecheck errors in Antena (`PUBLIC_API_BASE`, EmptyState undefined, slug.md ImportMeta, read-later spread)
+- API search test failing (FTS5 contentless fixture aligned with production schema)
+- AKIRA iter 4 merged to main (silences RAG NameError; 220+1 tests passing; canonical DB connection)
+- Vectorize query was empty `[[]]` — now uses real Workers AI embeddings
+- Vectorize upsert was `Math.random()*0.01` — now real embeddings from `@cf/baai/bge-small-en-v1.5`
+- D1 had 60-day-old data — refresh cron now syncs from `AKIRA /admin/dump` every 2h
+- `image_hash` column doesn't exist (PROD-BROKEN) — dropped `OR image_hash = ?` from 2 SQL queries
+- `ANALYTICS` binding missing (PROD-BROKEN) — added to wrangler.toml + wrangler.production.toml
+- `wrangler.production.toml` and `wrangler.staging.toml` were missing — created
+- refresh cron used non-existent `updated_at` — fixed to use `created_at`
+- Queue consumer silently acked failures — added `msg.retry()` with exponential backoff (max 3 attempts)
+- Discord alert was a comment — implemented in seo-monitor (configurable via DISCORD_WEBHOOK_URL secret)
+- loadMore pagination duplicated first page — real offset-based pagination via fetchFeed
+- Service worker missing `navigateFallback` — added `/offline.html` fallback
+- Static `public/manifest.json` conflicted with VitePWA — removed
+- AKIRA → D1 sync was launchd-only on local Mac — refresh cron now automated
+- stale docs: apex domain status, REAL_API_BASE URL in docs/api.md and docs/deploy.md
+
+### Added
+- AKIRA `/admin/dump` endpoint for remote sync (X-Admin-Key auth)
+- Workers AI `[[ai]]` binding (`@cf/baai/bge-small-en-v1.5` embeddings)
+- Cron triggers `[triggers] crons = ["0 */2 * * *"]` in wrangler.toml
+- Pages Functions build pipeline (`scripts/build-functions.mjs` esbuild)
+- 13 Pages Functions endpoints (RSS, sitemaps×3, search, track, newsletter, img, __cron/indexnow)
+- 5 trackEvent callsites wired: `trackCardView`, `trackArticleOpen`, `trackArticleComplete`, `trackBookmark`, `trackShare`
+- Z-axis CSS vars in `design-tokens.css` (`--z-base` through `--z-tooltip`)
+- `DISCORD_WEBHOOK_URL`, `AKIRA_ADMIN_KEY`, `AKIRA_URL` env vars in Env type
+
+### Changed
+- `Env` type now has `IMAGES` and `IMAGE_QUEUE` and `AKIRA_URL` typed correctly
+- AKIRA Python tests: 196 → 220 (+24 new tests from iter4 merge)
+- AKIRA iter 4: 9 commits, +1626/-176 lines, pure refactor with zero behavior changes
+
+### Pending (user actions or future sessions)
+- Bot Fight Mode WAF skip rules for AI bots (Cloudflare dashboard)
+- R2 bucket + queue bindings (deferred per user — needs Cloudflare account-level R2 enable)
+- `api.antena.com.ar` DNS (requires `dns:write` scope on API token)
+- AKIRA_URL hardcoded as trycloudflare tunnel — needs VM with fixed URL
+- `akira-iter4-canonical-connection` worktree already merged; `antena-v1-closer` discarded (divergent, no common ancestor); `seo-geo-perfecto` was already merged
+- AKIRA mypy still has 56 pre-existing errors (CI has `continue-on-error: true`)
+- 4/10 critical frontend audit bugs fixed (loadMore, swipe, popstate, forYou). Remaining: apple-touch-icon PNG (icon.svg still referenced — needs sharp/inkscape install script), manifest `id`/`lang`/`screenshots`, z-axis migrations in components, etc.
+
 ## [1.1.0] - 2026-06-12
 
 Feed polish v2. Adds the 7 high-impact user-facing features identified after the v1.0 closer + Reddit/X-style redesign.
