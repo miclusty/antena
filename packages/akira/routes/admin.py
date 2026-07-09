@@ -467,3 +467,38 @@ async def image_stats(request: Request, _auth=Depends(check_admin)):
         "without_image": total - with_image,
         "image_coverage_pct": round(with_image / total * 100, 1) if total > 0 else 0,
     }
+
+
+@router.get("/admin/dump")
+async def dump_news_cards(
+    since: Optional[str] = None,
+    limit: int = 500,
+    _auth=Depends(check_admin),
+):
+    """Dump news cards as JSON for Worker refresh cron to sync to D1.
+
+    Query params:
+      - since: ISO timestamp; only return cards with created_at > since
+      - limit: max cards (1-2000, default 500)
+    """
+    limit = max(1, min(limit, 2000))
+    with get_db_connection() as conn:
+        conn.row_factory = None
+        if since:
+            rows = conn.execute(
+                "SELECT * FROM news_cards WHERE created_at > ? "
+                "ORDER BY created_at DESC LIMIT ?",
+                (since, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM news_cards ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+
+    return {
+        "news": [dict(r) for r in rows],
+        "count": len(rows),
+        "since": since,
+        "limit": limit,
+    }
