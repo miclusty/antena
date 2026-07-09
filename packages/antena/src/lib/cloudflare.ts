@@ -35,6 +35,7 @@ export interface PagesEnv {
   IMAGE_QUEUE: Queue;
   ENVIRONMENT?: "development" | "staging" | "production";
   API_BASE?: string;
+  PUBLIC_API_BASE?: string;
   AKIRA_URL?: string;
 }
 
