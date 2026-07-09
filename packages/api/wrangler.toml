@@ -55,9 +55,14 @@ binding = "VECTORS"
 index_name = "news_embeddings"
 
 # ── Analytics Engine (telemetry) ──────────────────────────────────
-[[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "feed_events"
+# NOTE 2026-07-09: Cloudflare deploy fails with "10089 enable Analytics Engine"
+# until the user creates the `feed_events` dataset in dash.cloudflare.com.
+# The binding stays commented out for now; track endpoints in code guard with
+# `if (env.ANALYTICS)`. Re-enable when Analytics Engine is provisioned.
+#
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "feed_events"
 
 # ── Workers AI (embeddings for Vectorize) ─────────────────────────
 [ai]

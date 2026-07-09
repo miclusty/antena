@@ -14,11 +14,13 @@ trackRoutes.post("/", async (c) => {
   const event = parsed.data;
   const newsId = event.newsId ?? "anon";
 
-  c.env.ANALYTICS.writeDataPoint({
-    blobs: [event.type, newsId, event.category ?? "", event.source ?? ""],
-    doubles: [event.dwellTime ?? 0, event.scrollDepth ?? 0],
-    indexes: [newsId],
-  });
+  if (c.env.ANALYTICS) {
+    c.env.ANALYTICS.writeDataPoint({
+      blobs: [event.type, newsId, event.category ?? "", event.source ?? ""],
+      doubles: [event.dwellTime ?? 0, event.scrollDepth ?? 0],
+      indexes: [newsId],
+    });
+  }
 
   return c.json({ ok: true });
 });

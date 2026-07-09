@@ -26,6 +26,7 @@ routes = [
 # [[analytics_engine_datasets]]
 # binding = "ANALYTICS"
 # dataset = "feed_events_staging"
+# NOTE 2026-07-09: commented out — needs Analytics Engine enabled in dashboard
 #
 # [ai]
 # binding = "AI"

@@ -104,7 +104,9 @@ export interface Env {
   CACHE: KVNamespace;
   IMAGES: R2Bucket;
   VECTORS: VectorizeIndex;
-  ANALYTICS: AnalyticsEngineDataset;
+  // ANALYTICS is optional — requires manual Analytics Engine dataset
+  // provisioning in dash.cloudflare.com. track.ts guards with `if (env.ANALYTICS)`.
+  ANALYTICS?: AnalyticsEngineDataset;
   IMAGE_QUEUE: Queue;
   AI?: Ai;
   ENVIRONMENT: "development" | "staging" | "production";

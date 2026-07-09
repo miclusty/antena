@@ -30,9 +30,13 @@ binding = "VECTORS"
 index_name = "news_embeddings"
 
 # ── Analytics Engine (telemetry) ──────────────────────────────────
-[[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "feed_events"
+# NOTE 2026-07-09: commented out — Cloudflare deploy fails until the
+# `feed_events` Analytics Engine dataset is created in dash.cloudflare.com.
+# See ../wrangler.toml for the same comment.
+#
+# [[analytics_engine_datasets]]
+# binding = "ANALYTICS"
+# dataset = "feed_events"
 
 # ── Workers AI (embeddings for Vectorize) ─────────────────────────
 [ai]

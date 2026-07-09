@@ -150,17 +150,19 @@ export async function handleRefreshCron(env: Env, ctx: ExecutionContext): Promis
       await env.VECTORS.upsert(vectors);
     }
 
-    env.ANALYTICS.writeDataPoint({
-      blobs: [
-        "cron",
-        "refresh",
-        String(syncedFromAkira),
-        String(vectors.length),
-        String(rows.length),
-      ],
-      doubles: [Date.now()],
-      indexes: ["cron-refresh"],
-    });
+    if (env.ANALYTICS) {
+      env.ANALYTICS.writeDataPoint({
+        blobs: [
+          "cron",
+          "refresh",
+          String(syncedFromAkira),
+          String(vectors.length),
+          String(rows.length),
+        ],
+        doubles: [Date.now()],
+        indexes: ["cron-refresh"],
+      });
+    }
 
     const seo = await runSeoHealthCheck(env);
     console.log(`[cron:refresh] seo-monitor ${seo.ok}/${seo.ok + seo.fail} passed`);
