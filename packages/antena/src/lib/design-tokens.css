@@ -132,6 +132,17 @@
   --drawer-z:        100;
   --backdrop-z:      90;
   --drawer-shadow:   -8px 0 24px rgba(0, 0, 0, 0.20);
+
+  /* ── Z-axis scale (use in components to avoid overlap) ────── */
+  --z-base:        0;
+  --z-dropdown:    20;
+  --z-sticky:      30;   /* BottomNav */
+  --z-floating:    40;   /* RadioPlayer mini, ModoMate bar */
+  --z-modal-back:  50;   /* Modal backdrops */
+  --z-modal:       60;   /* Modal panels */
+  --z-drawer:      70;   /* MobileDrawer */
+  --z-toast:       80;   /* Toasts (above modals) */
+  --z-tooltip:     90;
 }
 
 /* ── Dark Mode ── */

@@ -79,13 +79,13 @@ const SITE = 'https://www.antena.com.ar';
     })} />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="manifest" href="/manifest.json" />
+    <!-- VitePWA generates /manifest.webmanifest at build; we removed public/manifest.json in 2026-07-09 to fix the conflict -->
 
     <!-- Apple Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Antena" />
-    <link rel="apple-touch-icon" href="/icons/icon.svg" />
+    <!-- NOTE: 2026-07-09 — switch apple-touch-icon from SVG (ignored by Safari) to PNG once icon-180.png is generated via scripts/generate-icons.mjs -->
 
     <!-- Preconnect to API + image CDN to remove
          ~200ms of DNS/TCP/TLS overhead on first hit. -->

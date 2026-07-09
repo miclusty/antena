@@ -23,20 +23,23 @@ export default defineConfig({
           scope: "/",
           start_url: "/",
           icons: [
-            { src: "/icons/icon.svg", sizes: "192x192", type: "image/svg+xml" },
-            { src: "/icons/icon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "maskable" }
+            { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+            { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+            { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
           ],
           shortcuts: [
             {
               name: "Ultimas noticias",
               short_name: "Ultimas",
               url: "/",
-              icons: [{ src: "/icons/icon.svg", sizes: "96x96" }]
+              icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }]
             }
           ]
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+          navigateFallback: "/offline.html",
+          navigateFallbackDenylist: [/^\/api\//, /\.(?:js|css|map|json)$/],
           runtimeCaching: [
             {
               urlPattern: /^https?:\/\/(localhost:\d+|akira-api\.miclusty\.workers\.dev)\/api\/news.*/i,

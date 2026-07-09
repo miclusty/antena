@@ -195,19 +195,30 @@ export function useFeed(opts: UseFeedOptions) {
     refetch();
   };
 
-  const loadMore = () => {
+  const loadMore = async () => {
     if (!hasMore() || isLoadingMore()) return;
     setIsLoadingMore(true);
-    const data = feed();
-    if (!data?.news) {
+    try {
+      const nextOffset = allNews().length;
+      const catParam = opts.activeCategory() === "Todas" ? undefined : opts.activeCategory();
+      const result = await fetchFeed({
+        category: catParam,
+        location_id: opts.activeLocation() ? parseInt(opts.activeLocation()!) : undefined,
+        limit: 20,
+        offset: nextOffset,
+        following: opts.activeFeedTab() === "following",
+        foryou: opts.activeFeedTab() !== "home",
+        ...buildFeedFilterParams(opts.filterState()),
+      });
+      const newItems = (result.news ?? []).map(mapNewsCard);
+      setAllNews((prev) => [...prev, ...newItems]);
+      setOffset(nextOffset + newItems.length);
+      setHasMore(newItems.length >= 20);
+    } catch (e) {
+      console.warn("[useFeed] loadMore failed:", e);
+    } finally {
       setIsLoadingMore(false);
-      return;
     }
-    const newItems = data.news.map(mapNewsCard);
-    setAllNews((prev) => [...prev, ...newItems]);
-    setOffset((prev) => prev + 20);
-    setHasMore(data.news.length >= 20);
-    setIsLoadingMore(false);
   };
 
   const featuredCluster = createMemo<FeaturedCluster | null>(() => {
