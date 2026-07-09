@@ -29,15 +29,12 @@ redis = ["redis>=5.0.0"]
 
 
 
-[project.optional-dependencies]
-dev = ["pytest>=8.0.0", "pytest-asyncio>=0.23.0", "httpx>=0.27.0"]
-redis = ["redis>=5.0.0"]
-
-
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+
+
 
 [tool.setuptools.packages.find]
 # AKIRA uses a flat layout: source modules live directly in
