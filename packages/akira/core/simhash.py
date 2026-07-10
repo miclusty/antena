@@ -45,7 +45,14 @@ def _tokens(text: str) -> list[str]:
 
 
 def compute_simhash(text: str) -> int:
-    """Compute a 64-bit SimHash for the given text. Returns int in [0, 2^64)."""
+    """Compute a 64-bit SimHash for the given text.
+
+    Returns a signed 64-bit integer (range [-(2^63), 2^63-1]) so it can
+    be stored in SQL INTEGER columns (which use signed BIGINT).
+
+    The conversion is deterministic — the same input always produces the
+    same signed value, and Hamming distance is preserved.
+    """
     if not text:
         return 0
     accum = [0] * 64
@@ -60,11 +67,17 @@ def compute_simhash(text: str) -> int:
             bit_in_byte = bit_pos % 8
             bit_set = (digest[byte_idx] >> (7 - bit_in_byte)) & 1
             accum[bit_pos] += 1 if bit_set else -1
-    result = 0
+    unsigned = 0
     for bit_pos in range(64):
         if accum[bit_pos] > 0:
-            result |= 1 << bit_pos
-    return result
+            unsigned |= 1 << bit_pos
+    # Convert unsigned 64-bit to signed 64-bit for SQL storage.
+    # If the high bit is set, subtract 2^64 to get the signed representation.
+    SIGN_BIT = 1 << 63
+    MODULUS = 1 << 64
+    if unsigned >= SIGN_BIT:
+        return unsigned - MODULUS
+    return unsigned
 
 
 def hamming_distance(a: int, b: int) -> int:
