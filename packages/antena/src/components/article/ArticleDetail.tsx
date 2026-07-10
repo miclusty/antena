@@ -647,6 +647,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         <OtrasVocesCta
           otherSources={clusterData().filter((a) => a.id !== n().id)}
           currentId={n().id}
+          clusterId={n().clusterId}
           onSelect={props.onArticleSelect}
         />
 

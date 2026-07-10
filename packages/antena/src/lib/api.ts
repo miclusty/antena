@@ -592,3 +592,28 @@ export async function fetchReport(
     return false;
   }
 }
+
+export interface BiasKeyQuote {
+  source: string;
+  quote: string;
+}
+
+export interface BiasNarrative {
+  cluster_id: string;
+  narrative: string;
+  key_quotes: BiasKeyQuote[];
+  source: string;
+  generated_at: string | null;
+}
+
+export async function fetchBiasNarrative(
+  clusterId: string,
+): Promise<BiasNarrative | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/clusters/${clusterId}/bias-narrative`);
+    if (!res.ok) return null;
+    return (await res.json()) as BiasNarrative;
+  } catch {
+    return null;
+  }
+}

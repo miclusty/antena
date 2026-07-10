@@ -527,6 +527,54 @@ Responde SOLO en formato JSON:
             )
             conn.commit()
 
+        # Generate bias narrative (background, non-blocking).
+        # Writes to clusters.bias_narrative via the local SQLite mirror.
+        # Production: a separate Worker cron syncs AKIRA SQLite → D1.
+        try:
+            from core.bias_narrative import BiasNarrativeService, NarrativeCache
+            from core.llm_client import LLMClient
+
+            llm = LLMClient()  # default = LMStudio local
+            narrative_svc = BiasNarrativeService(
+                llm_client=llm,
+                cache=NarrativeCache(),
+            )
+            # Re-fetch source biases + excerpts for the cluster
+            with get_db_connection(self.db_path) as conn:
+                src_rows = conn.execute(
+                    "SELECT s.name, nc.bias_score FROM news_cards nc "
+                    "JOIN sources s ON s.id = nc.source_id "
+                    "WHERE nc.cluster_id = ? AND nc.bias_score IS NOT NULL",
+                    (cluster_id,),
+                ).fetchall()
+                source_biases = [(r[0], r[1]) for r in src_rows]
+                ex_rows = conn.execute(
+                    "SELECT s.name, nc.title, nc.body FROM news_cards nc "
+                    "JOIN sources s ON s.id = nc.source_id "
+                    "WHERE nc.cluster_id = ? LIMIT 5",
+                    (cluster_id,),
+                ).fetchall()
+                excerpts = [(r[0], r[1], r[2] or "") for r in ex_rows]
+
+            narrative = narrative_svc.generate_for_cluster(
+                cluster_id, source_biases, excerpts
+            )
+            with get_db_connection(self.db_path) as conn:
+                conn.execute(
+                    "UPDATE clusters SET bias_narrative = ?, bias_key_quotes = ?, "
+                    "bias_narrative_at = datetime('now'), bias_narrative_model = ? "
+                    "WHERE id = ?",
+                    (
+                        narrative["narrative"],
+                        json.dumps(narrative["key_quotes"], ensure_ascii=False),
+                        narrative.get("source", "unknown"),
+                        cluster_id,
+                    ),
+                )
+                conn.commit()
+        except Exception as e:
+            logger.warning(f"Bias narrative generation skipped for {cluster_id}: {e}")
+
         return master_id
 
     def batch_synthesize(

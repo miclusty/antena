@@ -1,9 +1,10 @@
 /** @jsxImportSource solid-js */
-import { createMemo, createSignal, Show } from 'solid-js';
+import { createMemo, createResource, createSignal, Show } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import { useHaptic } from '../../lib/haptic';
 import { createScrollProgress } from '../../lib/scroll-progress';
 import { trackEvent } from '../../lib/analytics';
+import { fetchBiasNarrative } from '../../lib/api';
 import BottomSheet from '../common/BottomSheet';
 import MaterialIcon from '../common/MaterialIcon';
 import OtrasVocesTable from './OtrasVocesTable';
@@ -11,6 +12,7 @@ import OtrasVocesTable from './OtrasVocesTable';
 interface OtrasVocesCtaProps {
   otherSources: NewsItem[];
   currentId: string;
+  clusterId?: string;
   onSelect?: (article: NewsItem) => void;
 }
 
@@ -23,6 +25,12 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
   const haptic = useHaptic();
   const [sheetOpen, setSheetOpen] = createSignal(false);
   const [sentinelRef, passed] = createScrollProgress(0.6);
+
+  // Bias narrative: LLM-generated explanation of cluster bias.
+  const [narrative] = createResource(
+    () => (sheetOpen() && props.clusterId ? props.clusterId : null),
+    fetchBiasNarrative
+  );
 
   // Pre-compute the source labels for the CTA copy
   const topSources = createMemo(() => {
@@ -127,6 +135,36 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
         >
           Deslizá horizontalmente para comparar cómo cubre cada medio
         </p>
+        <Show when={narrative()}>
+          {(n) => (
+            <div
+              class="rounded-lg p-3 mb-3 text-[13px] leading-relaxed"
+              style={{
+                background: 'var(--bg-base)',
+                'border-left': '4px solid var(--accent)',
+              }}
+              role="note"
+              aria-label="Análisis de sesgo editorial"
+            >
+              <p style={{ color: 'var(--text-primary)' }}>{n().narrative}</p>
+              <Show when={n().key_quotes.length > 0}>
+                <ul class="mt-2 space-y-1 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                  {n().key_quotes.map((q) => (
+                    <li>
+                      <strong style={{ color: 'var(--text-secondary)' }}>{q.source}:</strong>{' '}
+                      "{q.quote}"
+                    </li>
+                  ))}
+                </ul>
+              </Show>
+              <Show when={n().source === 'heuristic'}>
+                <p class="text-[10px] mt-1 italic" style={{ color: 'var(--text-tertiary)' }}>
+                  (análisis simplificado, sin LLM disponible)
+                </p>
+              </Show>
+            </div>
+          )}
+        </Show>
         <OtrasVocesTable
           sources={props.otherSources}
           currentId={props.currentId}
