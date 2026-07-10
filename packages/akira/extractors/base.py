@@ -4,7 +4,7 @@ import asyncio
 import logging
 import re
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any, List, Optional
 from dataclasses import dataclass
 
 logger = logging.getLogger("akira.extractors")
@@ -158,9 +158,9 @@ class BaseExtractor(ABC):
 
     def __init__(
         self,
-        session: Optional[object] = None,
+        session: Optional[Any] = None,
         owns_session: bool = False,
-        browser_pool=None,
+        browser_pool: Optional[Any] = None,
     ):
         self._session = session
         self._owns_session = owns_session

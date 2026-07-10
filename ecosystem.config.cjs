@@ -60,5 +60,30 @@ module.exports = {
       merge_logs: true,
       watch: false,
     },
+    {
+      // AKIRA live-crawl. Cron-restart every 30 minutes selects the
+      // top 50 sources by oldest-last-harvest, resets seen_urls for
+      // those sources, and delegates the cascade to harvest_run.py.
+      // cron_restart is "*"/30 — runs at minute 0 and 30 of every
+      // hour. autorestart=false so a failing run doesn't loop.
+      // The 6h pipeline (~/Library/LaunchAgents/com.antena.akira-pipeline.plist)
+      // is the heavy re-cluster + embed path; this is the news-feed
+      // heartbeat.
+      name: 'akira-harvest',
+      cwd: './packages/akira',
+      script: './.venv/bin/python',
+      args: '-m scripts.harvest_full_cycle --max-sources 50',
+      interpreter: 'none',
+      instances: 1,
+      autorestart: false,
+      cron_restart: '0,30 * * * *',
+      max_memory_restart: '500M',
+      error_file: '/tmp/akira-harvest-error.log',
+      out_file: '/tmp/akira-harvest-out.log',
+      merge_logs: true,
+      env: {
+        PYTHONPATH: '.',
+      },
+    },
   ],
 };

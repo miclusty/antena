@@ -17,7 +17,7 @@ import json
 import sqlite3
 import logging
 import hashlib
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from datetime import datetime
 
 from db.connection import get_db_connection
@@ -162,7 +162,7 @@ class FactExtractor:
             return re.sub(r"[^\w\s]", "", s.lower().strip())
 
         # Count sentence frequency (with fuzzy matching)
-        sentence_groups = {}
+        sentence_groups: Dict[str, Dict[str, Any]] = {}
         for sentence, bias in all_sentences:
             key = normalize(sentence)[:80]  # First 80 chars as key
             if key not in sentence_groups:
@@ -415,7 +415,7 @@ Responde SOLO en formato JSON:
         articles: List[Dict],
         facts: Dict,
         perspectives: Dict,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """Parse the LLM response into {title, summary}. Tolerates markdown
         fences around the JSON, falls back to first sentences if no JSON."""
         # Strip markdown ```json fences if present
@@ -429,7 +429,8 @@ Responde SOLO en formato JSON:
         end = content.rfind("}") + 1
         if start != -1 and end > start:
             try:
-                return json.loads(content[start:end])
+                parsed: Dict[str, Any] = json.loads(content[start:end])
+                return parsed
             except json.JSONDecodeError:
                 pass  # fall through to sentence-split fallback
 

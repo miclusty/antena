@@ -6,12 +6,13 @@ from pathlib import Path
 
 import pytest
 
-spec = importlib.util.spec_from_file_location(
+_spec = importlib.util.spec_from_file_location(
     "backfill", Path(__file__).parent.parent / "scripts" / "backfill_slugs.py"
 )
-backfill = importlib.util.module_from_spec(spec)
+assert _spec is not None and _spec.loader is not None  # nosec — local script path
+backfill = importlib.util.module_from_spec(_spec)
 sys.modules["backfill"] = backfill
-spec.loader.exec_module(backfill)
+_spec.loader.exec_module(backfill)
 
 
 def test_resolve_slug_no_collision():

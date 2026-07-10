@@ -124,7 +124,7 @@ class BrowserPool:
         for inst in to_remove:
             await self._pool.put(inst)
 
-    async def _get_browser(self) -> Optional:
+    async def _get_browser(self) -> Optional[BrowserInstance]:
         """Get a browser from the pool or launch a new one."""
         # First, try to get an existing browser
         try:
@@ -133,7 +133,7 @@ class BrowserPool:
                 # Edge case: put back and create new
                 await self._pool.put(inst)
             else:
-                return inst
+                return inst  # type: ignore[no-any-return]  # queue.get_nowait -> Any
         except asyncio.QueueEmpty:
             pass
 
@@ -142,15 +142,16 @@ class BrowserPool:
         if active_count >= self.max_browsers:
             # Wait for a browser to become available
             inst = await asyncio.wait_for(self._pool.get(), timeout=60)
-            return inst
+            return inst  # type: ignore[no-any-return]
 
         # Launch new browser (with concurrency limit)
         async with self._launch_lock:
-            inst = await self._launch_browser()
-            if inst is None:
-                # Fallback: wait for any available browser
-                inst = await asyncio.wait_for(self._pool.get(), timeout=30)
-            return inst
+            launched: Optional[BrowserInstance] = await self._launch_browser()
+            if launched is not None:
+                return launched
+            # Fallback: wait for any available browser
+            inst = await asyncio.wait_for(self._pool.get(), timeout=30)
+            return inst  # type: ignore[no-any-return]
 
 
 class _BrowserContext:

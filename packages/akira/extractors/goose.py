@@ -36,6 +36,7 @@ class GooseExtractor(BaseExtractor):
         timeout: int = 60,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         hard_timeout = timeout * 1.5
         loop = asyncio.get_running_loop()

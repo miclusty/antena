@@ -4,7 +4,7 @@ import pytest
 from extractors.base import BaseExtractor, ExtractedItem
 from extractors.rss import RSSExtractor
 from extractors.wordpress import WordPressExtractor
-from extractors.newspaper import NewspaperExtractor
+from extractors._newspaper_DEPRECATED import NewspaperExtractor
 from extractors.goose import GooseExtractor
 from extractors.sitemap import SitemapExtractor
 from extractors.playwright import PlaywrightExtractor

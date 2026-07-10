@@ -16,6 +16,7 @@ No external ML dependencies.
 
 import re
 import hashlib
+import sqlite3
 import logging
 from typing import List, Dict, Set, Optional, Tuple
 from collections import defaultdict, Counter
@@ -308,45 +309,73 @@ class ClusteringService:
         Returns:
             Dict mapping cluster_id -> list of card_ids.
         """
-        with get_db_connection(self.db_path) as conn:
-            if card_ids is None:
-                rows = conn.execute(
-                    "SELECT id, title, source_ids, image_url FROM news_cards"
-                ).fetchall()
-            else:
-                placeholders = ",".join("?" * len(card_ids))
-                rows = conn.execute(
-                    f"SELECT id, title, source_ids, image_url FROM news_cards "
-                    f"WHERE id IN ({placeholders})",
-                    card_ids,
-                ).fetchall()
-
-            if not rows:
-                return {}
-
-            items = [
-                (str(r["id"]), r["title"] or "", r["source_ids"] or "", r["image_url"] or "")
-                for r in rows
-            ]
-            # Wipe existing cluster_id for the cards we're re-clustering.
-            ids_to_clear = [it[0] for it in items]
-            placeholders = ",".join("?" * len(ids_to_clear))
-            conn.execute(
-                f"UPDATE news_cards SET cluster_id = NULL WHERE id IN ({placeholders})",
-                ids_to_clear,
+        # Production callers should invoke `cluster_recent_news(hours=24)`
+        # instead of the full pull: clustering all 50k cards is O(n²)
+        # and a 50k-card run can take ~10 minutes, during which any
+        # crash leaves the DB with NULL cluster_ids for the cleared
+        # range. cluster_recent_news() operates on small bounded
+        # batches and is idempotent across restarts.
+        if card_ids is None:
+            logger.warning(
+                "cluster_news_cards full pull is O(n²) and uses LIMIT 5000 — "
+                "production should use cluster_recent_news()"
             )
-            conn.commit()
 
-            clusters = self._compute_clusters(items)
+        with get_db_connection(self.db_path) as conn:
+            try:
+                if card_ids is None:
+                    rows = conn.execute(
+                        "SELECT id, title, source_ids, image_url FROM news_cards "
+                        "ORDER BY created_at DESC LIMIT 5000"
+                    ).fetchall()
+                else:
+                    placeholders = ",".join("?" * len(card_ids))
+                    rows = conn.execute(
+                        f"SELECT id, title, source_ids, image_url FROM news_cards "
+                        f"WHERE id IN ({placeholders})",
+                        card_ids,
+                    ).fetchall()
 
-            # Update DB with new cluster IDs.
-            for cluster_id, ids in clusters.items():
-                for cid in ids:
-                    conn.execute(
-                        "UPDATE news_cards SET cluster_id = ? WHERE id = ?",
-                        (cluster_id, cid),
-                    )
-            conn.commit()
+                if not rows:
+                    return {}
+
+                items = [
+                    (str(r["id"]), r["title"] or "", r["source_ids"] or "", r["image_url"] or "")
+                    for r in rows
+                ]
+                # BEGIN a single transaction covering clear + recompute
+                # + write-back so an interrupted run can't leave
+                # cluster_ids NULL for cards we're about to re-cluster.
+                # Without this, a SIGKILL after the UPDATE-NULL but
+                # before the per-cluster INSERTs would orphan every
+                # card from its cluster until the next re-cluster run.
+                conn.execute("BEGIN IMMEDIATE")
+                # Wipe existing cluster_id for the cards we're re-clustering.
+                ids_to_clear = [it[0] for it in items]
+                placeholders = ",".join("?" * len(ids_to_clear))
+                conn.execute(
+                    f"UPDATE news_cards SET cluster_id = NULL WHERE id IN ({placeholders})",
+                    ids_to_clear,
+                )
+
+                clusters = self._compute_clusters(items)
+
+                # Update DB with new cluster IDs.
+                for cluster_id, ids in clusters.items():
+                    for cid in ids:
+                        conn.execute(
+                            "UPDATE news_cards SET cluster_id = ? WHERE id = ?",
+                            (cluster_id, cid),
+                        )
+                conn.execute("COMMIT")
+            except Exception:
+                # Roll back so the previous cluster_ids are preserved
+                # across restarts.
+                try:
+                    conn.execute("ROLLBACK")
+                except sqlite3.OperationalError:
+                    pass  # pragma: no cover — defensive only
+                raise
 
         logger.info(
             f"clustering_v2_complete cards={len(items)} clusters={len(clusters)}"

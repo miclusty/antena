@@ -6,7 +6,7 @@ import logging
 import re
 import time
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 from urllib.parse import urljoin
 
 
@@ -68,6 +68,7 @@ class RSSExtractor(BaseExtractor):
         timeout: int = 30,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         hard_timeout = timeout * 1.5
         loop = asyncio.get_running_loop()
@@ -204,11 +205,13 @@ class RSSExtractor(BaseExtractor):
         if own_session:
             self._session = aiohttp.ClientSession()
             self._owns_session = True
+        session: Any = self._session
+        assert session is not None  # nosec — just-narrowed
 
         headers = {"User-Agent": get_user_agent()}
 
         try:
-            async with self._session.get(
+            async with session.get(
                 url, headers=headers, timeout=aiohttp.ClientTimeout(total=timeout)
             ) as resp:
                 if resp.status != 200:
@@ -235,7 +238,7 @@ class RSSExtractor(BaseExtractor):
             base = url.rstrip("/")
             for path in ["/feed", "/rss", "/feed/", "/rss.xml", "/index.xml"]:
                 feed_url = urljoin(base, path)
-                async with self._session.get(
+                async with session.get(
                     feed_url,
                     headers=headers,
                     timeout=aiohttp.ClientTimeout(total=5),
@@ -250,7 +253,7 @@ class RSSExtractor(BaseExtractor):
 
         finally:
             if own_session:
-                await self._session.close()
+                await session.close()
                 self._session = None
                 self._owns_session = False
 

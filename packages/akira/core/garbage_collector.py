@@ -13,7 +13,7 @@ class GarbageCollector:
     def __init__(self, cache: CacheManager, circuit_breaker: CircuitBreaker):
         self.cache = cache
         self.circuit_breaker = circuit_breaker
-        self.stats = {
+        self.stats: dict = {
             "items_collected": 0,
             "memory_freed_mb": 0.0,
             "last_run": None,

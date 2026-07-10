@@ -109,7 +109,8 @@ class MethodLearner:
             )
             return None
 
-        return row["last_success_method"]
+        result: Optional[str] = row["last_success_method"]
+        return result
 
     def record_success(self, url: str, method: str, duration_ms: int, items_count: int):
         """

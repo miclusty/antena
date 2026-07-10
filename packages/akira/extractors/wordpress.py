@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import Any, List, Optional
 import aiohttp
 
 from db.dedup import filter_new_urls
@@ -72,6 +72,7 @@ class WordPressExtractor(BaseExtractor):
         timeout: int = 30,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         # If the URL points at a feed (RSS/Atom), the WP
         # API is on the host's root, not on the feed path.
@@ -111,9 +112,11 @@ class WordPressExtractor(BaseExtractor):
         if own_session:
             self._session = aiohttp.ClientSession()
             self._owns_session = True
+        session: Any = self._session
+        assert session is not None  # nosec — just-narrowed
 
         try:
-            async with self._session.get(
+            async with session.get(
                 api_url,
                 params=params,
                 headers=headers,
@@ -140,7 +143,7 @@ class WordPressExtractor(BaseExtractor):
             return []
         finally:
             if self._owns_session:
-                await self._session.close()
+                await session.close()
                 self._session = None
                 self._owns_session = False
 

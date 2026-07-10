@@ -171,7 +171,7 @@ class LMStudioClient:
         self.embed_model = embed_model or os.getenv(
             "AKIRA_LMSTUDIO_EMBED", DEFAULT_EMBED_MODEL
         )
-        self._cache: Dict[Tuple[str, str], List[float]] = {} if enable_cache else {}
+        self._cache: Dict[Tuple[Optional[str], str], List[float]] = {} if enable_cache else {}
         logger.info(
             f"LMStudioClient ready: {len(self._nodes)} node(s), "
             f"chat={self.chat_model}, embed={self.embed_model}, "
@@ -320,7 +320,7 @@ class LMStudioClient:
         prefix and the `chat_template_kwargs` flag.
         """
         model = model or self.chat_model
-        payload = {
+        payload: Dict[str, Any] = {
             "model": model,
             "messages": list(messages),
             "max_tokens": max_tokens,
@@ -454,7 +454,7 @@ class LMStudioClient:
                     method="POST",
                 )
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
-                    raw = json.loads(resp.read().decode("utf-8"))
+                    raw: Dict[str, Any] = json.loads(resp.read().decode("utf-8"))
                 latency = time.monotonic() - t0
                 # Detect "came back from down state": we just
                 # succeeded, but the previous attempt was <5s

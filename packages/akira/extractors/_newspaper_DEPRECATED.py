@@ -1,4 +1,15 @@
-"""Article extractor using newspaper4k."""
+"""DEPRECATED — kept for reference only. Do NOT import.
+
+The newspaper4k (a.k.a. newspaper3k) import path is broken in our venv:
+``newspaper.settings`` exports ``CF_CACHE_DIRECTORY`` but its own modules
+import ``CACHE_DIRECTORY``. The result is that even an ``import newspaper``
+raises ``ImportError`` at runtime.
+
+This file is intentionally NOT registered by ``extractors/__init__.py``
+nor by the cascade in ``core/app_setup.py:184``. Use
+``extractors.trafilatura.TrafilaturaExtractor`` — well-maintained, no API
+keys, returns similar output. See PR AKIRA Iter 4 for details.
+"""
 
 import asyncio
 import logging
@@ -25,6 +36,7 @@ class NewspaperExtractor(BaseExtractor):
         timeout: int = 60,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         from newspaper import Article as NewspaperArticle
 

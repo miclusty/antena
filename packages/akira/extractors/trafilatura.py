@@ -56,6 +56,7 @@ class TrafilaturaExtractor(BaseExtractor):
         timeout: int = 30,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         loop = asyncio.get_running_loop()
 

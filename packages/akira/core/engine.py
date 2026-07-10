@@ -110,10 +110,11 @@ class ExtractionEngine:
         self, extractor, url: str, timeout: int
     ) -> List[ExtractedItem]:
         """Execute extractor with exponential backoff retry for transient failures."""
-        last_error = None
+        last_error: Exception = RuntimeError("retry_with_backoff_no_attempts")
         for attempt in range(self.MAX_RETRIES + 1):
             try:
-                return await extractor.extract(url, timeout=timeout)
+                result: List[ExtractedItem] = await extractor.extract(url, timeout=timeout)
+                return result
             except (KeyboardInterrupt, SystemExit, asyncio.CancelledError):
                 raise
             except Exception as e:
@@ -127,6 +128,7 @@ class ExtractionEngine:
                     await asyncio.sleep(backoff)
                 else:
                     raise last_error
+        raise last_error
 
     async def extract(
         self,
@@ -144,8 +146,8 @@ class ExtractionEngine:
         Cascade order (by priority):
         1. Check cache
         2. Check circuit breaker
-        3. Try extractors: RSS(100) > WP(90) > Newspaper(70) > Goose(60) >
-           Sitemap(50) > Playwright(30) > Jina(10)
+        3. Try extractors: RSS(100) > WP(90) > Trafilatura(65) >
+           Goose(60) > Sitemap(50) > Playwright(30) > Jina(10)
         4. Return first success
 
         Args:
@@ -181,7 +183,8 @@ class ExtractionEngine:
         async with self._in_flight_lock:
             if dedup_key in self._in_flight:
                 logger.info(f"awaiting_in_flight url={url}")
-                return await self._in_flight[dedup_key]
+                in_flight: ExtractResult = await self._in_flight[dedup_key]
+                return in_flight
             future = asyncio.get_running_loop().create_future()
             self._in_flight[dedup_key] = future
 

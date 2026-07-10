@@ -44,6 +44,7 @@ class GoogleNewsExtractor(BaseExtractor):
         query: str = "",
         country: str = "AR",
         limit: int = 10,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         """
         Extract news from Google News RSS search.

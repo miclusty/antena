@@ -1,7 +1,7 @@
 """Jina Reader API extractor - last resort for difficult sites."""
 
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 import aiohttp
 from .base import BaseExtractor, ExtractedItem
 from core.http_client import get_user_agent
@@ -25,6 +25,7 @@ class JinaExtractor(BaseExtractor):
         timeout: int = 60,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         jina_url = f"https://r.jina.ai/{url}"
         headers = {
@@ -37,10 +38,12 @@ class JinaExtractor(BaseExtractor):
         if own_session:
             self._session = aiohttp.ClientSession()
             self._owns_session = True
+        session: Any = self._session
+        assert session is not None  # nosec — just-narrowed
 
         data = None
         try:
-            async with self._session.get(
+            async with session.get(
                 jina_url, headers=headers, timeout=aiohttp.ClientTimeout(total=timeout)
             ) as resp:
                 resp.raise_for_status()
@@ -53,7 +56,7 @@ class JinaExtractor(BaseExtractor):
             return []
         finally:
             if self._owns_session:
-                await self._session.close()
+                await session.close()
                 self._session = None
                 self._owns_session = False
 

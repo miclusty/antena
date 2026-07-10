@@ -705,8 +705,6 @@ class RAGEngine:
             len((d.get("resumen") or "").split()) for d in results.values() if d
         )
 
-        # type: ignore[arg-type] — we asserted above that all 3
-        # perspectives are populated.
         perspectives = SynthesizedPerspectives(
             cluster_id=cluster_id,
             neutral_title=results["neutral"]["titulo"],  # type: ignore[index]

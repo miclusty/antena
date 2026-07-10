@@ -114,6 +114,8 @@ class HTTPClient:
 
     async def get_text(self, url: str, **kwargs) -> str:
         """Convenience method for GET returning text."""
-        async with self.get(url, **kwargs) as resp:
+        resp = await self.get(url, **kwargs)
+        async with resp:
             resp.raise_for_status()
-            return await resp.text()
+            text: str = await resp.text()
+            return text

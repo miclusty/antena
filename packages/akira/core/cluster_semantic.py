@@ -54,6 +54,8 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
+from db.connection import get_db_connection
+
 logger = logging.getLogger("akira.cluster_semantic")
 
 # Cosine threshold for re-assigning a noise card to a
@@ -197,7 +199,7 @@ class SemanticClusterer:
             # Step 3: re-assign noise cards
             reassigned = 0
             singleton = 0
-            singleton_groups: Dict[str, List[str]] = {}  # singleton_id -> [card_ids]
+            singleton_groups: Dict[str, np.ndarray] = {}  # singleton_id -> running centroid
             updates: List[Tuple[str, str]] = []  # (card_id, new_cluster_id)
             n_noise = 0
             for c in cards:

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 import aiohttp
 import xml.etree.ElementTree as ET
 from .base import BaseExtractor, ExtractedItem
@@ -27,6 +27,7 @@ class SitemapExtractor(BaseExtractor):
         timeout: int = 15,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         base_url = url.rstrip("/")
         sitemap_paths = ["/sitemap.xml", "/sitemap_index.xml", "/wp-sitemap.xml"]
@@ -36,13 +37,15 @@ class SitemapExtractor(BaseExtractor):
         if own_session:
             self._session = aiohttp.ClientSession()
             self._owns_session = True
+        session: Any = self._session
+        assert session is not None  # nosec — just-narrowed
 
         try:
             for path in sitemap_paths:
                 try:
                     sitemap_url = base_url + path
                     resp = await asyncio.wait_for(
-                        self._session.get(
+                        session.get(
                             sitemap_url,
                             headers=headers,
                             timeout=aiohttp.ClientTimeout(total=timeout),
@@ -66,15 +69,16 @@ class SitemapExtractor(BaseExtractor):
                                 lastmod = url_elem.find("sm:lastmod", ns)
 
                                 if loc is not None:
+                                    loc_text: str = loc.text or ""
                                     title = (
-                                        loc.text.split("/")[-1]
+                                        loc_text.split("/")[-1]
                                         .replace("-", " ")
                                         .replace(".html", "")
                                     )
                                     items.append(
                                         ExtractedItem(
                                             title=title.title(),
-                                            url=loc.text,
+                                            url=loc_text,
                                             summary=f"URL discovered via sitemap: {loc.text}",
                                             published_at=lastmod.text
                                             if lastmod is not None
@@ -99,7 +103,7 @@ class SitemapExtractor(BaseExtractor):
                     continue
         finally:
             if self._owns_session:
-                await self._session.close()
+                await session.close()
                 self._session = None
                 self._owns_session = False
 

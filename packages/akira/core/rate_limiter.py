@@ -58,7 +58,7 @@ class RateLimiter:
         stale = [d for d, t in self.last_request.items() if now - t > _DOMAIN_MAX_AGE]
         if not stale:
             # No stale entries; remove the oldest one
-            oldest = min(self.last_request, key=self.last_request.get)
+            oldest = min(self.last_request, key=lambda d: self.last_request[d])
             stale = [oldest]
 
         for domain in stale:

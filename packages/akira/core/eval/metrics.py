@@ -22,7 +22,7 @@ numpy (already a dep of the embedding code).
 from __future__ import annotations
 
 import math
-from typing import Iterable, List, Set
+from typing import Iterable, List, Set, Dict, Any
 
 
 def recall_at_k(candidates: List[str], relevant: Set[str], k: int) -> float:
@@ -138,7 +138,7 @@ def all_metrics(
     return out
 
 
-def aggregate(per_query: List[dict]) -> dict:
+def aggregate(per_query: List[dict]) -> Dict[str, Any]:
     """Mean-aggregate a list of per-query metric dicts.
 
     Each input dict has the same keys (as produced by
@@ -158,7 +158,7 @@ def aggregate(per_query: List[dict]) -> dict:
             len([v for v in values if isinstance(v, (int, float))]), 1
         )
 
-    def walk(items):
+    def walk(items) -> Dict[str, Any]:
         if not items:
             return {}
         keys = set()

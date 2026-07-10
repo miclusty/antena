@@ -1,7 +1,7 @@
 """Social media extractor - X (Twitter), TikTok, Instagram via oEmbed."""
 
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 import aiohttp
 from .base import BaseExtractor, ExtractedItem
 from core.http_client import get_user_agent
@@ -31,6 +31,7 @@ class SocialExtractor(BaseExtractor):
         timeout: int = 30,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         oembed_url = self._build_oembed_url(url)
         if not oembed_url:
@@ -44,9 +45,11 @@ class SocialExtractor(BaseExtractor):
         own_session = self._session is None
         if own_session:
             self._session = aiohttp.ClientSession()
+        session: Any = self._session
+        assert session is not None  # nosec — just-narrowed
 
         try:
-            async with self._session.get(
+            async with session.get(
                 oembed_url,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=timeout),
@@ -58,7 +61,7 @@ class SocialExtractor(BaseExtractor):
             return []
         finally:
             if own_session:
-                await self._session.close()
+                await session.close()
                 self._session = None
 
         if not isinstance(data, dict):

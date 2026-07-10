@@ -18,7 +18,7 @@ class MockExtractor(BaseExtractor):
     def can_extract(cls, url: str, html=None) -> bool:
         return True
 
-    async def extract(self, url: str, timeout: int = 30):
+    async def extract(self, url: str, timeout: int = 30, **kwargs) -> list[ExtractedItem]:
         if "failing" in url:
             raise ValueError("Simulated failure")
         return [

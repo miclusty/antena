@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 from .base import BaseExtractor, ExtractedItem
 
 logger = logging.getLogger("akira.extractors")
@@ -28,15 +28,17 @@ class PlaywrightExtractor(BaseExtractor):
         timeout: int = 60,
         db_path: Optional[str] = None,
         source_id: Optional[int] = None,
+        **kwargs: object,
     ) -> List[ExtractedItem]:
         hard_timeout = timeout * 1.5
         title = ""
         content = ""
-        image_url = None
-        browser = None
-        page = None
+        image_url: Optional[str] = None
+        browser: Any = None
+        page: Any = None
 
         use_pool = self._browser_pool is not None
+        pool: Any = self._browser_pool
 
         try:
             if use_pool:
@@ -44,12 +46,14 @@ class PlaywrightExtractor(BaseExtractor):
                 # returns a _BrowserContext (an async context
                 # manager). Await it first to get the context
                 # manager, then use it.
-                ctx = await self._browser_pool.acquire()
+                ctx = await pool.acquire()
+                assert ctx is not None  # nosec — pool always returns a context manager
                 async with ctx as browser:
                     if browser is None:
                         # Pool couldn't give us a browser
                         return []
                     page = await browser.new_page()
+                    assert page is not None  # nosec — Browser.new_page() returns a Page
                     page.set_default_timeout(timeout * 1000)
                     await page.goto(url, wait_until="domcontentloaded")
                     title, content, image_url = await self._extract_content(
@@ -65,6 +69,7 @@ class PlaywrightExtractor(BaseExtractor):
                     p.chromium.launch(headless=True), timeout=hard_timeout
                 )
                 page = await asyncio.wait_for(browser.new_page(), timeout=hard_timeout)
+                assert page is not None  # nosec — Browser.new_page() returns Page
                 page.set_default_timeout(timeout * 1000)
 
                 await asyncio.wait_for(

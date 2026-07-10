@@ -137,7 +137,7 @@ async def extract(
       2. Circuit breaker check
       3. RSS (feedparser) - fastest for feeds
       4. WordPress REST API - fast for WP sites
-      5. Newspaper - best for articles
+      5. Trafilatura - best for articles (replaces newspaper4k — broken in our venv)
       6. Goose - fallback
       7. Sitemap - find URLs
       8. Playwright - JS-heavy sites
