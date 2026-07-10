@@ -123,6 +123,22 @@ describe("BottomSheet", () => {
     expect(findDialog().className).toContain("max-h-[85vh]");
   });
 
+  it("adds keyboard padding to the scroll area when an input receives focus", () => {
+    Object.defineProperty(window, "visualViewport", {
+      configurable: true,
+      value: { height: 500, addEventListener: vi.fn(), removeEventListener: vi.fn() },
+    });
+    Object.defineProperty(document.documentElement, "clientHeight", { configurable: true, value: 800 });
+    render(() => (
+      <BottomSheet open={true} onClose={() => {}}>
+        <input aria-label="Nombre" />
+      </BottomSheet>
+    ));
+    fireEvent.focus(document.querySelector('input[aria-label="Nombre"]') as HTMLInputElement);
+    const scrollArea = findDialog().querySelector(".overflow-y-auto") as HTMLElement;
+    expect(scrollArea.getAttribute("style") ?? "").toContain("300px");
+  });
+
   it("uses default title 'Menu' as aria-label", () => {
     render(() => (
       <BottomSheet open={true} onClose={() => {}}>

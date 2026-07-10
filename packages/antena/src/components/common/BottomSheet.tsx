@@ -19,6 +19,7 @@ export default function BottomSheet(props: BottomSheetProps) {
   const haptic = useHaptic();
   const [dragY, setDragY] = createSignal(0);
   const [dragging, setDragging] = createSignal(false);
+  const [keyboardOffset, setKeyboardOffset] = createSignal(0);
 
   let dragStartY = 0;
   let dragStartTime = 0;
@@ -54,6 +55,42 @@ export default function BottomSheet(props: BottomSheetProps) {
   });
 
   const setSheetRef = useFocusTrap(() => props.open);
+
+  const getKeyboardOffset = () => {
+    if (typeof window === 'undefined') return 0;
+    const visualHeight = window.visualViewport?.height ?? window.innerHeight;
+    const layoutHeight = document.documentElement.clientHeight || window.innerHeight;
+    return Math.max(0, Math.round(layoutHeight - visualHeight));
+  };
+
+  const updateKeyboardOffset = () => {
+    if (!props.open) return;
+    setKeyboardOffset(getKeyboardOffset());
+  };
+
+  const isKeyboardTarget = (target: EventTarget | null) => (
+    target instanceof HTMLElement && target.matches('input, textarea, select, [contenteditable="true"]')
+  );
+
+  const onFocusIn = (e: FocusEvent) => {
+    if (!isKeyboardTarget(e.target)) return;
+    updateKeyboardOffset();
+    queueMicrotask(() => (e.target as HTMLElement).scrollIntoView({ block: 'nearest' }));
+  };
+
+  const onFocusOut = () => {
+    setTimeout(() => {
+      if (!isKeyboardTarget(document.activeElement)) setKeyboardOffset(0);
+    }, 0);
+  };
+
+  onMount(() => {
+    window.visualViewport?.addEventListener('resize', updateKeyboardOffset);
+  });
+
+  onCleanup(() => {
+    window.visualViewport?.removeEventListener('resize', updateKeyboardOffset);
+  });
 
   const onTouchStart = (e: TouchEvent) => {
     if (!sheetRef) return;
@@ -165,6 +202,8 @@ export default function BottomSheet(props: BottomSheetProps) {
               'touch-action': 'none',
             }}
             onClick={(e) => e.stopPropagation()}
+            onFocusIn={onFocusIn}
+            onFocusOut={onFocusOut}
             role="dialog"
             aria-modal="true"
             aria-label={props.title || 'Menu'}
@@ -183,7 +222,7 @@ export default function BottomSheet(props: BottomSheetProps) {
                 <h2 class="text-base font-semibold text-text-primary">{props.title}</h2>
               </div>
             </Show>
-            <div class="flex-1 overflow-y-auto">
+            <div class="flex-1 overflow-y-auto" style={{ 'padding-bottom': `${keyboardOffset()}px` }}>
               {props.children}
             </div>
           </div>

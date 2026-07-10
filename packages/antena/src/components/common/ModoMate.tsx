@@ -39,11 +39,12 @@ export default function ModoMate(props: ModoMateProps) {
 
   return (
     <div
-      class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 flex items-center gap-3 border shadow-lg"
+      class="fixed bottom-20 left-1/2 -translate-x-1/2 rounded-full px-4 py-2 flex items-center gap-3 border shadow-lg"
       style={{
         background: 'var(--bg-elevated)',
         'border-color': 'var(--border-base)',
         'box-shadow': '0 4px 24px rgba(0,0,0,0.3)',
+        'z-index': 'var(--z-floating)',
       }}
     >
       <button
@@ -61,8 +62,9 @@ export default function ModoMate(props: ModoMateProps) {
           <div class="flex items-center gap-1">
             <button
               onClick={() => setRate(Math.max(0.5, rate() - 0.1))}
-              class="w-6 h-6 flex items-center justify-center rounded-full text-xs transition-colors"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-xs transition-colors"
               style={{ color: 'var(--text-tertiary)', background: 'transparent' }}
+              aria-label="Disminuir velocidad"
             >
               −
             </button>
@@ -74,8 +76,9 @@ export default function ModoMate(props: ModoMateProps) {
             </span>
             <button
               onClick={() => setRate(Math.min(2, rate() + 0.1))}
-              class="w-6 h-6 flex items-center justify-center rounded-full text-xs transition-colors"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-xs transition-colors"
               style={{ color: 'var(--text-tertiary)', background: 'transparent' }}
+              aria-label="Aumentar velocidad"
             >
               +
             </button>

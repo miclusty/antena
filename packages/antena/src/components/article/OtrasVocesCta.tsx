@@ -78,8 +78,8 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
       />
       <Show when={passed()}>
         <div
-          class="fixed left-0 right-0 z-30 mx-4 flex justify-center pointer-events-none"
-          style={{ bottom: 'calc(var(--bottom-nav-height, 60px) + 12px)' }}
+          class="fixed left-0 right-0 mx-4 flex justify-center pointer-events-none"
+          style={{ bottom: 'calc(var(--bottom-nav-height, 60px) + 12px)', 'z-index': 'var(--z-floating)' }}
         >
           <button
             onClick={openSheet}

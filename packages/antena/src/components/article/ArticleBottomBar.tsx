@@ -24,11 +24,12 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
 
   return (
     <div
-      class="fixed bottom-0 left-0 right-0 z-40 border-t lg:hidden"
+      class="fixed bottom-0 left-0 right-0 border-t lg:hidden"
       style={{
         background: 'var(--bg-elevated)',
         'border-color': 'var(--border-base)',
         'padding-bottom': 'env(safe-area-inset-bottom, 0px)',
+        'z-index': 'var(--z-floating)',
       }}
     >
       <div class="flex items-center justify-between px-4 py-3">

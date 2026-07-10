@@ -13,7 +13,10 @@ export default function PullToRefresh(props: PullToRefreshProps) {
   let startY = 0;
   let pulling = false;
 
+  const isStandalonePwa = () => Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+
   const onTouchStart = (e: TouchEvent) => {
+    if (isStandalonePwa()) return;
     const el = props.scrollContainer?.();
     if (el && el.scrollTop > 0) return;
     startY = e.touches[0].clientY;
@@ -21,17 +24,18 @@ export default function PullToRefresh(props: PullToRefreshProps) {
   };
 
   const onTouchMove = (e: TouchEvent) => {
-    if (!pulling) return;
+    if (!pulling || isStandalonePwa()) return;
     const el = props.scrollContainer?.();
     if (el && el.scrollTop > 0) { pulling = false; return; }
     const dy = e.touches[0].clientY - startY;
     if (dy > 0) {
+      if (e.cancelable) e.preventDefault();
       setPullDistance(Math.min(dy * 0.4, 80));
     }
   };
 
   const onTouchEnd = async () => {
-    if (!pulling) return;
+    if (!pulling || isStandalonePwa()) return;
     pulling = false;
     const dist = pullDistance();
     setPullDistance(0);

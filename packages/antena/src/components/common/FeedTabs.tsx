@@ -68,9 +68,9 @@ export default function FeedTabs(props: FeedTabsProps) {
 
   return (
     <div
-      class="sticky top-[var(--header-height)] z-30 bg-bg-base/85 backdrop-blur-xl border-b border-border-base/10 transition-transform duration-200 ease-out"
+      class="sticky top-[var(--header-height)] bg-bg-base/85 backdrop-blur-xl border-b border-border-base/10 transition-transform duration-200 ease-out"
+      style={{ 'z-index': 'var(--z-sticky)', 'will-change': 'transform' }}
       classList={{ '-translate-y-full': !visible() }}
-      style={{ 'will-change': 'transform' }}
     >
       <div
         class="flex items-center overflow-x-auto scrollbar-hide px-4"
@@ -122,7 +122,7 @@ export default function FeedTabs(props: FeedTabsProps) {
                     e.stopPropagation();
                     props.onRemoveCustomTab(tab.id);
                   }}
-                  class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-bg-hover text-text-tertiary"
+                  class="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full hover:bg-bg-hover text-text-tertiary"
                   aria-label={`Quitar pestaña ${tab.label}`}
                 >
                   <MaterialIcon name="close" size="base" class="text-base " style={{ }} />
@@ -149,8 +149,9 @@ export default function FeedTabs(props: FeedTabsProps) {
 
           <Show when={pickerOpen()}>
             <div
-              class="absolute left-0 top-full mt-2 z-40 min-w-[200px] rounded-2xl border border-border-base overflow-hidden"
+              class="absolute left-0 top-full mt-2 min-w-[200px] rounded-2xl border border-border-base overflow-hidden"
               style={{
+                'z-index': 'var(--z-dropdown)',
                 'background-color': 'var(--bg-elevated)',
                 'box-shadow': 'var(--shadow-md)',
               }}

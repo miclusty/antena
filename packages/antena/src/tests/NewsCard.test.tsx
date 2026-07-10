@@ -73,9 +73,44 @@ describe("NewsCard", () => {
     const onClick = vi.fn();
     const news = createMockNews();
     const { container } = render(() => <NewsCard news={news} onClick={onClick} />);
-    const article = container.querySelector("article") as HTMLElement;
-    article.click();
+    // The card body is now an <a> (C9 a11y fix). Clicking the link
+    // triggers the SPA navigation handler (preventDefault + onClick).
+    const link = container.querySelector("article a") as HTMLElement;
+    link.click();
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("card exposes the canonical article URL as its href (a11y C9)", () => {
+    // The headline link must carry the article URL so screen readers
+    // announce a real link, cmd/middle-click can open in a new tab,
+    // and keyboard users can tab + Enter to navigate.
+    const news = createMockNews({ id: "abc-123", slug: "foo-bar", slugDate: "2026-06-15" });
+    const { container } = render(() => <NewsCard news={news} onClick={() => {}} />);
+    const link = container.querySelector("article a") as HTMLAnchorElement;
+    expect(link).toBeTruthy();
+    expect(link.getAttribute("aria-label")).toBe(news.title);
+    // slug + slugDate → canonical /<y>/<m>/<d>/<slug>/
+    expect(link.getAttribute("href")).toBe("/2026/06/15/foo-bar/");
+  });
+
+  it("card href falls back to legacy ?view=article&id= when no slug is present", () => {
+    const news = createMockNews({ id: "abc-123", slug: null, slugDate: null });
+    const { container } = render(() => <NewsCard news={news} onClick={() => {}} />);
+    const link = container.querySelector("article a") as HTMLAnchorElement;
+    expect(link.getAttribute("href")).toBe("/?view=article&id=abc-123");
+  });
+
+  it("clicking an action button does NOT navigate to the article URL", () => {
+    // The footer action buttons live outside the <a>, and they
+    // stopPropagation so the card-level click doesn't fire the nav.
+    const onClick = vi.fn();
+    Object.defineProperty(window, "open", { configurable: true, writable: true, value: vi.fn() });
+    const news = createMockNews();
+    const { getByLabelText } = render(() => (
+      <NewsCard news={news} onClick={onClick} />
+    ));
+    fireEvent.click(getByLabelText("Voto positivo"));
+    expect(onClick).not.toHaveBeenCalled();
   });
 
   it("calls onBookmark when bookmark button is clicked (not card click)", () => {

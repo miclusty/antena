@@ -27,7 +27,7 @@ export default function CitySelector(props: CitySelectorProps) {
         role="tab"
         aria-selected={props.activeCityId === null}
         onClick={() => props.onSelect(null)}
-        class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full min-h-[36px] transition-colors duration-150 active:scale-95"
+        class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full min-h-[44px] transition-colors duration-150 active:scale-95"
         style={
           props.activeCityId === null
             ? {
@@ -53,7 +53,7 @@ export default function CitySelector(props: CitySelectorProps) {
               role="tab"
               aria-selected={isActive()}
               onClick={() => props.onSelect(city.id)}
-              class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full min-h-[36px] transition-colors duration-150 active:scale-95 whitespace-nowrap"
+              class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full min-h-[44px] transition-colors duration-150 active:scale-95 whitespace-nowrap"
               style={
                 isActive()
                   ? {

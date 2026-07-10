@@ -216,7 +216,7 @@ export default function SettingsView() {
             <button
               type="button"
               onClick={() => updateFontScale(fontScale() - FONT_SCALE_STEP)}
-              class="w-8 h-8 flex items-center justify-center rounded-full"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full"
               style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-base)" }}
               aria-label="Reducir fuente"
             >
@@ -235,7 +235,7 @@ export default function SettingsView() {
             <button
               type="button"
               onClick={() => updateFontScale(fontScale() + FONT_SCALE_STEP)}
-              class="w-8 h-8 flex items-center justify-center rounded-full"
+              class="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full"
               style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border-base)" }}
               aria-label="Aumentar fuente"
             >

@@ -65,8 +65,8 @@ export default function FollowButton(props: FollowButtonProps) {
       class={
         "inline-flex items-center gap-1.5 rounded-full transition-all active:scale-95 disabled:opacity-50 " +
         (props.size === "md"
-          ? "min-h-[36px] px-4 text-sm font-semibold"
-          : "min-h-[32px] px-2.5 text-xs font-semibold")
+          ? "min-h-[44px] min-w-[44px] px-4 text-sm font-semibold"
+          : "min-h-[44px] min-w-[44px] px-2.5 text-xs font-semibold")
       }
       style={{
         "background-color": isFollowing() ? "var(--accent)" : "transparent",

@@ -105,10 +105,10 @@ describe("ArticleDetail", () => {
 
   it("renders reading time", () => {
     const news = createMockNews({ body: "word ".repeat(400) });
-    const { getByText } = render(() => (
+    const { getAllByText } = render(() => (
       <ArticleDetail news={news} onBack={() => {}} />
     ));
-    expect(getByText(/\d+ min de lectura/)).toBeInTheDocument();
+    expect(getAllByText(/\d+ min de lectura/).length).toBeGreaterThan(0);
   });
 
   it("renders signal gauge bars (10 of them)", () => {

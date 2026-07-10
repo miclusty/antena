@@ -285,6 +285,10 @@ export default function ArticleDetail(props: ArticleDetailProps) {
   const onTouchStart = (e: TouchEvent) => {
     const t = e.touches[0];
     if (!t) return;
+    if (t.clientX < 24) {
+      touchActive = false;
+      return;
+    }
     touchStartX = t.clientX;
     touchStartY = t.clientY;
     touchActive = true;
@@ -335,8 +339,8 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
       {/* Top bar */}
       <header
-        class="sticky top-0 z-40 border-b"
-        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+        class="sticky top-0 border-b"
+        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)', 'z-index': 'var(--z-sticky)' }}
       >
         <div class="flex items-center px-4 h-12">
           <button
@@ -543,7 +547,8 @@ export default function ArticleDetail(props: ArticleDetailProps) {
                   sizes="(max-width: 768px) 100vw, 800px"
                   alt=""
                   class="w-full h-64 md:h-80 object-cover cursor-zoom-in"
-                  loading="lazy"
+                  loading="eager"
+                  fetchpriority="high"
                   decoding="async"
                   width="800"
                   height="320"
@@ -807,7 +812,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             onClick={() => goPrev()}
             disabled={clusterIds().length < 2}
             aria-label="Cobertura anterior"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium min-h-[36px] disabled:opacity-50 transition-colors hover:bg-bg-hover"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium min-h-[44px] disabled:opacity-50 transition-colors hover:bg-bg-hover"
             style={{ color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }}
           >
             <MaterialIcon name="chevron_left" size="sm" class="text-base" aria-hidden="true" />
@@ -825,7 +830,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             onClick={() => goNext()}
             disabled={clusterIds().length < 2}
             aria-label="Siguiente cobertura"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium min-h-[36px] disabled:opacity-50 transition-colors hover:bg-bg-hover"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium min-h-[44px] disabled:opacity-50 transition-colors hover:bg-bg-hover"
             style={{ color: 'var(--text-secondary)', border: '1px solid var(--border-base)' }}
           >
             <span>Siguiente</span>

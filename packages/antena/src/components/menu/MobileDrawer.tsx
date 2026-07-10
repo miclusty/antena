@@ -153,13 +153,14 @@ export default function MobileDrawer(props: MobileDrawerProps) {
   return (
     <Show when={props.open}>
       <div
-        class="fixed inset-0 z-[var(--backdrop-z)] bg-black/50 animate-[fadeIn_200ms_ease]"
+        class="fixed inset-0 bg-black/50 animate-[fadeIn_200ms_ease]"
+        style={{ 'z-index': 'var(--z-modal-back)' }}
         onClick={props.onClose}
         aria-hidden="true"
       />
       <aside
         ref={setDrawerRef}
-        class="fixed top-0 left-0 h-full z-[var(--drawer-z)] overflow-y-auto transition-transform duration-300 ease-out"
+        class="fixed top-0 left-0 h-full overflow-y-auto transition-transform duration-300 ease-out"
         style={{
           width: 'var(--drawer-width)',
           'max-width': '420px',
@@ -168,6 +169,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
           transform: 'translateX(0)',
           'padding-top': 'env(safe-area-inset-top, 0px)',
           'padding-bottom': 'env(safe-area-inset-bottom, 0px)',
+          'z-index': 'var(--z-drawer)',
         }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -209,7 +211,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
           <button
             type="button"
             onClick={props.onClose}
-            class="w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:bg-bg-hover shrink-0"
+            class="w-11 h-11 flex items-center justify-center rounded-full transition-colors hover:bg-bg-hover shrink-0"
             aria-label="Cerrar menú"
           >
             <MaterialIcon name="close" size="xl" class="text-[24px] " style={{ color: 'var(--text-secondary)' }} />
@@ -341,7 +343,7 @@ export default function MobileDrawer(props: MobileDrawerProps) {
                   <button
                     type="button"
                     onClick={() => handleSelectCategory(cat.slug)}
-                    class="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full min-h-[32px] transition-colors"
+                    class="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full min-h-[44px] transition-colors"
                     style={
                       isActive()
                         ? { background: 'var(--accent)', color: 'var(--accent-fg)' }

@@ -59,8 +59,8 @@ export default function ToastContainer() {
   return (
     <Portal>
       <div
-        class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none"
-        style={{ 'padding-bottom': 'env(safe-area-inset-bottom, 0px)' }}
+        class="fixed bottom-20 left-1/2 -translate-x-1/2 flex flex-col gap-2 items-center pointer-events-none"
+        style={{ 'padding-bottom': 'env(safe-area-inset-bottom, 0px)', 'z-index': 'var(--z-toast)' }}
       >
         <For each={toasts}>
           {(t) => (
@@ -79,7 +79,7 @@ export default function ToastContainer() {
                 <button
                   onClick={() => dismissToast(t.id)}
                   aria-label="Cerrar aviso"
-                  class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/10 active:scale-90 transition-all"
+                  class="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full hover:bg-black/10 active:scale-90 transition-all"
                 >
                   <MaterialIcon name="close" size="base" class="text-[16px]" style={{ }} aria-hidden="true" />
                 </button>

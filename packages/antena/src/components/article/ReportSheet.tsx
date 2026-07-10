@@ -39,8 +39,8 @@ export default function ReportSheet(props: ReportSheetProps) {
   return (
     <Show when={props.open}>
       <div
-        class="fixed inset-0 z-[100] flex items-end justify-center"
-        style={{ background: "rgba(0,0,0,0.45)", "backdrop-filter": "blur(2px)" }}
+        class="fixed inset-0 flex items-end justify-center"
+        style={{ background: "rgba(0,0,0,0.45)", "backdrop-filter": "blur(2px)", "z-index": "var(--z-modal-back)" }}
         onClick={close}
         role="dialog"
         aria-modal="true"

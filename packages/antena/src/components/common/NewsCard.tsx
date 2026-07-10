@@ -5,6 +5,7 @@ import { useHaptic } from '../../lib/haptic';
 import { isRead } from '../../lib/db';
 import { buildWhatsAppUrl } from '../../lib/share';
 import { trackEvent, trackCardView, trackBookmark } from '../../lib/analytics';
+import { articleCanonicalPath } from '../../lib/urlState';
 import SourceLogo from './SourceLogo';
 import FollowButton from './FollowButton';
 import MaterialIcon from '../common/MaterialIcon';
@@ -75,6 +76,19 @@ export interface NewsCardProps {
 export default function NewsCard(props: NewsCardProps) {
   const haptic = useHaptic();
   const compact = () => props.variant === 'compact';
+
+  /**
+   * Canonical article URL for the underlying `<a>`. Lets users:
+   *  - middle-click / cmd-click to open in a new tab (native browser),
+   *  - right-click → copy link,
+   *  - tab to focus + Enter to activate (keyboard a11y),
+   *  - screen-reader announces as a real link with a meaningful name.
+   * The plain click handler still calls props.onClick() (the parent's
+   * `nav.handleNewsClick`) which does the SPA navigation; we
+   * `preventDefault()` only for plain left-clicks so the SPA path stays
+   * intact while native semantic behaviors still work.
+   */
+  const articleHref = () => articleCanonicalPath(props.news.slug, props.news.slugDate, props.news.id);
 
   const [vote, setVote] = createSignal<0|1|-1>(props.news.myVote ?? 0);
   const [voteN, setVoteN] = createSignal(props.news.upvotes ?? 0);
@@ -203,23 +217,36 @@ export default function NewsCard(props: NewsCardProps) {
   if (compact()) {
     return (
       <article
-        onClick={props.onClick}
-        class="flex items-center gap-3 px-5 py-3 border-b border-border-base hover:bg-bg-hover active:scale-[0.99] cursor-pointer transition-all"
+        class="border-b border-border-base hover:bg-bg-hover transition-all"
         classList={{'opacity-50': read()}}
       >
-        <div class="flex-1 min-w-0">
-          <Show when={props.news.category}>
-            <span class="text-[12px] xl:text-[13px] font-bold uppercase tracking-wider" style={{color:cc()}}>{props.news.category}</span>
-          </Show>
-          <h3 class="text-[16px] xl:text-[17px] font-semibold leading-snug truncate mt-0.5 text-text-primary">{props.news.title}</h3>
-          <div class="flex items-center gap-1.5 mt-1 text-[13px] xl:text-[14px] text-text-tertiary">
-            <span class="font-medium text-text-secondary">{props.news.source}</span>
-            <span>·</span><span>{ago()}</span>
-            <Show when={props.news.sourcesCount > 1}>
-              <span>·</span><span class="text-accent font-semibold">{props.news.sourcesCount} fuentes</span>
+        <a
+          href={articleHref()}
+          onClick={(e) => {
+            // Let the browser handle modified clicks (cmd/ctrl/middle)
+            // so users can open in a new tab. Plain left-clicks go
+            // through the SPA handler.
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+            e.preventDefault();
+            props.onClick();
+          }}
+          aria-label={props.news.title}
+          class="flex items-center gap-3 px-5 py-3 cursor-pointer active:scale-[0.99] no-underline text-inherit"
+        >
+          <div class="flex-1 min-w-0">
+            <Show when={props.news.category}>
+              <span class="text-[12px] xl:text-[13px] font-bold uppercase tracking-wider" style={{color:cc()}}>{props.news.category}</span>
             </Show>
+            <h3 class="text-[16px] xl:text-[17px] font-semibold leading-snug truncate mt-0.5 text-text-primary">{props.news.title}</h3>
+            <div class="flex items-center gap-1.5 mt-1 text-[13px] xl:text-[14px] text-text-tertiary">
+              <span class="font-medium text-text-secondary">{props.news.source}</span>
+              <span>·</span><span>{ago()}</span>
+              <Show when={props.news.sourcesCount > 1}>
+                <span>·</span><span class="text-accent font-semibold">{props.news.sourcesCount} fuentes</span>
+              </Show>
+            </div>
           </div>
-        </div>
+        </a>
       </article>
     );
   }
@@ -251,7 +278,6 @@ export default function NewsCard(props: NewsCardProps) {
   return (
     <article
       ref={cardRef}
-      onClick={onCardClick}
       onTouchStart={(e) => onPressStart(e.touches[0].clientX, e.touches[0].clientY)}
       onTouchMove={(e) => onPressMove(e.touches[0].clientX, e.touches[0].clientY)}
       onTouchEnd={onPressEnd}
@@ -260,77 +286,106 @@ export default function NewsCard(props: NewsCardProps) {
       onMouseMove={(e) => onPressMove(e.clientX, e.clientY)}
       onMouseUp={onPressEnd}
       onMouseLeave={onPressEnd}
-      class="group cursor-pointer border-b border-border-base hover:bg-bg-hover active:scale-[0.98] active:bg-bg-hover transition-all duration-100 mb-3"
+      class="group border-b border-border-base hover:bg-bg-hover active:scale-[0.98] active:bg-bg-hover transition-all duration-100 mb-3"
       classList={{'opacity-50': read()}}
     >
       <div class="px-5 py-4">
-        {/* ── Meta row ── */}
-        <div class="flex items-center gap-2 mb-2.5 flex-wrap">
-          <Show when={props.news.category}>
-            <span class="inline-flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold" style={{color:cc()}}>
-              <span class="w-2 h-2 rounded-full shrink-0" style={{'background-color':cc()}} />
-              {props.news.category}
-            </span>
-            <span class="text-text-tertiary">·</span>
-          </Show>
-          <SourceLogo
-            source={props.news.source}
-            size={24}
-            biasScore={props.news.biasScore}
-            showBiasDot={true}
-            sourceId={props.news.sourceId ?? null}
-            onClick={props.onSourceClick}
-          />
-          <span class="text-[16px] xl:text-[17px] text-text-secondary font-semibold">{props.news.source}</span>
-          <span class="text-[16px] xl:text-[17px] text-text-tertiary">{ago()}</span>
-          <Show when={trending()}>
-            <span class="text-[12px] xl:text-[13px] font-extrabold text-accent uppercase tracking-wider ml-auto inline-flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-accent" />
-              Trending
-            </span>
-          </Show>
-        </div>
-
-        {/* ── Content area (flex row if image) ── */}
-        <div class="flex gap-4" classList={{'flex-row-reverse': showThumb()}}>
-          <Show when={showThumb()}>
-            <div
-              class="shrink-0 w-[130px] h-[85px] rounded-xl overflow-hidden bg-bg-hover"
-              data-hide-on-data-saver="true"
-            >
-              {(() => {
-                const u = props.news.imageUrl;
-                if (!u) return null;
-                const base = `https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(u)}&q=72&fmt=webp&fit=cover`;
-                return (
-                  <img
-                    src={`${base}&w=260`}
-                    srcset={`${base}&w=260 260w, ${base}&w=390 390w, ${base}&w=520 520w`}
-                    sizes="(max-width: 768px) 130px, 260px"
-                    alt=""
-                    class="w-full h-full object-cover"
-                    loading={props.priority ? "eager" : "lazy"}
-                    fetchpriority={props.priority ? "high" : "auto"}
-                    decoding="async"
-                    width="130"
-                    height="85"
-                  />
-                );
-              })()}
-            </div>
-          </Show>
-
-          <div class="flex-1 min-w-0">
-            <h2 class="text-[22px] xl:text-[24px] font-bold leading-snug text-text-primary group-hover:underline group-hover:decoration-text-tertiary/30">
-              {props.news.title}
-            </h2>
-            <p class="text-[16px] xl:text-[17px] text-text-secondary mt-1.5 leading-relaxed line-clamp-2">
-              {props.news.summary}
-            </p>
+        {/*
+          ── Primary clickable region (a11y C9) ──
+          The headline / image / meta row is wrapped in a single <a> so
+          the card is reachable by keyboard, announces as a link to
+          screen-readers, and supports cmd/middle-click for native new-
+          tab behavior. The action row below sits OUTSIDE the anchor
+          so each button's stopPropagation keeps it from triggering
+          navigation. Long-press still works because the touch handlers
+          live on the surrounding <article>.
+        */}
+        <a
+          href={articleHref()}
+          onClick={(e) => {
+            // Hand off to native browser for modified clicks so the
+            // user can open in a new tab / window.
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+            e.preventDefault();
+            // Skip the SPA nav when a long-press just released — the
+            // pressActive flag is flipped in `onPressEnd`/the click
+            // guard.
+            if (pressActive) { pressActive = false; return; }
+            haptic.vibrate('selection');
+            props.onClick();
+          }}
+          aria-label={props.news.title}
+          class="block no-underline text-inherit cursor-pointer active:scale-[0.98]"
+        >
+          {/* ── Meta row ── */}
+          <div class="flex items-center gap-2 mb-2.5 flex-wrap">
+            <Show when={props.news.category}>
+              <span class="inline-flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold" style={{color:cc()}}>
+                <span class="w-2 h-2 rounded-full shrink-0" style={{'background-color':cc()}} />
+                {props.news.category}
+              </span>
+              <span class="text-text-tertiary">·</span>
+            </Show>
+            <SourceLogo
+              source={props.news.source}
+              size={24}
+              biasScore={props.news.biasScore}
+              showBiasDot={true}
+              sourceId={props.news.sourceId ?? null}
+              onClick={props.onSourceClick}
+            />
+            <span class="text-[16px] xl:text-[17px] text-text-secondary font-semibold">{props.news.source}</span>
+            <span class="text-[16px] xl:text-[17px] text-text-tertiary">{ago()}</span>
+            <Show when={trending()}>
+              <span class="text-[12px] xl:text-[13px] font-extrabold text-accent uppercase tracking-wider ml-auto inline-flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-accent" />
+                Trending
+              </span>
+            </Show>
           </div>
-        </div>
 
-        {/* ── Footer: sources pill + actions ── */}
+          {/* ── Content area (flex row if image) ── */}
+          <div class="flex gap-4" classList={{'flex-row-reverse': showThumb()}}>
+            <Show when={showThumb()}>
+              <div
+                class="shrink-0 w-[130px] h-[85px] rounded-xl overflow-hidden bg-bg-hover"
+                data-hide-on-data-saver="true"
+              >
+                {(() => {
+                  const u = props.news.imageUrl;
+                  if (!u) return null;
+                  const base = `https://akira-api.miclusty.workers.dev/api/img?url=${encodeURIComponent(u)}&q=72&fmt=webp&fit=cover`;
+                  return (
+                    <img
+                      src={`${base}&w=260`}
+                      srcset={`${base}&w=260 260w, ${base}&w=390 390w, ${base}&w=520 520w`}
+                      sizes="(max-width: 768px) 130px, 260px"
+                      alt=""
+                      class="w-full h-full object-cover"
+                      loading={props.priority ? "eager" : "lazy"}
+                      fetchpriority={props.priority ? "high" : "auto"}
+                      decoding="async"
+                      width="130"
+                      height="85"
+                    />
+                  );
+                })()}
+              </div>
+            </Show>
+
+            <div class="flex-1 min-w-0">
+              <h2 class="text-[22px] xl:text-[24px] font-bold leading-snug text-text-primary group-hover:underline group-hover:decoration-text-tertiary/30">
+                {props.news.title}
+              </h2>
+              <p class="text-[16px] xl:text-[17px] text-text-secondary mt-1.5 leading-relaxed line-clamp-2">
+                {props.news.summary}
+              </p>
+            </div>
+          </div>
+        </a>
+
+        {/* ── Footer: sources pill + actions (outside the <a> so each
+                button keeps its own click semantics) ── */}
         <div class="mt-3 space-y-2">
           <Show when={props.news.sourcesCount > 1}>
             <span class="inline-flex items-center gap-1.5 text-[13px] xl:text-[14px] font-semibold text-accent bg-accent/5 px-2.5 min-h-[28px] rounded-md">
@@ -415,8 +470,8 @@ export default function NewsCard(props: NewsCardProps) {
       {/* ── Long-press action sheet ── */}
       <Show when={actionSheetOpen()}>
         <div
-          class="fixed inset-0 z-[60] flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.45)', 'backdrop-filter': 'blur(2px)' }}
+          class="fixed inset-0 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.45)', 'backdrop-filter': 'blur(2px)', 'z-index': 'var(--z-modal-back)' }}
           onClick={closeSheet}
         >
           <div

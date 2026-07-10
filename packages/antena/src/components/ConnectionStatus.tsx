@@ -72,7 +72,7 @@ export default function ConnectionStatus() {
             clearAutoDismiss();
           }}
           aria-label="Cerrar aviso de sin conexión"
-          class="shrink-0 flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/10 active:scale-90 transition-all"
+          class="shrink-0 flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full hover:bg-black/10 active:scale-90 transition-all"
         >
           <MaterialIcon name="close" size="base" class="text-[16px]" style={{ "font-variation-settings": "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24" }} aria-hidden="true" />
         </button>

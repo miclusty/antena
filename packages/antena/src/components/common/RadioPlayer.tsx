@@ -336,10 +336,11 @@ export default function RadioPlayer() {
 
       {/* Persistent play bar — fixed bottom, above the BottomNav */}
       <div
-        class="fixed left-0 right-0 z-40 transition-transform duration-200"
+        class="fixed left-0 right-0 transition-transform duration-200"
         style={{
           bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
           transform: open() ? 'translateY(0)' : 'translateY(0)',
+          'z-index': 'var(--z-floating)',
         }}
       >
         <Show when={current()}>
@@ -358,7 +359,7 @@ export default function RadioPlayer() {
               <button
                 onClick={togglePlay}
                 aria-label={playing() ? 'Pausar' : 'Reproducir'}
-                class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-95"
+                class="shrink-0 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-transform active:scale-95"
                 style={{ background: 'var(--accent)', color: 'white' }}
                 disabled={starting() !== null}
               >
@@ -419,7 +420,7 @@ export default function RadioPlayer() {
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleFavorite(current()!.id); }}
                   aria-label={favorites().includes(current()!.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                  class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                  class="shrink-0 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center"
                 >
                   <MaterialIcon
                     name={favorites().includes(current()!.id) ? 'favorite' : 'favorite_border'}
@@ -433,7 +434,7 @@ export default function RadioPlayer() {
                 <button
                   onClick={() => { haptic.vibrate('tap'); setMuted(!muted()); }}
                   aria-label={muted() ? 'Activar sonido' : 'Silenciar'}
-                  class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                  class="shrink-0 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center"
                 >
                   <MaterialIcon
                     name={muted() ? 'volume_off' : 'volume_up'}
@@ -445,7 +446,7 @@ export default function RadioPlayer() {
                 <button
                   onClick={() => { setCurrent(null); setPlaying(false); setOpen(false); }}
                   aria-label="Cerrar reproductor"
-                  class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+                  class="shrink-0 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center"
                 >
                   <MaterialIcon
                     name="close"
@@ -463,8 +464,8 @@ export default function RadioPlayer() {
       {/* Full panel: drawer of all radios */}
       <Show when={open()}>
         <div
-          class="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          class="fixed inset-0 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.5)', 'z-index': 'var(--z-modal-back)' }}
           onClick={() => setOpen(false)}
         >
           <div
@@ -498,7 +499,7 @@ export default function RadioPlayer() {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar"
-                class="w-8 h-8 rounded-full flex items-center justify-center"
+                class="min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center"
                 style={{ background: 'var(--bg-elevated)' }}
               >
                 <MaterialIcon name="close" size="sm" class="text-base" />
@@ -680,11 +681,12 @@ export default function RadioPlayer() {
         <button
           onClick={() => { haptic.vibrate('tap'); setOpen(true); loadRadios(); }}
           aria-label="Abrir radios en vivo"
-          class="fixed right-4 z-40 w-12 h-12 rounded-full shadow-lg flex items-center justify-center"
+          class="fixed right-4 w-12 h-12 rounded-full shadow-lg flex items-center justify-center"
           style={{
             bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
             background: 'var(--accent)',
             color: 'white',
+            'z-index': 'var(--z-floating)',
           }}
         >
           <MaterialIcon name="radio" size="base" class="text-xl" />

@@ -19,8 +19,8 @@ export default function ReadLaterView(props: ReadLaterViewProps) {
   return (
     <div class="min-h-screen pb-24" style={{ background: 'var(--bg-base)' }}>
       <header
-        class="sticky top-0 z-40 border-b"
-        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)' }}
+        class="sticky top-0 border-b"
+        style={{ background: 'var(--bg-elevated)', 'border-color': 'var(--border-base)', 'z-index': 'var(--z-sticky)' }}
       >
         <div class="max-w-[680px] mx-auto flex items-center px-4 h-12">
           <button

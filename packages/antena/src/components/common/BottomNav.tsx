@@ -32,8 +32,8 @@ interface BottomNavProps {
 export default function BottomNav(props: BottomNavProps) {
   return (
     <nav
-      class="fixed bottom-0 left-0 right-0 z-50 bg-bg-elevated/85 backdrop-blur-xl border-t border-border-base/10"
-      style={{ 'padding-bottom': 'env(safe-area-inset-bottom, 0px)' }}
+      class="fixed bottom-0 left-0 right-0 bg-bg-elevated/85 backdrop-blur-xl border-t border-border-base/10"
+      style={{ 'padding-bottom': 'env(safe-area-inset-bottom, 0px)', 'z-index': 'var(--z-sticky)' }}
       aria-label="Navegación principal"
     >
       <div class="flex items-center justify-around h-[var(--bottom-nav-height)] max-w-screen-md mx-auto">

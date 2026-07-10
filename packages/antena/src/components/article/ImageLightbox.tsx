@@ -41,7 +41,7 @@ export default function ImageLightbox(props: ImageLightboxProps) {
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); props.onClose(); }}
-          class="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
+          class="absolute top-4 right-4 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center"
           style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
           aria-label="Cerrar"
         >

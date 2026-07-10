@@ -159,7 +159,7 @@ export default function SearchView() {
   return (
     <div class="w-full">
       {/* Search input */}
-      <div class="sticky top-0 z-20 px-4 py-3 border-b border-border-base" style={{ background: "var(--bg-base)" }}>
+      <div class="sticky top-0 px-4 py-3 border-b border-border-base" style={{ background: "var(--bg-base)", "z-index": "var(--z-sticky)" }}>
         <div class="flex items-center gap-2">
           <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-full" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border-base)" }}>
             <MaterialIcon name="search" size="xl" class="text-xl " style={{ color: "var(--text-tertiary)", "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />

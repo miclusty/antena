@@ -67,10 +67,11 @@ export default function LocationSelector(props: LocationSelectorProps) {
 
       <Show when={isOpen()}>
         <div
-          class="absolute top-full left-0 mt-1 w-64 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto border"
+          class="absolute top-full left-0 mt-1 w-64 rounded-lg shadow-lg max-h-64 overflow-y-auto border"
           style={{
             background: 'var(--bg-elevated)',
             'border-color': 'var(--border-base)',
+            'z-index': 'var(--z-dropdown)',
           }}
         >
           <button

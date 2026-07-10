@@ -129,8 +129,6 @@
 
   /* ── Drawer ── */
   --drawer-width:    85%;
-  --drawer-z:        100;
-  --backdrop-z:      90;
   --drawer-shadow:   -8px 0 24px rgba(0, 0, 0, 0.20);
 
   /* ── Z-axis scale (use in components to avoid overlap) ────── */

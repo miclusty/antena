@@ -36,11 +36,11 @@ export default function SourceProfileView(props: { sourceId: number; onBack: () 
 
   return (
     <div class="w-full max-w-2xl mx-auto">
-      <header class="sticky top-0 z-20 px-4 py-3 border-b border-border-base flex items-center gap-3" style={{ background: 'var(--bg-base)' }}>
+      <header class="sticky top-0 px-4 py-3 border-b border-border-base flex items-center gap-3" style={{ background: 'var(--bg-base)', 'z-index': 'var(--z-sticky)' }}>
         <button
           type="button"
           onClick={props.onBack}
-          class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-bg-hover"
+          class="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-full hover:bg-bg-hover"
           aria-label="Volver"
         >
           <MaterialIcon name="arrow_back" size="xl" class="text-xl " style={{ "font-variation-settings": "'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20" }} aria-hidden="true" />

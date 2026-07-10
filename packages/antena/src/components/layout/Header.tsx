@@ -37,7 +37,7 @@ export default function Header(props: HeaderProps) {
   };
 
   return (
-    <header class="sticky top-0 z-40 bg-bg-elevated/85 backdrop-blur-xl border-b border-border-base/10">
+    <header class="sticky top-0 bg-bg-elevated/85 backdrop-blur-xl border-b border-border-base/10" style={{ 'padding-top': 'env(safe-area-inset-top, 0px)', 'z-index': 'var(--z-sticky)' }}>
       <div class="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-4">
         {/* Left: back or logo */}
         <div class="flex items-center gap-3 min-w-[80px]">
@@ -61,7 +61,7 @@ export default function Header(props: HeaderProps) {
           >
             <button
               onClick={props.onBack}
-              class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
+              class="flex items-center justify-center w-11 h-11 rounded-full hover:bg-bg-hover transition-colors"
               aria-label="Volver"
             >
               <MaterialIcon name="arrow_back" size="xl" class="text-xl text-text-primary" style={{ }} />
@@ -81,7 +81,7 @@ export default function Header(props: HeaderProps) {
           {/* Theme toggle — cycles light → auto → dark */}
           <button
             onClick={toggleTheme}
-            class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
+            class="flex items-center justify-center w-11 h-11 rounded-full hover:bg-bg-hover transition-colors"
             aria-label={themeLabel()}
             title={themeLabel()}
           >
@@ -91,7 +91,7 @@ export default function Header(props: HeaderProps) {
           {/* Search button */}
           <button
             onClick={() => setSearchOpen(!searchOpen())}
-            class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
+            class="flex items-center justify-center w-11 h-11 rounded-full hover:bg-bg-hover transition-colors"
             aria-label="Buscar"
           >
             <MaterialIcon name="search" size="xl" class="text-xl text-text-secondary" style={{ }} />
@@ -100,7 +100,7 @@ export default function Header(props: HeaderProps) {
           {/* Settings link */}
           <a
             href="/settings"
-            class="flex items-center justify-center w-9 h-9 rounded-full hover:bg-bg-hover transition-colors"
+            class="flex items-center justify-center w-11 h-11 rounded-full hover:bg-bg-hover transition-colors"
             aria-label="Configuración"
             title="Configuración"
           >

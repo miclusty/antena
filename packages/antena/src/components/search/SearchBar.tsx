@@ -127,7 +127,7 @@ export default function SearchBar(props: SearchBarProps) {
             type="button"
             onClick={onClear}
             aria-label="Limpiar busqueda"
-            class="ml-1 w-7 h-7 rounded-full flex items-center justify-center hover:bg-bg-hover active:scale-90 transition-all"
+            class="ml-1 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:bg-bg-hover active:scale-90 transition-all"
           >
             <MaterialIcon name="close" size="base" class="text-base " style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
           </button>
@@ -135,10 +135,11 @@ export default function SearchBar(props: SearchBarProps) {
       </div>
       <Show when={showList() && suggestions().length > 0}>
         <div
-          class="absolute left-0 right-0 top-full mt-1.5 z-40 rounded-2xl border border-border-base overflow-hidden"
+          class="absolute left-0 right-0 top-full mt-1.5 rounded-2xl border border-border-base overflow-hidden"
           style={{
             background: 'var(--bg-elevated)',
             'box-shadow': 'var(--shadow-md)',
+            'z-index': 'var(--z-dropdown)',
           }}
           role="listbox"
         >

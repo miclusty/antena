@@ -97,8 +97,8 @@ export default function PwaInstallPrompt() {
           safe area) and above the radio bar (which is at the same
           level but on the right). z-30 keeps it under the radio
           when both are visible (radio is z-40). */}
-      <div class="fixed bottom-24 left-4 z-30 flex items-stretch shadow-lg rounded-full overflow-hidden"
-           style={{ background: 'var(--accent)' }}>
+      <div class="fixed bottom-24 left-4 flex items-stretch shadow-lg rounded-full overflow-hidden"
+           style={{ background: 'var(--accent)', 'z-index': 'var(--z-floating)' }}>
         <button
           type="button"
           onClick={install}
@@ -135,8 +135,8 @@ export default function PwaInstallPrompt() {
       <Show when={iosVisible()}>
         <div
           ref={setIosRef}
-          class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.6)' }}
+          class="fixed inset-0 flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)', 'z-index': 'var(--z-modal-back)' }}
           onClick={() => setIosVisible(false)}
           role="dialog"
           aria-modal="true"
@@ -159,7 +159,7 @@ export default function PwaInstallPrompt() {
                   setIosVisible(false);
                 }
               }}
-              class="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full cursor-pointer"
+              class="absolute top-3 right-3 w-11 h-11 flex items-center justify-center rounded-full cursor-pointer"
               style={{ color: 'var(--text-secondary)', 'background-color': 'var(--bg-hover)' }}
               aria-label="Cerrar"
             >
