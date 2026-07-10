@@ -414,6 +414,9 @@ export interface ApiSourceEntry {
   type?: string;
   reliability_score?: number;
   bias_score?: number;
+  credibility_score?: number;
+  credibility_updated_at?: string | null;
+  retraction_count?: number;
   is_active?: number;
   news_count?: number;
   location_name?: string | null;

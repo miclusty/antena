@@ -76,7 +76,13 @@ def main() -> int:
         SELECT s.id, s.url
         FROM sources s
         WHERE s.is_active = 1
-        ORDER BY COALESCE(NULLIF(s.last_harvest_at, '1970-01-01'), '1970-01-01') ASC,
+          -- Skip sources with credibility < 30 (not verified); they
+          -- still get crawled via the full cycle but with lower
+          -- priority. Sources with NULL credibility (new ones) are kept.
+          AND (COALESCE(s.credibility_score, 50) >= 30)
+        ORDER BY (CASE WHEN COALESCE(s.credibility_score, 50) IS NULL THEN 1 ELSE 0 END),
+                 COALESCE(s.credibility_score, 50) DESC,
+                 COALESCE(NULLIF(s.last_harvest_at, '1970-01-01'), '1970-01-01') ASC,
                  s.id ASC
         LIMIT ?
         """,

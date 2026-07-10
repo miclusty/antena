@@ -108,6 +108,27 @@ export default function SourceProfileView(props: { sourceId: number; onBack: () 
               >
                 <BiasIndicator score={p().source.bias_score!} />
               </Show>
+
+              <Show when={p().source.credibility_score !== undefined && p().source.credibility_score !== null}>
+                <div class="flex items-center gap-2 mt-2">
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold"
+                    classList={{
+                      'bg-green-100 text-green-800': (p().source.credibility_score ?? 0) >= 80,
+                      'bg-yellow-100 text-yellow-800': (p().source.credibility_score ?? 0) >= 50 && (p().source.credibility_score ?? 0) < 80,
+                      'bg-red-100 text-red-800': (p().source.credibility_score ?? 0) < 50,
+                    }}
+                    title={`Credibilidad ${p().source.credibility_score}/100`}
+                  >
+                    Credibilidad: {p().source.credibility_score}/100
+                  </span>
+                  <Show when={(p().source.credibility_score ?? 0) < 30}>
+                    <span class="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      (no verificada)
+                    </span>
+                  </Show>
+                </div>
+              </Show>
             </section>
 
             <section class="px-1 pb-12">

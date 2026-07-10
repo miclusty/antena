@@ -187,18 +187,30 @@ newsRoutes.get("/map", async (c) => {
   return withCache(async () => {
     const rows = await c.env.DB.prepare(`
       SELECT nc.id, nc.title, nc.category, nc.published_at,
-             l.id as location_id, l.name as location_name, l.lat, l.lng
+             l.id as location_id, l.name as location_name, l.lat, l.lng,
+             COALESCE(s.credibility_score, 50) AS source_credibility
       FROM news_cards nc
       INNER JOIN locations l ON l.id = nc.location_id
+      LEFT JOIN sources s ON (
+        SELECT CAST(TRIM(SUBSTR(nc.source_ids, 1,
+          CASE WHEN INSTR(nc.source_ids, ',') > 0
+               THEN INSTR(nc.source_ids, ',') - 1
+               ELSE LENGTH(nc.source_ids)
+          END)) AS INTEGER)
+      ) = s.id
       WHERE l.lat IS NOT NULL AND l.lng IS NOT NULL
         AND nc.published_at >= datetime('now', '-1 day')
-      ORDER BY nc.published_at DESC
+      ORDER BY
+        CASE WHEN COALESCE(s.credibility_score, 50) >= 30 THEN 0 ELSE 1 END ASC,
+        COALESCE(s.credibility_score, 50) DESC,
+        nc.published_at DESC
       LIMIT ?
     `).bind(limit).all<{
       id: string; title: string; category: string | null;
       published_at: string | null;
       location_id: number; location_name: string;
       lat: number; lng: number;
+      source_credibility: number;
     }>();
     return c.json({ items: rows.results });
   }, { ttl: 300, swr: 0 })(c.req.raw);

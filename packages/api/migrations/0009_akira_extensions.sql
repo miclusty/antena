@@ -10,3 +10,11 @@ ALTER TABLE clusters ADD COLUMN bias_key_quotes TEXT;
 ALTER TABLE clusters ADD COLUMN bias_narrative_at TEXT;
 ALTER TABLE clusters ADD COLUMN bias_narrative_model TEXT;
 CREATE INDEX idx_clusters_narrative_at ON clusters(bias_narrative_at);
+
+-- Phase 3 — credibility scoring columns on sources
+ALTER TABLE sources ADD COLUMN credibility_score INTEGER DEFAULT 50;
+ALTER TABLE sources ADD COLUMN retraction_count INTEGER DEFAULT 0;
+ALTER TABLE sources ADD COLUMN uniqueness_ratio REAL DEFAULT 1.0;
+ALTER TABLE sources ADD COLUMN diversity_score INTEGER DEFAULT 50;
+ALTER TABLE sources ADD COLUMN credibility_updated_at TEXT;
+CREATE INDEX idx_sources_credibility ON sources(credibility_score DESC);
