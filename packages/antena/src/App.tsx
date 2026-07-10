@@ -40,6 +40,7 @@ import { fetchFeed, fetchNewsById, fetchCategories, fetchStats, fetchBreaking, f
 // Lazy-loaded views (code-split out of the main bundle).
 // Each is only downloaded when the user navigates to it.
 const ArticleDetail = lazy(() => import('./components/article/ArticleDetail'));
+const SearchView = lazy(() => import('./components/search/SearchView'));
 const BookmarksView = lazy(() => import('./components/bookmarks/BookmarksView'));
 const ReadLaterView = lazy(() => import('./components/readlater/ReadLaterView'));
 const HistoryView = lazy(() => import('./components/history/HistoryView'));
@@ -341,6 +342,10 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
               />
             </Show>
 
+            <Show when={nav.currentView() === 'search'}>
+              <SearchView />
+            </Show>
+
             {/* ── Bookmarks view ── */}
             <Show when={nav.currentView() === 'bookmarks'}>
               <BookmarksView onBack={() => nav.handleViewChange('feed')} onNewsClick={nav.handleNewsClick} />
@@ -381,9 +386,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
               feedHook.refreshBreaking();
             }
             else if (tab === 'search') {
-              if (typeof window !== 'undefined') {
-                window.location.href = '/buscar';
-              }
+              nav.handleViewChange('search');
             }
           }}
           unreadCount={(() => {
