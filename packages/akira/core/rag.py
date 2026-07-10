@@ -468,6 +468,11 @@ class RAGEngine:
         ctx.cluster_articles = self._fetch_cluster_articles(cluster_id)
         if not ctx.cluster_articles:
             return ctx
+        # SimHash dedup: cluster articles that are near-duplicates of
+        # each other (Hamming <= 12) get collapsed — we keep only the
+        # longer one. This trims the LLM context and prevents it from
+        # weighting multiple phrasings of the same article heavily.
+        ctx.cluster_articles = self._dedupe_by_simhash(ctx.cluster_articles)
         ctx.representative_text = self._representative_text(ctx.cluster_articles)
         ctx.neighbor_ids, ctx.neighbor_summaries = self._knn_neighbors(
             ctx.representative_text, exclude_cluster=cluster_id
@@ -476,6 +481,33 @@ class RAGEngine:
         ctx.related_entities = self._related_entities(ctx.top_entities)
         ctx.bias_distribution = self._bias_distribution(ctx.cluster_articles)
         return ctx
+
+    def _dedupe_by_simhash(self, articles: List[Dict], threshold: int = 12) -> List[Dict]:
+        """Collapse near-duplicate articles by SimHash Hamming distance.
+
+        For each article, compute simhash from title + summary. Keep
+        only the longer-content version of any pair within `threshold`
+        bits of each other.
+        """
+        from core.simhash import compute_simhash, hamming_distance
+        if len(articles) <= 1:
+            return articles
+        hashes: List[int] = []
+        for a in articles:
+            text = f"{a.get('title','')} {a.get('summary','')}"
+            hashes.append(compute_simhash(text[:500]))
+        kept: List[Dict] = []
+        kept_hashes: List[int] = []
+        for art, h in zip(articles, hashes):
+            is_dup = False
+            for kh in kept_hashes:
+                if hamming_distance(h, kh) <= threshold:
+                    is_dup = True
+                    break
+            if not is_dup:
+                kept.append(art)
+                kept_hashes.append(h)
+        return kept
 
     def synthesize(self, cluster_id: str) -> Optional[SynthesizedPerspectives]:
         """Full RAG pipeline: assemble context → prompt LLM → parse.

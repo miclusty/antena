@@ -162,11 +162,17 @@ def _seed_cluster(db_path: str, cluster_id: str, n_cards: int = 3) -> None:
         "VALUES (1, 'Test Source', 'https://example.com', 0.0)"
     )
     for i in range(n_cards):
-        title = f"Presidente Milei announces economic plan {i}"
-        summary = (
-            f"El presidente anunció nuevas medidas económicas para "
-            f"estabilizar el peso y reducir la inflación en Argentina número {i}."
-        )
+        # Use truly distinct topics — simhash dedup at threshold 12 will
+        # collapse near-duplicates. We want each card to survive dedup.
+        events = [
+            ("Milei anuncia reforma tributaria con cambios en ganancias",
+             "El gobierno presenta proyecto que modifica el impuesto a las ganancias para empleados registrados"),
+            ("Córdoba elige nuevo intendente en elecciones municipales",
+             "Los candidatos presentan propuestas para el transporte público y la seguridad en la ciudad"),
+            ("Selección argentina vence a Brasil en partido amistoso",
+             "El equipo argentino se impone por 2 a 1 con goles de Messi y Álvarez en el estadio Monumental"),
+        ]
+        title, summary = events[i % 3]
         conn.execute(
             "INSERT INTO news_cards "
             "(id, cluster_id, title, summary, source_ids, bias_score) "
@@ -252,7 +258,7 @@ def test_assemble_with_seeded_cluster_returns_cluster_articles():
         # Bias distribution: all articles have bias_score=0 → neutral bucket.
         assert ctx.bias_distribution == {"pro": 0, "anti": 0, "neutral": 3}
         # Representative text is built from the top-3 articles by length.
-        assert "Presidente Milei" in ctx.representative_text
+        assert "Milei anuncia reforma tributaria" in ctx.representative_text
     finally:
         os.unlink(path)
 

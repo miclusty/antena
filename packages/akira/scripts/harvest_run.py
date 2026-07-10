@@ -355,10 +355,20 @@ async def process_sources():
                     if slug in existing_slugs:
                         slug = _resolve_slug_collision(slug, existing_slugs, article_id)
                     # bias_score and category left NULL — AKIRA cascade will enrich them
+                    # Compute simhash from (title + summary + body[:200]) for near-duplicate detection.
+                    from core.simhash import compute_simhash
+                    title_for_hash = item.get("title", "")[:1000]
+                    summary_for_hash = item.get("summary", "")[:2500]
+                    body_for_hash = body or ""
+                    if isinstance(body_for_hash, str):
+                        body_for_hash = body_for_hash[:200]
+                    simhash = compute_simhash(
+                        " ".join(p for p in [title_for_hash, summary_for_hash, body_for_hash] if p)
+                    )
                     conn2.execute("""
                         INSERT OR IGNORE INTO news_cards
-                        (id, location_id, title, summary, body, image_url, source_url, article_url, source_ids, bias_score, published_at, created_at, category, author, slug, slug_date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?, ?, ?)
+                        (id, location_id, title, summary, body, image_url, source_url, article_url, source_ids, bias_score, published_at, created_at, category, author, slug, slug_date, simhash)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, datetime("now"), NULL, ?, ?, ?, ?)
                     """, (
                         article_id, location_id,
                         # Title cap raised from 500 → 1000 so
@@ -366,14 +376,14 @@ async def process_sources():
                         # run 100-200 chars with subhead) are
                         # not truncated before they reach the
                         # user.
-                        item.get("title", "")[:1000],
+                        title_for_hash,
                         # Summary cap raised from 1000 → 2500
                         # so feed items with content:encoded
                         # or longer <description> blocks
                         # actually reach the user. Most
                         # modern feeds cap their lede at
                         # ~1500-2000 chars; this matches.
-                        item.get("summary", "")[:2500],
+                        summary_for_hash,
                         body,
                         item.get("image_url"),
                         item.get("url", "")[:500],
@@ -383,6 +393,7 @@ async def process_sources():
                         author,
                         slug,
                         slug_date,
+                        simhash,
                     ))
                 # Track the per-source yield.
                 items_count = len(items) if items else 0

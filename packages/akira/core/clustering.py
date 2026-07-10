@@ -408,10 +408,17 @@ class ClusteringService:
                     image_domain = urlparse(image_url).netloc.lower()
                 except Exception:
                     pass
+            # Pre-compute simhash from title (cheap O(tokens) per card)
+            # so the pairwise loop can do a fast Hamming-distance
+            # pre-filter (O(1) per pair) before running the more
+            # expensive Jaccard + ngram_containment computation.
+            from core.simhash import compute_simhash
+            simhash = compute_simhash(title or "")
             features[card_id] = {
                 "title": title,
                 "tokens": tokens,
                 "ents": ents,
+                "simhash": simhash,
                 "source_id": primary_source_id,
                 "image_domain": image_domain,
             }
@@ -435,7 +442,10 @@ class ClusteringService:
         # merge it into an existing cluster in phase 2.
 
         # Phase 2: for pending singletons, find the best matching
-        # cluster by merge_score.
+        # cluster by merge_score. We use simhash as a fast Hamming-
+        # distance pre-filter: if simhash distance > 25, skip the
+        # expensive merge_score entirely (avoids O(n*m) Jaccard).
+        from core.simhash import hamming_distance
         all_ids = set(features.keys())
         pending = [cid for cid in all_ids if cid not in cluster_id_map]
         for single_id in pending:
@@ -448,6 +458,11 @@ class ClusteringService:
                 # already well-defined, so this is fast and robust.
                 rep_id = members[0]
                 rf = features[rep_id]
+                # SimHash pre-filter: short titles produce noisy hashes,
+                # so use a loose Hamming threshold (25 bits) to skip
+                # only clearly-unrelated pairs.
+                if hamming_distance(sf["simhash"], rf["simhash"]) > 25:
+                    continue
                 # Same source_id and same image_domain → strong
                 # signal of the SAME article syndicated. Bump score
                 # up to the threshold.
