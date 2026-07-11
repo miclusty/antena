@@ -18,7 +18,7 @@ jobs:
         with: { version: 11.5.0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile || true
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm typecheck
       - run: pnpm lint
 
@@ -31,7 +31,7 @@ jobs:
         with: { version: 11.5.0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile || true
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Apply D1 migrations
         run: pnpm --filter @akira/api exec wrangler d1 migrations apply DB --env=production --remote
         env:
@@ -52,15 +52,9 @@ jobs:
         with: { version: 11.5.0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile || true
+      - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Build Antena (with production env)
         run: |
-          # The frontend calls /api/* with this base URL. Today we
-          # serve the API from the Cloudflare Worker URL
-          # (akira-api.miclusty.workers.dev). When the custom
-          # domain api.antena.com.ar is wired up (DEBT #2 — needs
-          # dns:write scope on the API token), update both lines
-          # to https://api.antena.com.ar.
           echo "PUBLIC_API_BASE=https://akira-api.miclusty.workers.dev" > packages/antena/.env.production
           echo "PUBLIC_AKIRA_BASE=https://akira-api.miclusty.workers.dev" >> packages/antena/.env.production
           pnpm --filter antena build
