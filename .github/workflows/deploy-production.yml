@@ -32,6 +32,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile || true
+      - name: Apply D1 migrations
+        run: pnpm --filter @akira/api exec wrangler d1 migrations apply DB --env=production --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Deploy API Worker to production
         run: pnpm --filter @akira/api exec wrangler deploy --config wrangler.production.toml
         env:
