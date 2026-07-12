@@ -1,0 +1,235 @@
+---
+// /entidad/[slug].astro — Dedicated entity profile page.
+//
+// The slug is the entity name, slugified ("Javier Milei" →
+// "javier-milei"). At build time we:
+//   1. Resolve the top-N entities from /api/entities/top
+//   2. Fetch each entity's detail (?include=related&related_limit=10),
+//      timeline, recent articles, and top sources
+//   3. Render a Solid island that hydrates with the data
+//
+// Slugs not in the top-N never get a static page → Cloudflare
+// Pages returns a 404 for the user. This matches the rest of
+// the topic-hub family (/ciudad, /categoria, /autor) which all
+// pre-render top entities at build time.
+
+import Layout from '../../layouts/Layout.astro';
+import EntityDetailView from '../../components/entity/EntityDetailView';
+import { entitySlugify } from '../../lib/slugify';
+import type { ApiNewsCard, EntityDetail, EntitySourceRef, EntitySummary, EntityTimelinePoint } from '../../lib/api';
+
+export const prerender = true;
+
+const SITE = 'https://www.antena.com.ar';
+const TOP_N = 50;
+
+interface ResolvedEntityPage {
+  entity: EntityDetail;
+  timeline: EntityTimelinePoint[];
+  articles: ApiNewsCard[];
+  topSources: EntitySourceRef[];
+}
+
+const fromEnv = import.meta.env.PUBLIC_API_BASE;
+const apiBase = (!fromEnv || fromEnv.includes('localhost'))
+  ? 'https://akira-api.miclusty.workers.dev'
+  : fromEnv;
+
+export async function getStaticPaths() {
+  const paths: { params: { slug: string }; props: ResolvedEntityPage }[] = [];
+  try {
+    const topRes = await fetch(`${apiBase}/api/entities/top?limit=${TOP_N}&days=30`, {
+      headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+    });
+    if (!topRes.ok) return paths;
+    const topBody = (await topRes.json()) as { entities: EntitySummary[] };
+    const top = topBody.entities ?? [];
+
+    // Build the {slug → entity} dedup map first so we don't fan
+    // out the same slug twice if two rows slugify identically.
+    const seenSlugs = new Set<string>();
+    const topEntities: { slug: string; id: number }[] = [];
+    for (const e of top) {
+      const slug = entitySlugify(e.name);
+      if (!slug || seenSlugs.has(slug)) continue;
+      seenSlugs.add(slug);
+      topEntities.push({ slug, id: e.id });
+    }
+
+    // Per-entity fetches are sequential to stay gentle on the
+    // worker (each call is a 300–1800s cached read, so this is
+    // mostly a Cloudflare→D1 round-trip; under 50 entities the
+    // build cost stays well under the 60s edge timeout).
+    for (const { slug, id } of topEntities) {
+      try {
+        const [detailRes, timelineRes, articlesRes, sourcesRes] = await Promise.all([
+          fetch(`${apiBase}/api/entities/${id}?include=related&related_limit=10`, {
+            headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+          }),
+          fetch(`${apiBase}/api/entities/${id}/timeline?days=30`, {
+            headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+          }),
+          fetch(`${apiBase}/api/entities/${id}/articles?limit=20`, {
+            headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+          }),
+          fetch(`${apiBase}/api/entities/${id}/sources?limit=5`, {
+            headers: { 'User-Agent': 'AntenaSSRBatcher/1.0' },
+          }),
+        ]);
+
+        if (!detailRes.ok) continue;
+        const detail = (await detailRes.json()) as EntityDetail;
+
+        const timeline = timelineRes.ok
+          ? ((await timelineRes.json()) as { timeline: EntityTimelinePoint[] }).timeline ?? []
+          : [];
+
+        const articles = articlesRes.ok
+          ? ((await articlesRes.json()) as { news: ApiNewsCard[] }).news ?? []
+          : [];
+
+        const topSourcesRaw = sourcesRes.ok
+          ? ((await sourcesRes.json()) as { sources: EntitySourceRef[] }).sources ?? []
+          : [];
+
+        // Mirror the entity type for the JSON-LD Person/Place/Org schema.
+        const topSources = topSourcesRaw.map((s) => ({
+          ...s,
+          slug: entitySlugify(s.name),
+        }));
+
+        paths.push({
+          params: { slug },
+          props: { entity: detail, timeline, articles, topSources },
+        });
+      } catch {
+        // One entity failing shouldn't break the whole build.
+      }
+    }
+  } catch {
+    // Top-entities fetch itself failed — build an empty page set.
+  }
+  return paths;
+}
+
+const { slug } = Astro.params;
+const { entity, timeline, articles, topSources } = Astro.props as ResolvedEntityPage;
+
+if (!entity) {
+  // Astro will skip the page since getStaticPaths didn't emit it,
+  // but this guards the dev-server render path.
+  return Astro.redirect('/');
+}
+
+const canonical = `${SITE}/entidad/${slug}`;
+const relatedCount = entity.related?.length ?? 0;
+const TYPE_LABEL: Record<EntityDetail["type"], string> = {
+  person: "Persona",
+  place: "Lugar",
+  org: "Organización",
+  event: "Evento",
+};
+const SCHEMA_TYPE: Record<EntityDetail["type"], string> = {
+  person: "Person",
+  place: "Place",
+  org: "Organization",
+  event: "Event",
+};
+const description = `${entity.mention_count.toLocaleString("es-AR")} menciones de ${entity.name} en Antena. ${relatedCount} entidades relacionadas.`;
+---
+<Layout
+  title={`${entity.name} — Antena`}
+  description={description}
+  canonical={canonical}
+>
+  <Fragment slot="head">
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={`${entity.name} — Antena`} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="https://www.antena.com.ar/og-default.png" />
+
+    <!-- Entity JSON-LD. Picks Person/Place/Organization/Event by
+         the entity type so Google can show the correct knowledge-
+         panel hint. -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': SCHEMA_TYPE[entity.type] ?? 'Thing',
+      'name': entity.name,
+      'url': canonical,
+      'description': description,
+      'inLanguage': 'es-AR',
+    })} />
+
+    <!-- BreadcrumbList for /entidad/<slug> -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': [
+        { '@type': 'ListItem', 'position': 1, 'name': 'Inicio', 'item': `${SITE}/` },
+        { '@type': 'ListItem', 'position': 2, 'name': 'Entidades', 'item': `${SITE}/entidad` },
+        { '@type': 'ListItem', 'position': 3, 'name': entity.name, 'item': canonical },
+      ],
+    })} />
+
+    <!-- FAQPage JSON-LD: LLM-extractable Q&A about this entity.
+         Mirrors the pattern used on /ciudad/[city] and /autor/[name]. -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      'name': `Preguntas frecuentes sobre ${entity.name}`,
+      'inLanguage': 'es-AR',
+      'url': canonical,
+      'mainEntity': [
+        {
+          '@type': 'Question',
+          'name': `¿Cuántas veces se mencionó a ${entity.name} en Antena?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `${entity.name} aparece en ${entity.mention_count.toLocaleString("es-AR")} notas en Antena. Perfil completo en ${canonical}.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Qué tipo de entidad es ${entity.name}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `${entity.name} está clasificada como ${TYPE_LABEL[entity.type] ?? entity.type} en el grafo de entidades de Antena.`,
+          },
+        },
+        {
+          '@type': 'Question',
+          'name': `¿Cuáles son las últimas notas sobre ${entity.name}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Las ${articles.length} notas más recientes que mencionan a ${entity.name} están en ${canonical}.`,
+          },
+        },
+        ...(entity.related && entity.related.length > 0 ? [{
+          '@type': 'Question',
+          'name': `¿Qué entidades se mencionan junto con ${entity.name}?`,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': `Las entidades co-ocurrentes más frecuentes con ${entity.name} son: ${entity.related.slice(0, 5).map((r) => r.name).join(', ')}.`,
+          },
+        }] : []),
+      ],
+    })} />
+  </Fragment>
+
+  <nav aria-label="Breadcrumb" class="max-w-2xl mx-auto px-4 pt-6 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+    <ol class="flex items-center gap-1.5">
+      <li><a href="/" class="hover:underline" style={{ color: 'var(--accent)' }}>Inicio</a></li>
+      <li aria-hidden="true">›</li>
+      <li style={{ color: 'var(--text-secondary)' }} aria-current="page">{entity.name}</li>
+    </ol>
+  </nav>
+
+  <EntityDetailView
+    client:load
+    entity={entity}
+    timeline={timeline}
+    articles={articles}
+    topSources={topSources}
+  />
+</Layout>

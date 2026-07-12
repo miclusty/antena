@@ -2,6 +2,8 @@
 // API Client for AKIRA + Hono API
 // ═══════════════════════════════════════════
 
+import { entitySlugify } from "./slugify";
+
 // API_BASE is the Workers API. Production points to
 // akira-api.miclusty.workers.dev. Set PUBLIC_API_BASE in
 // .env.production to override. The localhost fallback is
@@ -844,4 +846,68 @@ export async function fetchEntitiesBySource(
   } catch {
     return [];
   }
+}
+
+export interface EntitySourceRef {
+  id: number;
+  name: string;
+  articleCount: number;
+}
+
+export async function fetchEntitySources(
+  id: number,
+  limit = 5,
+): Promise<EntitySourceRef[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/${id}/sources?limit=${limit}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { sources?: EntitySourceRef[] };
+    return data.sources ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchEntityArticles(
+  id: number,
+  limit = 20,
+): Promise<ApiNewsCard[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/${id}/articles?limit=${limit}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { news?: ApiNewsCard[] };
+    return data.news ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export interface ResolvedEntity {
+  entity: EntityDetail;
+  timeline: EntityTimelinePoint[];
+  articles: ApiNewsCard[];
+  topSources: EntitySourceRef[];
+}
+
+/** One-shot fetch for the entity profile page. Resolves the slug
+ *  via /api/entities/search, then fans out to detail + timeline
+ *  + articles + sources in parallel. Returns null when the slug
+ *  doesn't resolve. */
+export async function resolveEntityBySlug(slug: string): Promise<ResolvedEntity | null> {
+  const trimmed = slug.trim();
+  if (!trimmed) return null;
+  const searchResults = await searchEntities(trimmed.replace(/-/g, " "), 5);
+  const match =
+    searchResults.find((e) => entitySlugify(e.name) === trimmed) ?? searchResults[0];
+  if (!match) return null;
+
+  const [detail, timeline, articles, sources] = await Promise.all([
+    fetchEntityDetail(match.id),
+    fetchEntityTimeline(match.id, 30),
+    fetchEntityArticles(match.id, 20),
+    fetchEntitySources(match.id, 5),
+  ]);
+  if (!detail) return null;
+
+  return { entity: detail, timeline, articles, topSources: sources };
 }
