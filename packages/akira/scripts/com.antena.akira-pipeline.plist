@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.antena.akira-pipeline</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/omatic/proyectos/news/packages/akira/scripts/run_pipeline_cron.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/omatic/proyectos/news/packages/akira</string>
+
+    <!-- Run every 6 hours. launchd will fire the next run 6h
+         after the previous one finishes. -->
+    <key>StartInterval</key>
+    <integer>21600</integer>
+
+    <!-- Also run once at load (5 min after boot). -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Capture stdout/stderr. -->
+    <key>StandardOutPath</key>
+    <string>/tmp/akira-pipeline.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/akira-pipeline.err.log</string>
+
+    <!-- KeepAlive false = don't auto-restart on failure. Surface
+         errors so the operator can investigate. Set to true if
+         you want launchd to keep retrying on failures. -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- Environment variables. The wrangler CLI needs the API
+         token to push to D1; AKIRA_D1_DATABASE_ID targets the
+         right database; AKIRA_AKIRA_URL stays empty (script
+         computes from local network). -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omatic/.nvm/versions/node/v20.18.0/bin</string>
+        <key>CLOUDFLARE_ACCOUNT_ID</key>
+        <string>aec9ebbec62970f96aa639feaabdc9f5</string>
+        <key>CLOUDFLARE_API_TOKEN</key>
+        <string><!-- PUT YOUR TOKEN HERE --></string>
+        <key>AKIRA_D1_DATABASE_ID</key>
+        <string>ef096b0b-bab6-4b0b-bf5a-30b2dd5bd17c</string>
+        <key>LMSTUDIO_URL</key>
+        <string>http://192.168.31.37:1234</string>
+        <key>LMSTUDIO_FALLBACK_URL</key>
+        <string>http://localhost:1234</string>
+    </dict>
+</dict>
+</plist>
