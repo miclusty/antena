@@ -47,6 +47,32 @@ BIAS_OFFICIALIST = 0.3
 BIAS_OPPOSITION = -0.3
 
 
+def _primary_source_name(db_path: str, source_ids: str | None) -> str:
+    """Look up the first source name for a CSV of source IDs.
+
+    Returns "unknown" if the lookup fails for any reason (missing
+    table, bad CSV, deleted source). The detector uses this as the
+    dedup key for entries, so consistent failures are fine — they
+    just produce a single "unknown"-tagged entry.
+    """
+    if not source_ids:
+        return "unknown"
+    try:
+        first_id = int(source_ids.split(",")[0].strip())
+    except (ValueError, AttributeError):
+        return "unknown"
+    try:
+        with get_db_connection(db_path) as conn:
+            row = conn.execute(
+                "SELECT name FROM sources WHERE id = ?", (first_id,)
+            ).fetchone()
+            if row and row["name"]:
+                return row["name"]
+    except Exception:
+        pass
+    return "unknown"
+
+
 class FactExtractor:
     """Extracts facts from a cluster of news articles using regex + frequency counting."""
 
@@ -574,6 +600,45 @@ Responde SOLO en formato JSON:
                 conn.commit()
         except Exception as e:
             logger.warning(f"Bias narrative generation skipped for {cluster_id}: {e}")
+
+        # Generate contradiction report (numerical/factual disagreements
+        # between sources in this cluster). Wrapped in try/except so a
+        # detector bug never blocks the master article from being saved.
+        try:
+            from core.contradiction_detector import find_contradictions
+
+            # Build article-shaped dicts for the detector. We use the
+            # same articles that fed the synthesis so the contradictions
+            # match what the user sees in the bias narrative.
+            detector_articles = [
+                {
+                    "source": _primary_source_name(self.db_path, a.get("source_ids")),
+                    "title": a.get("title") or "",
+                    "summary": a.get("summary") or "",
+                }
+                for a in articles
+            ]
+            contradictions = find_contradictions(detector_articles)
+            contradictions_payload = [c.to_dict() for c in contradictions]
+            with get_db_connection(self.db_path) as conn:
+                conn.execute(
+                    "UPDATE clusters SET contradictions_json = ?, "
+                    "contradictions_at = datetime('now'), contradictions_count = ? "
+                    "WHERE id = ?",
+                    (
+                        json.dumps(contradictions_payload, ensure_ascii=False),
+                        len(contradictions_payload),
+                        cluster_id,
+                    ),
+                )
+                conn.commit()
+            if contradictions_payload:
+                logger.info(
+                    f"contradictions_found cluster={cluster_id} "
+                    f"count={len(contradictions_payload)}"
+                )
+        except Exception as e:
+            logger.warning(f"Contradiction detection skipped for {cluster_id}: {e}")
 
         return master_id
 
