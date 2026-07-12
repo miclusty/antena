@@ -108,8 +108,8 @@ def _resolve_slug_collision(base_slug: str, existing: set[str], article_id: str)
 
 AKIRA_DB = "/Users/omatic/proyectos/news/packages/akira/data/akira.db"
 AKIRA_API = os.getenv("AKIRA_API_URL", "http://localhost:5100/extract")
-MAX_CONCURRENT = 2
-RATE_LIMIT = 2.0
+MAX_CONCURRENT = int(os.getenv("AKIRA_HARVEST_CONCURRENCY", "4"))
+RATE_LIMIT = float(os.getenv("AKIRA_HARVEST_RATE_LIMIT", "1.0"))
 TIMEOUT = 60.0
 
 # Module-level EntityGraph instance, opened once per harvest run. The
