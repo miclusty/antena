@@ -281,3 +281,75 @@ entitiesRoutes.get("/:id/related", async (c) => {
     return c.json({ id, related: (result.results ?? []) as RelatedRow[] });
   }, { ttl: 600, swr: 1800 })(c.req.raw);
 });
+
+// Recent news cards that mention this entity. Powers the
+// "Artículos recientes" section on the entity profile page.
+//
+// Mirrors the SELECT shape used by /api/news/breaking and
+// /api/news/trending (nc.* plus source_name and location_name)
+// so the frontend can reuse the same ApiNewsCard type without
+// an extra mapper. Ordered by published_at DESC; uses the
+// `idx_mentions_entity` index for the entity_id filter and the
+// `idx_news_published` index for the ORDER BY.
+entitiesRoutes.get("/:id/articles", async (c) => {
+  const idRaw = c.req.param("id");
+  const id = parseInt(idRaw, 10);
+  if (!Number.isFinite(id) || id <= 0) {
+    return c.json({ error: "id must be a positive integer" }, 400);
+  }
+  const limit = Math.min(
+    Math.max(parseInt(c.req.query("limit") ?? "20", 10) || 20, 1),
+    50,
+  );
+  return withCache(async () => {
+    const result = await c.env.DB
+      .prepare(
+        `SELECT nc.*, s.name AS source_name, l.name AS location_name,
+                l.province AS location_province
+         FROM entity_mentions em
+         JOIN news_cards nc ON nc.id = em.card_id
+         LEFT JOIN sources s ON s.id = nc.source_id
+         LEFT JOIN locations l ON l.id = nc.location_id
+         WHERE em.entity_id = ?
+         ORDER BY COALESCE(nc.published_at, nc.created_at) DESC
+         LIMIT ?`,
+      )
+      .bind(id, limit)
+      .all();
+    const news = (result.results ?? []) as unknown[];
+    return c.json({ id, news, total: news.length });
+  }, { ttl: 300, swr: 900 })(c.req.raw);
+});
+
+// Top sources covering this entity — the "Cubierto por" panel.
+// Aggregates entity_mentions by the card's source_id; same shape
+// as /api/stats/sources rows (id + name + count) so the frontend
+// can link each row to /fuentes/<slug> without an extra lookup.
+entitiesRoutes.get("/:id/sources", async (c) => {
+  const idRaw = c.req.param("id");
+  const id = parseInt(idRaw, 10);
+  if (!Number.isFinite(id) || id <= 0) {
+    return c.json({ error: "id must be a positive integer" }, 400);
+  }
+  const limit = Math.min(
+    Math.max(parseInt(c.req.query("limit") ?? "5", 10) || 5, 1),
+    20,
+  );
+  return withCache(async () => {
+    const result = await c.env.DB
+      .prepare(
+        `SELECT s.id, s.name, COUNT(DISTINCT em.card_id) AS article_count
+         FROM entity_mentions em
+         JOIN news_cards nc ON nc.id = em.card_id
+         JOIN sources s ON s.id = nc.source_id
+         WHERE em.entity_id = ?
+         GROUP BY s.id
+         ORDER BY article_count DESC, s.name ASC
+         LIMIT ?`,
+      )
+      .bind(id, limit)
+      .all<{ id: number; name: string; article_count: number }>();
+    const rows = (result.results ?? []) as { id: number; name: string; article_count: number }[];
+    return c.json({ id, sources: rows, total: rows.length });
+  }, { ttl: 600, swr: 1800 })(c.req.raw);
+});
