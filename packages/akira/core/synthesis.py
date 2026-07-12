@@ -640,6 +640,48 @@ Responde SOLO en formato JSON:
         except Exception as e:
             logger.warning(f"Contradiction detection skipped for {cluster_id}: {e}")
 
+        # Generate FAQ pairs (3-5 reader questions + short answers) so
+        # users can understand "qué es X?" without reading every source.
+        # Wrapped in try/except so an FAQ bug never blocks the master
+        # article from being saved.
+        try:
+            from core.faq_generator import FAQGenerator, FAQCache
+            from core.llm_client import LLMClient
+
+            llm = LLMClient()  # default = LMStudio local
+            faq_svc = FAQGenerator(llm_client=llm, cache=FAQCache())
+            # Reuse the same articles that fed the synthesis. Pass through
+            # the source name so the LLM can see "[Clarín] Title" prefixes.
+            faq_articles = [
+                {
+                    "title": a.get("title") or "",
+                    "summary": a.get("summary") or "",
+                    "source": _primary_source_name(self.db_path, a.get("source_ids")),
+                }
+                for a in articles
+            ]
+            faq_result = faq_svc.generate_for_cluster(cluster_id, faq_articles)
+            faqs_payload = faq_result["faqs"]
+            with get_db_connection(self.db_path) as conn:
+                conn.execute(
+                    "UPDATE clusters SET faqs_json = ?, "
+                    "faqs_at = datetime('now'), faqs_count = ? "
+                    "WHERE id = ?",
+                    (
+                        json.dumps(faqs_payload, ensure_ascii=False),
+                        len(faqs_payload),
+                        cluster_id,
+                    ),
+                )
+                conn.commit()
+            if faqs_payload:
+                logger.info(
+                    f"faqs_generated cluster={cluster_id} "
+                    f"count={len(faqs_payload)} source={faq_result['source']}"
+                )
+        except Exception as e:
+            logger.warning(f"FAQ generation skipped for {cluster_id}: {e}")
+
         return master_id
 
     def batch_synthesize(
