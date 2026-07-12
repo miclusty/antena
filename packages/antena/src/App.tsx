@@ -98,6 +98,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     activeFeedTab,
     filterState: filters.filterState,
     follows,
+    newsToday: () => discovery.stats().news_today ?? 0,
   });
 
   filters.setReset(feedHook.resetFeed);

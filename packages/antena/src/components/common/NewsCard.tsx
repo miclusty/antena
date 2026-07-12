@@ -210,6 +210,64 @@ export default function NewsCard(props: NewsCardProps) {
     return d < 60 ? `${d}m` : d < 1440 ? `${Math.floor(d/60)}h` : `${Math.floor(d/1440)}d`;
   });
 
+  const minutesAgo = createMemo(() =>
+    Math.floor((Date.now() - new Date(props.news.publishedAt || props.news.time || Date.now()).getTime()) / 60000),
+  );
+
+  /**
+   * Recency tiers drive the colored pill on the card:
+   *   now      → < 1h, urgent red — "AHORA"
+   *   fresh    → < 24h, brand green dot
+   *   ok       → 1-7 days, neutral gray "Xd"
+   *   stale    → > 7 days, amber "Xd atrás" — signals the data is old
+   * The stale tier is also what the `staleCard` classList picks up
+   * to draw the amber border highlight.
+   */
+  const recencyTier = createMemo<"now" | "fresh" | "ok" | "stale">(() => {
+    const m = minutesAgo();
+    if (m < 60) return "now";
+    if (m < 1440) return "fresh";
+    if (m < 7 * 1440) return "ok";
+    return "stale";
+  });
+
+  const recencyBadgeText = createMemo(() => {
+    const tier = recencyTier();
+    const m = minutesAgo();
+    if (tier === "now") return "AHORA";
+    if (tier === "fresh") return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h`;
+    if (tier === "ok") return `${Math.floor(m / 1440)}d`;
+    return `${Math.floor(m / 1440)}d atrás`;
+  });
+
+  const recencyBadgeStyle = createMemo(() => {
+    const tier = recencyTier();
+    if (tier === "now") {
+      return {
+        background: "color-mix(in srgb, #FF4D5A 14%, transparent)",
+        color: "#FF4D5A",
+      };
+    }
+    if (tier === "fresh") {
+      return {
+        background: "color-mix(in srgb, #10B981 14%, transparent)",
+        color: "#10B981",
+      };
+    }
+    if (tier === "ok") {
+      return {
+        background: "var(--bg-hover)",
+        color: "var(--text-tertiary)",
+      };
+    }
+    return {
+      background: "color-mix(in srgb, #F59E0B 18%, transparent)",
+      color: "#F59E0B",
+    };
+  });
+
+  const isStaleCard = createMemo(() => minutesAgo() > 48 * 60);
+
   const up = createMemo(() => vote()===1 ? 'var(--accent)' : 'var(--text-tertiary)');
   const dn = createMemo(() => vote()===-1 ? '#75AADB' : 'var(--text-tertiary)');
 
@@ -287,7 +345,13 @@ export default function NewsCard(props: NewsCardProps) {
       onMouseUp={onPressEnd}
       onMouseLeave={onPressEnd}
       class="group border-b border-border-base hover:bg-bg-hover active:scale-[0.98] active:bg-bg-hover transition-all duration-100 mb-3"
-      classList={{'opacity-50': read()}}
+      classList={{
+        'opacity-50': read(),
+        'border-amber-500/40': isStaleCard(),
+      }}
+      style={isStaleCard()
+        ? { 'box-shadow': 'inset 2px 0 0 0 rgba(245, 158, 11, 0.45)' }
+        : {}}
     >
       <div class="px-5 py-4">
         {/*
@@ -335,7 +399,30 @@ export default function NewsCard(props: NewsCardProps) {
               onClick={props.onSourceClick}
             />
             <span class="text-[16px] xl:text-[17px] text-text-secondary font-semibold">{props.news.source}</span>
-            <span class="text-[16px] xl:text-[17px] text-text-tertiary">{ago()}</span>
+            <Show when={!compact()}>
+              <span
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] xl:text-[12px] font-extrabold uppercase tracking-wider"
+                style={recencyBadgeStyle()}
+                data-testid="recency-badge"
+                aria-label={
+                  recencyTier() === "now" ? "Publicado hace menos de una hora"
+                    : recencyTier() === "fresh" ? `Publicado hace ${recencyBadgeText()}`
+                    : recencyTier() === "ok" ? `Publicado hace ${recencyBadgeText()}`
+                    : `Publicado hace ${recencyBadgeText()} — datos antiguos`
+                }
+              >
+                <Show when={recencyTier() === "now"}>
+                  <span class="w-1.5 h-1.5 rounded-full" style={{ "background-color": "#FF4D5A" }} aria-hidden="true" />
+                </Show>
+                <Show when={recencyTier() === "fresh"}>
+                  <span class="w-1.5 h-1.5 rounded-full" style={{ "background-color": "#10B981" }} aria-hidden="true" />
+                </Show>
+                <span>{recencyBadgeText()}</span>
+              </span>
+            </Show>
+            <Show when={compact()}>
+              <span class="text-[13px] xl:text-[14px] text-text-tertiary">{ago()}</span>
+            </Show>
             <Show when={props.news.isEmerging}>
               <span
                 class="ml-auto text-[11px] xl:text-[12px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full"
@@ -399,9 +486,12 @@ export default function NewsCard(props: NewsCardProps) {
                 button keeps its own click semantics) ── */}
         <div class="mt-3 space-y-2">
           <Show when={props.news.sourcesCount > 1}>
-            <span class="inline-flex items-center gap-1.5 text-[13px] xl:text-[14px] font-semibold text-accent bg-accent/5 px-2.5 min-h-[28px] rounded-md">
-              <span class="w-1.5 h-1.5 rounded-full bg-accent" />
-              {props.news.sourcesCount} fuentes
+            <span
+              class="inline-flex items-center gap-1.5 text-[13px] xl:text-[14px] font-semibold text-accent bg-accent/5 px-2.5 min-h-[28px] rounded-md"
+              data-testid="multi-source-badge"
+            >
+              <span aria-hidden="true">📰</span>
+              {props.news.sourcesCount} medios
             </span>
           </Show>
 

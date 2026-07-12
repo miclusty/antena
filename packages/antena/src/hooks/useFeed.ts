@@ -15,6 +15,7 @@ import { toast } from "../components/Toast";
 import { buildFeedFilterParams, type FeedFilterState } from "../lib/feed-filters";
 import type { NewsItem } from "../lib/types";
 import { useFollows } from "../lib/follows";
+import { useStaleness } from "./useStaleness";
 
 export type FeaturedCluster = {
   primary: NewsItem;
@@ -50,6 +51,11 @@ export type UseFeedOptions = {
   activeFeedTab: () => string;
   filterState: () => FeedFilterState;
   follows: ReturnType<typeof useFollows>;
+  /** Stats signal from useDiscovery. We only read news_today to drive
+   *  the staleness banner — if the caller doesn't have stats wired up
+   *  yet (tests), we treat news_today as 0 which makes the banner
+   *  show immediately when the feed is empty. */
+  newsToday?: () => number;
 };
 
 const mapBlindspot = (items: Array<Record<string, unknown>>): BlindspotItem[] =>
@@ -317,6 +323,14 @@ export function useFeed(opts: UseFeedOptions) {
     }
   };
 
+  // ─── Staleness banner (S4.x) ──────────────────────────────────
+  // Wraps the pure logic in useStaleness so FeedView only has to
+  // read `feedHook.isStale()` + `feedHook.daysSinceLastNews()`.
+  const staleness = useStaleness({
+    mappedNews: () => mappedNews(),
+    newsToday: opts.newsToday ?? (() => 0),
+  });
+
   return {
     allNews,
     offset,
@@ -338,5 +352,7 @@ export function useFeed(opts: UseFeedOptions) {
     refreshBlindspot,
     refreshBreaking,
     refreshEmerging,
+    isStale: staleness.isStale,
+    daysSinceLastNews: staleness.daysSinceLastNews,
   };
 }

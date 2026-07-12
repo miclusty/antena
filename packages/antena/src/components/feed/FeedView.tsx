@@ -10,6 +10,7 @@ import DensityToggle from "../common/DensityToggle";
 import TimeFilters from "../common/TimeFilters";
 import QualityFilters from "../common/QualityFilters";
 import MaterialIcon from "../common/MaterialIcon";
+import StaleBanner from "../common/StaleBanner";
 import FeaturedStory from "./FeaturedStory";
 import TrendingSection from "./TrendingSection";
 import BlindspotSection from "./BlindspotSection";
@@ -56,6 +57,8 @@ type FeedHook = {
   searchQuery: () => string;
   setSearchQuery: (q: string) => void;
   resetFeed: () => void;
+  isStale?: () => boolean;
+  daysSinceLastNews?: () => number | null;
 };
 
 type Filters = {
@@ -290,6 +293,13 @@ export default function FeedView(props: FeedViewProps) {
               </div>
             }
           >
+            <Show when={props.feedHook.isStale?.()}>
+              <StaleBanner
+                daysSinceLastNews={props.feedHook.daysSinceLastNews?.() ?? null}
+                onRetry={() => props.feedHook.resetFeed()}
+              />
+            </Show>
+
             <Show when={props.feedHook.featuredCluster()}>
               {(cluster) => (
                 <div class="px-4 pt-3">

@@ -153,6 +153,45 @@ function extractCategory(title: string): string {
   return 'Generales';
 }
 
+/**
+ * Normalize a category string coming from the API. The D1 `categories`
+ * table stores Spanish category *names* (Política, Economía, …) but
+ * some AKIRA paths send lowercase slug-style labels ("economia").
+ * CAT_COLOR in NewsCard.tsx and the CATEGORIES lookup in useDiscovery
+ * both key off the title-case form, so we normalize at the boundary
+ * to keep every downstream renderer consistent.
+ *
+ * Lookup table wins for any known label; unknown inputs are passed
+ * through unchanged so a brand-new category from the API doesn't get
+ * silently rewritten.
+ */
+const CATEGORY_NORMALIZE: Record<string, string> = {
+  politica: 'Política',
+  política: 'Política',
+  economia: 'Economía',
+  economía: 'Economía',
+  deportes: 'Deportes',
+  deporte: 'Deportes',
+  policiales: 'Policiales',
+  policial: 'Policiales',
+  cultura: 'Cultura',
+  tecnologia: 'Tecnología',
+  tecnología: 'Tecnología',
+  sociedad: 'Sociedad',
+  internacional: 'Internacional',
+  clima: 'Clima',
+  espectaculos: 'Espectáculos',
+  espectáculos: 'Espectáculos',
+  general: 'Generales',
+  generales: 'Generales',
+};
+
+export function normalizeCategory(raw: string | null | undefined): string {
+  if (!raw) return 'Generales';
+  const key = raw.trim().toLowerCase();
+  return CATEGORY_NORMALIZE[key] ?? raw;
+}
+
 // ═══════════════════════════════════════════
 // Map API NewsCard → Frontend NewsItem
 // ═══════════════════════════════════════════
@@ -190,7 +229,9 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     }
   }
 
-  const category = card.category || extractCategory(card.title);
+  const category = card.category
+    ? normalizeCategory(card.category)
+    : extractCategory(card.title);
 
   return {
     id: card.id,

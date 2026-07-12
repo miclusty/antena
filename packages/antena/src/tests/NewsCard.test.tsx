@@ -54,13 +54,13 @@ describe("NewsCard", () => {
   it("shows sources count when > 1", () => {
     const news = createMockNews({ sourcesCount: 5 });
     const { getByText } = render(() => <NewsCard news={news} onClick={() => {}} />);
-    expect(getByText("5 fuentes")).toBeInTheDocument();
+    expect(getByText("5 medios")).toBeInTheDocument();
   });
 
   it("does not show sources count when 1 or less", () => {
     const news = createMockNews({ sourcesCount: 1 });
     const { container } = render(() => <NewsCard news={news} onClick={() => {}} />);
-    expect(container.textContent).not.toMatch(/1 fuentes/);
+    expect(container.textContent).not.toMatch(/1 medios/);
   });
 
   it("shows Trending label when sourcesCount >= 5", () => {
