@@ -93,11 +93,11 @@ EOF
 
 # Step 2: harvest (RSS + WordPress via AKIRA cascade)
 step "1/8 harvest_run.py" \
-    "python harvest_run.py"
+    "python scripts/harvest_run.py"
 
 # Step 3: enrich body with trafilatura (parallel)
-step "2/8 enrich_body_parallel.py" \
-    "python scripts/enrich_body_parallel.py --since-hours 1 --workers 10"
+step "2/8 enrich_body_trafilatura.py" \
+    "python scripts/enrich_body_trafilatura.py --since-hours 1 --workers 10"
 
 # Step 4: embed (nomic embed via LM Studio M5)
 step "3/8 embed_cards.py" \
