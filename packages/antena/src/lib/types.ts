@@ -56,6 +56,11 @@ export interface NewsItem {
   // legacy ?view=article&id=<uuid>.
   slug?: string | null;
   slugDate?: string | null;
+  // True when this article's cluster is in the AKIRA "emerging"
+  // list (see packages/akira/core/emerging_themes.py). Surfaced
+  // as a 🚨 Emergente badge on the news card. Set in useFeed.ts
+  // after clustering + filtering — defaults to undefined.
+  isEmerging?: boolean;
   // Raw HTML body (S3.3). The TOC + scroll-to-heading
   // rendering uses this; the plain `body` is the
   // HTML-stripped fallback for places that don't render

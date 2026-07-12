@@ -18,6 +18,7 @@ if _PKG_ROOT not in sys.path:
     sys.path.insert(0, _PKG_ROOT)
 from extractors.base import extract_byline, MAX_AUTHOR_LEN  # noqa: E402
 from extractors._slug import make_slug  # noqa: E402
+from core.entity_graph import EntityGraph  # noqa: E402
 
 # Patterns that indicate a junk card. These come from real-world
 # dead feeds (domain-for-sale pages, raw RSS passthroughs, etc.)
@@ -110,6 +111,12 @@ AKIRA_API = os.getenv("AKIRA_API_URL", "http://localhost:5100/extract")
 MAX_CONCURRENT = 2
 RATE_LIMIT = 2.0
 TIMEOUT = 60.0
+
+# Module-level EntityGraph instance, opened once per harvest run. The
+# graph module opens its own sqlite3.Connection per write so we don't
+# need to share harvest_run.py's WAL connection (which is sometimes
+# busy mid-commit). Cheaper than building a new graph per article.
+entity_graph = EntityGraph(AKIRA_DB)
 
 # Keyword-based category assignment
 CATEGORY_KEYWORDS = {
@@ -395,6 +402,34 @@ async def process_sources():
                         slug_date,
                         simhash,
                     ))
+                    # Inline entity-graph ingest (Phase 4 entity
+                    # graph). Uses the fast regex fallback — no
+                    # LM Studio call here, that's extract_entities.py's
+                    # job (slower, batched). Wrapped in try/except so a
+                    # transient DB error or schema mismatch can't
+                    # crash the harvest loop (the news INSERT above
+                    # is the critical path; entity graph is
+                    # best-effort and can be backfilled).
+                    try:
+                        entity_graph.build_graph_from_article(
+                            article_id=article_id,
+                            title=title_for_hash,
+                            body=summary_for_hash,
+                        )
+                    except Exception as eg_err:  # noqa: BLE001
+                        # Don't let this kill the harvest — log and
+                        # continue. The graph module itself is already
+                        # defensive about bad inputs.
+                        if not hasattr(stats, "_eg_warned"):
+                            stats["_eg_warned"] = True
+                            print(
+                                f"WARN: entity_graph ingest failed "
+                                f"(suppressing further): {eg_err}",
+                                flush=True,
+                            )
+                        stats["entity_graph_errors"] = (
+                            stats.get("entity_graph_errors", 0) + 1
+                        )
                 # Track the per-source yield.
                 items_count = len(items) if items else 0
                 conn2.execute("""

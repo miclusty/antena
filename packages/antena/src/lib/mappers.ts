@@ -219,6 +219,7 @@ export function mapNewsCard(card: ApiNewsCard): NewsItem {
     isClickbait: false,
     clusterId: card.cluster_id || '',
     sourcesCount: sourceCount,
+    isEmerging: false,
     imageUrl: card.image_url || undefined,
     publishedAt: card.published_at || card.created_at,
     // Canonical URL pieces (migration 0007). When both

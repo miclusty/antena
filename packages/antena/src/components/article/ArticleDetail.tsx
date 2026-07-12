@@ -1,7 +1,7 @@
 /** @jsxImportSource solid-js */
 import { createResource, For, Show, createMemo, createSignal, onMount, onCleanup } from 'solid-js';
 import type { NewsItem, VoiceBreakdown } from '../../lib/types';
-import { fetchNewsByCluster, fetchMasterArticle, fetchFeedback, fetchReport, type MasterArticle, type ReportReason } from '../../lib/api';
+import { fetchNewsByCluster, fetchMasterArticle, fetchFeedback, fetchReport, fetchEntitiesByCard, type MasterArticle, type ReportReason, type EntitySummary } from '../../lib/api';
 import { trackArticleOpen, trackArticleComplete } from '../../lib/analytics';
 import { mapNewsCard, stripHtml } from '../../lib/mappers';
 import { sanitizeArticleHtmlForView } from '../../lib/sanitize-html';
@@ -24,6 +24,7 @@ import TableOfContents from './TableOfContents';
 import ImageLightbox from './ImageLightbox';
 import { readingTimeText, remainingReadingMinutes, computeScrollPct } from '../../lib/reading-progress';
 import MaterialIcon from '../common/MaterialIcon';
+import EntityChipRow from '../common/EntityChipRow';
 
 interface ArticleDetailProps {
   news: NewsItem;
@@ -182,6 +183,20 @@ export default function ArticleDetail(props: ArticleDetailProps) {
       catch { return null; }
     },
     { initialValue: null }
+  );
+
+  // Entity graph — top 5 people/places/orgs mentioned in THIS article.
+  // Cheap pre-flight: AKIRA has already extracted entities via LM Studio
+  // (entities.sql pipeline) or via the regex fallback in `harvest_run.py`.
+  // The route is cached at the edge (10-min TTL), so re-opening the same
+  // article from the same edge POP doesn't refetch.
+  const [articleEntities] = createResource(
+    () => n().id,
+    async (newsId) => {
+      if (!newsId) return [] as EntitySummary[];
+      return await fetchEntitiesByCard(newsId, 5);
+    },
+    { initialValue: [] as EntitySummary[] }
   );
 
   const displayTitle = () => (masterArticle() as MasterArticle | null)?.title || n().title;
@@ -639,6 +654,15 @@ export default function ArticleDetail(props: ArticleDetailProps) {
             Reportar contenido
           </button>
         </section>
+
+        {/* Top entities mentioned in this article. The entity graph is
+            fed by AKIRA's harvest (regex fallback) and `extract_entities.py`
+            (LM Studio batch). Chips link to /buscar?q=<name> so the user
+            lands on a search of all cards mentioning this entity. */}
+        <EntityChipRow
+          entities={articleEntities()}
+          heading="Personas/entidades mencionadas"
+        />
 
         {/* Sticky CTA + bottom sheet for other voices on the same story.
             The CTA becomes visible after the user scrolls past 60% of the

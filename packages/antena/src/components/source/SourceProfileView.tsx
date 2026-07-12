@@ -1,10 +1,11 @@
 /** @jsxImportSource solid-js */
 import { createResource, For, Show, createSignal, onMount } from "solid-js";
-import { fetchSourceProfile, followSource, unfollowSource, type ApiSourceProfile, type ApiSourceEntry } from "../../lib/api";
+import { fetchSourceProfile, followSource, unfollowSource, fetchEntitiesBySource, type ApiSourceProfile, type ApiSourceEntry, type EntitySummary } from "../../lib/api";
 import { mapNewsCard } from "../../lib/mappers";
 import NewsCard from "../common/NewsCard";
 import FollowButton from "../common/FollowButton";
 import EmptyState from "../common/EmptyState";
+import EntityChipRow from "../common/EntityChipRow";
 import { toast } from "../Toast";
 import { useHaptic } from "../../lib/haptic";
 import MaterialIcon from '../common/MaterialIcon';
@@ -16,6 +17,18 @@ export default function SourceProfileView(props: { sourceId: number; onBack: () 
 
   const source = (): ApiSourceEntry | null => profile()?.source ?? null;
   const newsItems = () => (profile()?.news ?? []).map(mapNewsCard);
+
+  // Entity graph — top people/places/orgs this source covers the most.
+  // Powers the "Personas que más cubre" panel. Edge-cached for 15 min
+  // (TTL 900s) so navigating between sources stays snappy.
+  const [topEntities] = createResource(
+    () => props.sourceId,
+    async (sid) => {
+      try { return await fetchEntitiesBySource(sid, 5); }
+      catch { return [] as EntitySummary[]; }
+    },
+    { initialValue: [] as EntitySummary[] }
+  );
 
   const onFollowToggle = async () => {
     const s = source();
@@ -130,6 +143,15 @@ export default function SourceProfileView(props: { sourceId: number; onBack: () 
                 </div>
               </Show>
             </section>
+
+            {/* Top people/places/orgs this source covers — fed by the
+                /api/entities/by-source/:id endpoint. Chips link to
+                /buscar?q=<name> so the user lands on a search of all
+                cards mentioning this entity (from any source). */}
+            <EntityChipRow
+              entities={topEntities()}
+              heading="Personas que más cubre"
+            />
 
             <section class="px-1 pb-12">
               <h2 class="text-[10px] font-extrabold uppercase tracking-widest mb-1 px-4" style={{ color: 'var(--text-tertiary)' }}>

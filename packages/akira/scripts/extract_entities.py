@@ -4,13 +4,13 @@ AKIRA Day 3: Extract entities from news cards via LM Studio.
 
 Reads cards from news_cards, asks the local LLM (qwen3.5-4b) to
 extract people / places / organizations / events mentioned in
-the title+summary, and persists:
-  - The unique entity rows in `entities`
-  - The per-card mention rows in `entity_mentions`
+the title+summary, and persists them via `core.entity_graph.EntityGraph`.
 
 This is the LMWIKI "ingest" stage. Once entities are extracted
-across the corpus, build_kb.py computes the co-occurrence graph
-and the RAG engine can use it for context.
+across the corpus, the co-occurrence graph is automatically kept
+up to date (graph edges are recomputed inline per article; see
+`EntityGraph.build_graph_from_article`), and the RAG engine can
+use it for context.
 
 Design:
   - Idempotent: cards that already have entity_mentions rows are
@@ -22,6 +22,9 @@ Design:
     marked as 'failed' in a log and skipped (not retried
     indefinitely). The dead-letter file lets us see which ones
     need manual review.
+  - DB writes go through `EntityGraph`, so the same code path is
+    exercised by the per-article ingest in `harvest_run.py`. See
+    `core/entity_graph.py` for the schema and idempotency rules.
 
 CLI:
     --limit N        Process at most N cards
@@ -45,10 +48,11 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Tuple
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from core.entity_graph import EntityGraph, ENTITY_TYPE_MAP
 from core.lmstudio import LMStudioClient, LMStudioError
 from pathlib import Path
 
@@ -59,15 +63,10 @@ DEFAULT_MODEL = "qwen3.5-4b"
 BATCH_COMMIT = 100
 DEFAULT_WORKERS = 4
 
-# Schema-level entity types. These match the CHECK constraint in
-# the entities table (see migration 0003_rag_tables.sql).
+# The LLM-facing key set; matches the system prompt below. The DB-level
+# `type` enum (person/place/org/event) is mapped from these via
+# `ENTITY_TYPE_MAP` in `core.entity_graph`.
 ENTITY_TYPES = ("personas", "lugares", "organizaciones", "eventos")
-ENTITY_TYPE_MAP = {
-    "personas": "person",
-    "lugares": "place",
-    "organizaciones": "org",
-    "eventos": "event",
-}
 
 # The system prompt that constrains the LLM to clean JSON. Tested
 # locally: with this prompt, qwen3.5-4b returns valid JSON ~99%
@@ -180,117 +179,28 @@ def _parse_entity_json(raw: str) -> Dict[str, List[str]]:
     return out
 
 
-def _normalize_entity_name(name: str) -> str:
-    """Canonical form for entity deduplication. "Milei" and
-    "Javier Milei" and "JMilei" are all different rows in the
-    entities table; we only collapse obvious variants here
-    (case + whitespace). A more aggressive alias-merge could
-    be added later by an LLM-based pass that compares two
-    candidate names and decides if they're the same entity.
-    """
-    return re.sub(r"\s+", " ", name).strip()
-
-
-def commit_entities(
-    db_path: str,
-    rows: Sequence[Tuple[str, str, str, float]],
-    lock: threading.Lock,
-) -> int:
-    """Write (entity_name, entity_type, card_id, confidence) rows
-    to entities + entity_mentions. Uses INSERT OR IGNORE on
-    entities (uniqueness by name) and a separate INSERT OR IGNORE
-    on entity_mentions (uniqueness by card_id+entity_id). The
-    lock guards the SQLite writes; the network calls happen
-    outside the lock."""
-    if not rows:
-        return 0
-    n = 0
-    with lock:
-        with sqlite3.connect(db_path) as conn:
-            try:
-                # First, ensure all entity rows exist
-                entity_keys = set()
-                for name, etype, _cid, _conf in rows:
-                    entity_keys.add((name, etype))
-                for name, etype in entity_keys:
-                    conn.execute(
-                        """
-                        INSERT OR IGNORE INTO entities
-                            (name, type, first_seen, last_seen, mention_count)
-                        VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)
-                        """,
-                        (name, etype),
-                    )
-                # Now resolve entity_id by name and insert mentions
-                entity_id_map = {
-                    r[0]: r[1]
-                    for r in conn.execute(
-                        "SELECT name, id FROM entities WHERE name IN ({})".format(
-                            ",".join("?" * len(entity_keys))
-                        ),
-                        [n for n, _t in entity_keys],
-                    ).fetchall()
-                }
-                for name, _etype, card_id, conf in rows:
-                    eid = entity_id_map.get(name)
-                    if eid is None:
-                        continue
-                    conn.execute(
-                        """
-                        INSERT OR IGNORE INTO entity_mentions
-                            (card_id, entity_id, confidence)
-                        VALUES (?, ?, ?)
-                        """,
-                        (card_id, eid, conf),
-                    )
-                    # Bump mention_count
-                    conn.execute(
-                        "UPDATE entities SET mention_count = mention_count + 1, last_seen = CURRENT_TIMESTAMP WHERE id = ?",
-                        (eid,),
-                    )
-                conn.commit()
-                n = len(rows)
-            except sqlite3.OperationalError as e:
-                logger.error(f"commit_failed: {e}")
-    return n
-
-
 def process_one(
     client: LMStudioClient,
     card_id: str,
     title: str,
     summary: str,
     model: str,
-) -> Tuple[str, List[Tuple[str, str, str, float]], str]:
-    """Process a single card. Returns (card_id, rows, status) where
-    rows is the list of (entity_name, entity_type, card_id, confidence)
-    tuples ready to be committed, and status is one of:
-      - "ok": LLM responded, rows may be empty (legitimate 0-entity card)
+) -> Tuple[str, Dict[str, List[str]], str]:
+    """Process a single card. Returns (card_id, entities_dict, status)
+    where status is one of:
+      - "ok": LLM responded, entities may be empty (legitimate 0-entity card)
       - "llm_error": network/timeout — caller should dead-letter
-      - "parse_error": LLM responded but JSON didn't parse — log
-    Empty rows on status="ok" is NOT a failure (e.g. a sports score
+    Empty entities on status="ok" is NOT a failure (e.g. a sports score
     update or a "domain for sale" page may have zero entities).
     """
     try:
         entities = call_llm_for_entities(client, title, summary, model)
     except LMStudioError as e:
         logger.warning(f"llm_failed card_id={card_id} error={e}")
-        return (card_id, [], "llm_error")
-    rows: List[Tuple[str, str, str, float]] = []
-    for src_key, etype in ENTITY_TYPE_MAP.items():
-        for name in entities.get(src_key, []):
-            canonical = _normalize_entity_name(name)
-            if not canonical:
-                continue
-            rows.append((canonical, etype, card_id, 1.0))
-    if not rows and not entities:
-        # LLM returned but parser got nothing. Could be:
-        # - genuinely empty (e.g. RSS XML summary, "for sale" page)
-        # - JSON truncated by max_tokens
-        # - LLM returned non-JSON
-        # We treat this as "ok with 0 entities" — not a hard failure.
+        return (card_id, {}, "llm_error")
+    if not entities:
         logger.debug(f"empty_extraction card_id={card_id} title={title[:60]!r}")
-    return (card_id, rows, "ok")
+    return (card_id, entities, "ok")
 
 
 def main() -> int:
@@ -316,39 +226,11 @@ def main() -> int:
         logger.error(f"LM Studio unreachable: {e}")
         return 1
 
-    # Make sure entities table exists (created in migration 0003,
-    # but be defensive in case the script is run before migration).
-    with sqlite3.connect(args.db) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS entities (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              name TEXT NOT NULL,
-              type TEXT NOT NULL CHECK (type IN ('person', 'place', 'org', 'event')),
-              aliases TEXT,
-              first_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              last_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              mention_count INTEGER NOT NULL DEFAULT 0,
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              UNIQUE (name)
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS entity_mentions (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              card_id TEXT NOT NULL,
-              entity_id INTEGER NOT NULL,
-              confidence REAL NOT NULL DEFAULT 1.0,
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              UNIQUE (card_id, entity_id),
-              FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE CASCADE
-            )
-            """
-        )
-
+    # Ensure schema (creates tables + indexes if missing) and keep a
+    # single EntityGraph instance for the whole batch. The graph object
+    # is thread-safe at the connection-per-call level but we still serialize
+    # writes with `db_lock` to avoid `database is locked` on WAL contention.
+    graph = EntityGraph(args.db)
     cards = fetch_cards(args.db, args.limit, args.force)
     if not cards:
         logger.info("nothing to do (all cards already have entity_mentions)")
@@ -357,11 +239,27 @@ def main() -> int:
 
     db_lock = threading.Lock()
     t0 = time.monotonic()
-    pending_rows: List[Tuple[str, str, str, float]] = []
+    pending: List[Tuple[str, str, Dict[str, List[str]]]] = []
     done = 0
     failed = 0
     total_mentions = 0
     dead_letter: List[str] = []
+
+    def flush() -> int:
+        nonlocal total_mentions
+        n = 0
+        with db_lock:
+            for cid, _title, ents in pending:
+                try:
+                    graph.build_graph_from_article(
+                        article_id=cid, title="", body="", entities=ents
+                    )
+                    n += 1
+                except sqlite3.OperationalError as e:
+                    logger.error(f"commit_failed card={cid}: {e}")
+        total_mentions += n
+        pending.clear()
+        return n
 
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
         futures = {
@@ -369,18 +267,17 @@ def main() -> int:
             for cid, title, summary in cards
         }
         for i, fut in enumerate(as_completed(futures), 1):
-            card_id, rows, status = fut.result()
+            card_id, entities, status = fut.result()
             if status == "llm_error":
                 if card_id not in dead_letter:
                     failed += 1
                     dead_letter.append(card_id)
-            # status="ok" with 0 rows is a legitimate empty extraction
-            # (e.g. RSS XML card, "for sale" page). Not a failure.
-            pending_rows.extend(rows)
-            if len(pending_rows) >= args.batch:
-                n = commit_entities(args.db, pending_rows, db_lock)
-                total_mentions += n
-                pending_rows = []
+            # status="ok" with empty entities is a legitimate empty
+            # extraction (e.g. RSS XML card, "for sale" page). The graph
+            # call becomes a no-op (test_build_graph_empty_entities_is_noop).
+            pending.append((card_id, "", entities))
+            if len(pending) >= args.batch:
+                flush()
             done += 1
             if done % 50 == 0 or done == len(cards):
                 elapsed = time.monotonic() - t0
@@ -399,9 +296,8 @@ def main() -> int:
                     f"failed={failed} rate={rate:.2f}/s eta={eta_sec/60:.1f}min "
                     f"nodes: {node_stats}"
                 )
-        if pending_rows:
-            n = commit_entities(args.db, pending_rows, db_lock)
-            total_mentions += n
+        if pending:
+            flush()
 
     if dead_letter:
         with open(args.dead_letter, "w") as f:
