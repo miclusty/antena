@@ -90,6 +90,12 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
   const filters = useFeedFilters();
 
+  // Hook ordering matters: `discovery` must exist before `useFeed`
+  // because the feed reads discovery.stats() for staleness detection.
+  // (ReferenceError before init was the cause of the build failure on
+  // 2026-07-12 — hoisting useDiscovery above useFeed fixes it.)
+  const discovery = useDiscovery();
+
   const feedHook = useFeed({
     initialFeed: props?.initialFeed,
     initialBlindspot: props?.initialBlindspot,
@@ -110,7 +116,6 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
     setActiveLocation,
   });
 
-  const discovery = useDiscovery();
   const chrome = useChromeUi();
 
   const shareNews = async (news: NewsItem) => {
