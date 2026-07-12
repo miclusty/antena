@@ -148,6 +148,22 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
   const { setObserverTarget } = useInfiniteScroll({ onLoadMore: feedHook.loadMore, hasMore: feedHook.hasMore, isLoading: () => feedHook.feed.loading });
 
+  // ── Desktop breakpoint signal ─────────────────────────────────────
+  // Tracks `min-width: 1280px` so the persistent 3-column shell can
+  // conditionally render LeftSidebar + RightSidebar (and skip their
+  // overhead entirely on mobile). matchMedia updates the signal on
+  // every cross, not just the first one — so a user resizing their
+  // window or rotating an iPad sees the shell follow them.
+  const [isDesktop, setIsDesktop] = createSignal(false);
+  onMount(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(min-width: 1280px)");
+    setIsDesktop(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", onChange);
+    onCleanup(() => mq.removeEventListener("change", onChange));
+  });
+
   onMount(async () => {
     // Apply user preferences to the root <html> before any UI
     // renders — avoids a flash of the default size / data-saver
@@ -258,7 +274,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
           onSearchOpenChange={setSearchOpen}
         />
 
-        <Show when={nav.currentView() === 'feed'}>
+        <Show when={nav.currentView() === 'feed' && !isDesktop()}>
           <FeedView
             activeCategory={activeCategory}
             setActiveCategory={setActiveCategory}
@@ -283,14 +299,14 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
         </Show>
 
         {/* ── Persistent 3-column layout (desktop) ── */}
-        <div class="flex justify-center min-[1800px]:justify-between min-[1800px]:px-6 mx-auto w-full">
-          {leftSidebar}
+        <div class="mx-auto w-full max-w-[1400px] grid grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)_320px] gap-4">
+          <Show when={isDesktop()}>{leftSidebar}</Show>
 
           {/* ── Center column ── */}
-          <section aria-label="Feed de noticias" class="flex-1 min-w-0 max-w-[640px] xl:max-w-[960px] border-r border-border-base">
+          <section aria-label="Feed de noticias" class="min-w-0 border-r border-border-base">
 
-            {/* ── Feed view ── */}
-            <Show when={nav.currentView() === 'feed'}>
+            {/* ── Feed view (desktop: inside shell; mobile: rendered above) ── */}
+            <Show when={nav.currentView() === 'feed' && isDesktop()}>
               <FeedView
                 activeCategory={activeCategory}
                 setActiveCategory={setActiveCategory}
@@ -363,7 +379,7 @@ export default function App(props?: { initialFeed?: unknown[]; initialBlindspot?
 
           </section>
 
-          {rightSidebar}
+          <Show when={isDesktop()}>{rightSidebar}</Show>
         </div>
 
       </div>

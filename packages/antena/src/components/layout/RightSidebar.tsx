@@ -150,7 +150,7 @@ export default function RightSidebar(props: RightSidebarProps) {
 
   return (
     <aside
-      class="hidden xl:flex flex-col w-[380px] shrink-0"
+      class="hidden xl:flex flex-col w-[320px] shrink-0"
       style={{ 'min-height': 'calc(100vh - 56px)' }}
     >
       <div

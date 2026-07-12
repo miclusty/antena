@@ -389,7 +389,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
       </header>
 
       {/* Content */}
-      <main class="px-5 py-6">
+      <main class="px-4 sm:px-5 md:px-6 py-4 md:py-6">
         {/* Category badge */}
         <div class="mb-4">
           <span
@@ -473,7 +473,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
         {/* Meta row — kept for compact info (location/time/etc) */}
         <div
-          class="flex items-center gap-2 mb-6 pb-4 flex-wrap"
+          class="flex items-center gap-2 mb-4 md:mb-6 pb-4 flex-wrap"
           style={{ 'border-bottom': '1px solid var(--border-base)' }}
         >
           <span class="text-sm" style={{ color: 'var(--text-tertiary)' }}>
@@ -507,7 +507,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
         {/* Source link */}
         <Show when={n().sourceUrl}>
-          <div class="mb-6">
+          <div class="mb-4 md:mb-6">
             <a
               href={n().sourceUrl}
               target="_blank"
@@ -527,7 +527,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         </Show>
 
         {/* Badges */}
-        <div class="flex gap-2 mb-5 flex-wrap">
+        <div class="flex gap-2 mb-4 md:mb-5 flex-wrap">
           <Show when={n().isGacetilla}>
             <span
               class="h-6 flex items-center rounded-full border px-2.5"
@@ -548,7 +548,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
 
         {/* Hero Media */}
         <Show when={n().imageUrl || media().images.length > 0 || media().videos.length > 0}>
-          <div class="mb-6">
+          <div class="mb-4 md:mb-6">
             <Show when={media().videos.length > 0}>
               <MediaEmbed url={media().videos[0]} />
             </Show>
@@ -580,7 +580,7 @@ export default function ArticleDetail(props: ArticleDetailProps) {
         </Show>
 
         {/* Article Body */}
-        <section class="mb-6">
+        <section class="mb-4 md:mb-6">
           {/* S3.3 — Table of contents. Renders above the body
               when the article has ≥2 h2/h3 headings. */}
           <Show when={(n().headings ?? []).length >= 2}>

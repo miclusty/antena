@@ -151,7 +151,7 @@ export default function LeftSidebar(props: LeftSidebarProps) {
 
   return (
     <aside
-      class="hidden xl:flex flex-col w-[320px] shrink-0 border-r border-border-base"
+      class="hidden xl:flex flex-col w-[260px] shrink-0 border-r border-border-base"
       style={{ 'min-height': 'calc(100vh - 56px)' }}
     >
       <div class="sticky top-14 p-4 space-y-6 flex-1 overflow-y-auto" style={{ 'max-height': 'calc(100vh - 56px)' }}>

@@ -32,13 +32,13 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
         'z-index': 'var(--z-floating)',
       }}
     >
-      <div class="flex items-center justify-between px-4 py-3">
+      <div class="flex items-center justify-between gap-2 px-4 py-3">
         <a
           href={props.sourceUrl || '#'}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => haptic.vibrate('tap')}
-          class="flex items-center gap-1.5 text-xs font-medium"
+          class="flex items-center gap-1.5 text-xs font-medium min-h-[44px] min-w-[44px]"
           style={{ color: 'var(--accent)' }}
         >
           <MaterialIcon name="open_in_new" size="base" class="text-base " style={{ }} />
@@ -52,7 +52,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
               navigator.clipboard.writeText(props.articleUrl || (typeof window !== 'undefined' ? window.location.href : ''));
               toast('Enlace copiado', 'info');
             }}
-            class="p-2 rounded-full hover:bg-bg-hover transition-colors"
+            class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-bg-hover transition-colors"
             title="Copiar enlace"
             aria-label="Copiar enlace"
           >
@@ -72,7 +72,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
                   props.onListen?.();
                 }
               }}
-              class="p-2 rounded-full hover:bg-bg-hover transition-colors"
+              class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-bg-hover transition-colors"
               title={props.isSpeaking ? 'Detener lectura' : 'Escuchar'}
               aria-label={props.isSpeaking ? 'Detener lectura' : 'Escuchar'}
               aria-pressed={!!props.isSpeaking}
@@ -83,7 +83,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
 
           <button
             onClick={() => { haptic.vibrate('tap'); props.onBookmark?.(); }}
-            class="p-2 rounded-full hover:bg-bg-hover transition-colors"
+            class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-bg-hover transition-colors"
             title={props.isBookmarked ? 'Quitar de guardados' : 'Guardar'}
             aria-label={props.isBookmarked ? 'Quitar de guardados' : 'Guardar'}
           >
@@ -92,7 +92,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
 
           <button
             onClick={() => { haptic.vibrate('tap'); props.onReadLater?.(); }}
-            class="p-2 rounded-full hover:bg-bg-hover transition-colors"
+            class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-bg-hover transition-colors"
             title={props.isReadLater ? 'Quitar de "Leer después"' : 'Leer después'}
             aria-label={props.isReadLater ? 'Quitar de "Leer después"' : 'Leer después'}
             aria-pressed={!!props.isReadLater}
@@ -102,7 +102,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
 
           <button
             onClick={() => { haptic.vibrate('tap'); props.onShare?.(); }}
-            class="p-2 rounded-full hover:bg-bg-hover transition-colors"
+            class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-bg-hover transition-colors"
             title="Compartir"
             aria-label="Compartir"
           >
@@ -111,7 +111,7 @@ export default function ArticleBottomBar(props: ArticleBottomBarProps) {
 
           <button
             onClick={() => { haptic.vibrate('tap'); props.onReadingMode?.(); }}
-            class="p-2 rounded-full hover:bg-bg-hover transition-colors"
+            class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-bg-hover transition-colors"
             title="Modo lectura"
             aria-label="Modo lectura"
           >
