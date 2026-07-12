@@ -1,5 +1,5 @@
 /** @jsxImportSource solid-js */
-import { Show, For, createMemo } from "solid-js";
+import { Show, For, createMemo, createSignal } from "solid-js";
 import NewsCard from "../common/NewsCard";
 import FeedTabs from "../common/FeedTabs";
 import LocationSelector from "../common/LocationSelector";
@@ -20,6 +20,7 @@ import { resolveCustomTabSelection } from "../../lib/feed-controls";
 import { CATEGORIES, type Category, type NewsItem } from "../../lib/types";
 import type { ApiNewsCard } from "../../lib/api";
 import type { TrendingItem, BlindspotItem } from "../../hooks/useFeed";
+import { fetchEmerging, type EmergingCluster } from "../../lib/api";
 import type { ViewType } from "../../hooks/useUrlState";
 import type { Density } from "../../lib/preferences";
 import type { FeedFilterState, BiasFilter } from "../../lib/feed-filters";
@@ -49,6 +50,7 @@ type FeedHook = {
   trendingItems: () => TrendingItem[];
   blindspotItems: () => BlindspotItem[];
   blindspotLoading: () => boolean;
+  emergingClusterIds: () => Set<string>;
   feed: { error: unknown; loading: boolean };
   offset: () => number;
   searchQuery: () => string;
@@ -114,6 +116,32 @@ export type FeedViewProps = {
 };
 
 export default function FeedView(props: FeedViewProps) {
+  // ─── Emerging row (S3.9) ──────────────────────────────────────
+  // Pulled ONCE per minute, independent of the feed — lets us show
+  // the "🚨 Emergente" overlay even when the main feed is paused
+  // (Following, etc.). On error or empty, we render nothing and
+  // the existing TrendingSection takes over.
+  const [emergingItems, setEmergingItems] = createSignal<EmergingCluster[]>([]);
+  const refreshEmergingRow = async () => {
+    try {
+      const r = await fetchEmerging(6, 0);
+      setEmergingItems(r?.emerging?.slice(0, 4) ?? []);
+    } catch {
+      setEmergingItems([]);
+    }
+  };
+  if (typeof window !== "undefined") {
+    queueMicrotask(refreshEmergingRow);
+    setInterval(refreshEmergingRow, 60 * 1000);
+  }
+  const openArticleFromCluster = async (clusterId: string) => {
+    // Find any news card in the current feed that belongs to the
+    // given cluster. If none, bail (the cluster may have expired
+    // since the last refresh).
+    const match = props.feedHook.mappedNews().find((n) => n.clusterId === clusterId);
+    if (match) await props.nav.handleNewsClick(match);
+  };
+
   const onTabChange = (tabId: string) => {
     props.haptic.vibrate('tap');
     props.setActiveFeedTab(tabId);
@@ -286,6 +314,63 @@ export default function FeedView(props: FeedViewProps) {
                   else props.nav.loadArticleFromId(item.id);
                 }}
               />
+            </Show>
+
+            {/* ─── Emerging row (S3.9) ────────────────────────────
+                Pops up when AKIRA's emerging-themes detector flags
+                a cluster. Cards with the 🚨 badge (set in
+                useFeed.ts via the `isEmerging` flag) come from
+                this same data. The row itself surfaces the
+                `title` + `velocity_score` so users see WHY this
+                is showing. */}
+            <Show when={emergingItems().length > 0}>
+              <section class="w-full px-4 py-2" data-emerging-section>
+                <div class="flex items-center justify-between mb-1.5 gap-2">
+                  <h2 class="text-sm font-extrabold uppercase tracking-widest flex items-center gap-1.5" style={{ color: '#FF4D5A' }}>
+                    <span aria-hidden="true">🚨</span>
+                    <span>Emergentes</span>
+                  </h2>
+                  <span class="text-[11px] font-semibold" style={{ color: 'var(--text-tertiary)' }}>
+                    Ganando tracción
+                  </span>
+                </div>
+                <div
+                  class="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory"
+                  style={{ 'scrollbar-width': 'none', '-ms-overflow-style': 'none' }}
+                >
+                  <For each={emergingItems().slice(0, 4)}>
+                    {(item) => (
+                      <button
+                        type="button"
+                        onClick={() => openArticleFromCluster(item.cluster_id)}
+                        class="snap-start shrink-0 w-56 rounded-[var(--radius-md)] border text-left p-3 flex flex-col gap-1 active:scale-[0.98] hover:shadow-sm transition-all"
+                        style={{
+                          background: 'color-mix(in srgb, #FF4D5A 7%, var(--bg-elevated))',
+                          'border-color': 'color-mix(in srgb, #FF4D5A 30%, var(--border-base))',
+                        }}
+                        aria-label={item.title ?? 'Tema emergente'}
+                      >
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: '#FF4D5A' }}>
+                            {item.distinct_sources_in_window} fuentes
+                          </span>
+                          <span class="text-[10px] font-bold" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true">
+                            ⚡ {item.velocity_score.toFixed(1)}
+                          </span>
+                        </div>
+                        <p class="text-sm font-semibold leading-snug line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                          {item.title ?? `Cluster ${item.cluster_id}`}
+                        </p>
+                        <Show when={item.new_articles_in_window > 1}>
+                          <span class="text-[10px] font-semibold" style={{ color: 'var(--text-tertiary)' }}>
+                            +{item.new_articles_in_window} en {props.feedHook.emergingClusterIds().has(item.cluster_id) ? 'esta hora' : 'las últimas 6h'}
+                          </span>
+                        </Show>
+                      </button>
+                    )}
+                  </For>
+                </div>
+              </section>
             </Show>
 
             <BlindspotSection

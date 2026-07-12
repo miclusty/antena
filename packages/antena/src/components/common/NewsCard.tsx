@@ -336,7 +336,18 @@ export default function NewsCard(props: NewsCardProps) {
             />
             <span class="text-[16px] xl:text-[17px] text-text-secondary font-semibold">{props.news.source}</span>
             <span class="text-[16px] xl:text-[17px] text-text-tertiary">{ago()}</span>
-            <Show when={trending()}>
+            <Show when={props.news.isEmerging}>
+              <span
+                class="ml-auto text-[11px] xl:text-[12px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full"
+                style={{ background: 'color-mix(in srgb, #FF4D5A 20%, transparent)', color: '#FF4D5A' }}
+                aria-label="Tema emergente — varios medios convergieron recientemente"
+                title="Varios medios publicaron sobre esto en las últimas horas"
+              >
+                <span aria-hidden="true">🚨</span>
+                <span>Emergente</span>
+              </span>
+            </Show>
+            <Show when={trending() && !props.news.isEmerging}>
               <span class="text-[12px] xl:text-[13px] font-extrabold text-accent uppercase tracking-wider ml-auto inline-flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-accent" />
                 Trending

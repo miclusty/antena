@@ -85,5 +85,30 @@ module.exports = {
         PYTHONPATH: '.',
       },
     },
+    {
+      // AKIRA emerging-themes detector. Runs every 15 minutes to
+      // recompute the `emerging_clusters` SQLite mirror table that
+      // powers the /api/emerging endpoint. Pure SQL aggregation —
+      // no LLM, no network — so a 5-minute drift is acceptable and
+      // we keep the cron coarse (every 15 min) to leave cycles for
+      // the heavier harvest job. autorestart=false on purpose: if
+      // the recompute fails (DB locked, etc.) we don't want it
+      // busy-looping. The next 15-min cron tick retries.
+      name: 'akira-emerging',
+      cwd: './packages/akira',
+      script: './.venv/bin/python',
+      args: '-m scripts.update_emerging_themes',
+      interpreter: 'none',
+      instances: 1,
+      autorestart: false,
+      cron_restart: '*/15 * * * *',
+      max_memory_restart: '200M',
+      error_file: '/tmp/akira-emerging-error.log',
+      out_file: '/tmp/akira-emerging-out.log',
+      merge_logs: true,
+      env: {
+        PYTHONPATH: '.',
+      },
+    },
   ],
 };

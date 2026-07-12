@@ -30,7 +30,7 @@ function makeProps(overrides: Partial<FeedViewProps> = {}): FeedViewProps {
     setActiveFeedTab: vi.fn(),
     density: () => "comfortable",
     updateDensity: vi.fn(),
-    feedHook: { mappedNews: () => [news], featuredCluster: () => null, trendingItems: () => [], blindspotItems: () => [], blindspotLoading: () => false, feed: { error: null, loading: false }, offset: () => 0, searchQuery: () => "", setSearchQuery: vi.fn(), resetFeed: vi.fn() },
+    feedHook: { mappedNews: () => [news], featuredCluster: () => null, trendingItems: () => [], blindspotItems: () => [], blindspotLoading: () => false, emergingClusterIds: () => new Set(), feed: { error: null, loading: false }, offset: () => 0, searchQuery: () => "", setSearchQuery: vi.fn(), resetFeed: vi.fn() },
     filters: { filterState: () => ({ time: "all", quality: 0, bias: "all" }), showFilters: () => false, setShowFilters: vi.fn(), updateTime: vi.fn(), updateQuality: vi.fn(), updateBias: vi.fn(), clearFilters: vi.fn(), hasActiveFilters: () => false },
     discovery: { categories: () => [{ name: "Todas", slug: "all", icon: "home" }], cities: () => [], customTabs: () => [], feedTabsVisible: () => true, onAddCustomTab: vi.fn(), onRemoveCustomTab: vi.fn() },
     follows: { follows: () => [], followedIds: () => new Set() },

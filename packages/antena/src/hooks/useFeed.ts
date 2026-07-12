@@ -5,6 +5,7 @@ import {
   fetchTrending,
   fetchBreaking,
   fetchBlindspot,
+  fetchEmerging,
   type ApiNewsCard,
   type FeedResponse,
 } from "../lib/api";
@@ -79,6 +80,35 @@ export function useFeed(opts: UseFeedOptions) {
     mapBlindspot((opts.initialBlindspot ?? []) as Array<Record<string, unknown>>),
   );
   const [blindspotLoading, setBlindspotLoading] = createSignal(false);
+
+  // ─── Emerging clusters (S3.9) ───────────────────────────────────
+  // Set of cluster_ids flagged "emerging" by the AKIRA detector
+  // (see packages/akira/core/emerging_themes.py). Used by news
+  // cards to show the 🚨 Emergente badge. Refreshed every 15 min
+  // to roughly match the AKIRA cron cadence — we deliberately
+  // don't refresh on every feed refetch because the data is
+  // inherently low-cadence (clusters don't go from trending to
+  // emerging in 30s).
+  const [emergingClusterIds, setEmergingClusterIds] = createSignal<Set<string>>(
+    new Set(),
+  );
+  const EMERGING_REFRESH_MS = 15 * 60 * 1000;
+
+  const refreshEmerging = async () => {
+    try {
+      const r = await fetchEmerging(6, 0);
+      if (r?.emerging) {
+        setEmergingClusterIds(new Set(r.emerging.map((c) => c.cluster_id)));
+      }
+    } catch {
+      /* network blip — keep stale set */
+    }
+  };
+
+  if (typeof window !== "undefined") {
+    queueMicrotask(refreshEmerging);
+    setInterval(refreshEmerging, EMERGING_REFRESH_MS);
+  }
 
   const initialFeedResp: FeedResponse = {
     news: (opts.initialFeed ?? []) as ApiNewsCard[],
@@ -255,6 +285,15 @@ export function useFeed(opts: UseFeedOptions) {
           n.category.toLowerCase().includes(q),
       );
     }
+
+    // Tag emerging-cluster cards so NewsCard can render the badge.
+    // We do this AFTER filters so the badge stays visible even when
+    // a user has narrowed to "All"; the `isEmerging` flag is purely
+    // informational and doesn't change ordering.
+    const emergingIds = emergingClusterIds();
+    if (emergingIds.size > 0) {
+      items = items.map((n) => (emergingIds.has(n.clusterId) ? { ...n, isEmerging: true } : n));
+    }
     return items;
   });
 
@@ -291,11 +330,13 @@ export function useFeed(opts: UseFeedOptions) {
     breakingItems,
     blindspotItems,
     blindspotLoading,
+    emergingClusterIds,
     searchQuery,
     setSearchQuery,
     resetFeed,
     loadMore,
     refreshBlindspot,
     refreshBreaking,
+    refreshEmerging,
   };
 }
