@@ -104,6 +104,24 @@ export const clusters = sqliteTable("clusters", {
   proGovSynthAt: text("pro_gov_synth_at"),
   antiGovSynthAt: text("anti_gov_synth_at"),
   synthModel: text("synth_model"),
+  // Bias narrative (added by 0009_akira_extensions.sql; mirrored in
+  // Drizzle here for type safety). bias_narrative: 2-3 sentence LLM
+  // explanation. bias_key_quotes: JSON array of {source, quote}.
+  biasNarrative: text("bias_narrative"),
+  biasKeyQuotes: text("bias_key_quotes"),
+  biasNarrativeAt: text("bias_narrative_at"),
+  biasNarrativeModel: text("bias_narrative_model"),
+  // Contradiction detector output (0009 + 0011). JSON array of
+  // {subject, unit, values, entries, confidence} per pair of disagreeing
+  // sources.
+  contradictionsJson: text("contradictions_json"),
+  contradictionsAt: text("contradictions_at"),
+  contradictionsCount: integer("contradictions_count").notNull().default(0),
+  // FAQ generator output (0012). JSON array of
+  // {question, answer, source_count} per reader-style Q&A.
+  faqsJson: text("faqs_json"),
+  faqsAt: text("faqs_at"),
+  faqsCount: integer("faqs_count").notNull().default(0),
 });
 
 export type Cluster = typeof clusters.$inferSelect;
