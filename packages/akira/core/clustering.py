@@ -362,6 +362,25 @@ class ClusteringService:
 
                 # Update DB with new cluster IDs.
                 for cluster_id, ids in clusters.items():
+                    # Mirror row in the `clusters` table — needed so the
+                    # synthesis pipeline (core/synthesis.py:590, :625) can
+                    # UPDATE bias_narrative + contradictions_json. Without
+                    # this, those writes silently fail inside a try/except
+                    # and the prod API returns 404 for every cluster. The
+                    # table is provisioned by migration 0010_clusters.sql
+                    # and the `INSERT OR IGNORE` makes the re-cluster path
+                    # idempotent. We swallow the "no such table" error so a
+                    # fresh DB without the migration doesn't crash the
+                    # re-cluster pass — the existing test fixtures (which
+                    # only know about news_cards) keep working.
+                    try:
+                        conn.execute(
+                            "INSERT OR IGNORE INTO clusters (id) VALUES (?)",
+                            (cluster_id,),
+                        )
+                    except sqlite3.OperationalError as exc:
+                        if "no such table: clusters" not in str(exc):
+                            raise
                     for cid in ids:
                         conn.execute(
                             "UPDATE news_cards SET cluster_id = ? WHERE id = ?",

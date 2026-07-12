@@ -161,3 +161,96 @@ def test_cluster_news_cards_partial_failure_rolls_back(cluster_db):
     assert all(r[1] == "pre-existing-1" for r in rows), (
         f"ROLLBACK failed — cluster_ids lost: {rows}"
     )
+
+
+def _ensure_clusters_table(db_path: str) -> None:
+    """Provision the mirror `clusters` table — same shape as migration 0010."""
+    conn = sqlite3.connect(db_path)
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS clusters (
+            id TEXT PRIMARY KEY NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            master_article_id TEXT,
+            neutral_synth_at TEXT,
+            pro_gov_synth_at TEXT,
+            anti_gov_synth_at TEXT,
+            synth_model TEXT,
+            bias_narrative TEXT,
+            bias_key_quotes TEXT,
+            bias_narrative_at TEXT,
+            bias_narrative_model TEXT,
+            contradictions_json TEXT,
+            contradictions_at TEXT,
+            contradictions_count INTEGER DEFAULT 0
+        );
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_cluster_news_cards_populates_clusters_mirror_table(cluster_db):
+    """Re-cluster must INSERT OR IGNORE rows into the `clusters` mirror so the
+    UPDATE statements in core/synthesis.py:590 (bias_narrative) and :625
+    (contradictions_json) have a row to hit. Without this, those writes
+    silently fail inside a try/except and the prod API returns 404 for
+    every cluster.
+    """
+    _ensure_clusters_table(cluster_db)
+    _seed_cards(
+        cluster_db,
+        [
+            ("a", "Senate passes new tax reform bill in Buenos Aires"),
+            ("b", "Senate passes new tax reform bill in Buenos Aires"),
+        ],
+    )
+
+    service = ClusteringService(cluster_db)
+    clusters = service.cluster_news_cards(None)
+
+    # Pick any cluster_id from the result and verify it exists as a
+    # row in the mirror table.
+    assert clusters, "expected at least one cluster"
+    some_cluster_id = next(iter(clusters.keys()))
+
+    conn = sqlite3.connect(cluster_db)
+    rows = conn.execute(
+        "SELECT id, created_at FROM clusters WHERE id = ?",
+        (some_cluster_id,),
+    ).fetchall()
+    conn.close()
+
+    assert len(rows) == 1, (
+        f"clusters mirror row missing for {some_cluster_id}; "
+        f"clustering.py must INSERT OR IGNORE after assigning cluster_id"
+    )
+    assert rows[0][1], "clusters.created_at must be populated"
+
+
+def test_cluster_news_cards_mirror_insert_is_idempotent(cluster_db):
+    """Re-running clustering on the same cards must not duplicate rows."""
+    _ensure_clusters_table(cluster_db)
+    _seed_cards(
+        cluster_db,
+        [
+            ("a", "Milei announces new economic measures for Argentina"),
+            ("b", "Milei announces new economic measures for Argentina"),
+        ],
+    )
+    service = ClusteringService(cluster_db)
+    service.cluster_news_cards(None)
+    service.cluster_news_cards(None)
+
+    conn = sqlite3.connect(cluster_db)
+    n_rows = conn.execute("SELECT COUNT(*) FROM clusters").fetchone()[0]
+    n_unique_clusters = conn.execute(
+        "SELECT COUNT(DISTINCT cluster_id) FROM news_cards WHERE cluster_id IS NOT NULL"
+    ).fetchone()[0]
+    conn.close()
+    assert n_rows == n_unique_clusters, (
+        f"expected {n_unique_clusters} cluster rows, got {n_rows} — "
+        f"INSERT OR IGNORE not being used (or duplicate inserts)"
+    )
+    assert n_rows >= 1, "expected at least one mirror row after re-cluster"
