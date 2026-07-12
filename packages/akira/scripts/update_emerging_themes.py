@@ -121,10 +121,32 @@ def main() -> int:
         logger.exception("expire_stale_emerging() failed")
         return 1
 
+    # Mirror to D1 (best-effort: if creds are missing or D1 errors,
+    # the local SQLite write has already succeeded, so we log + skip
+    # rather than failing the cron. The hourly sync_to_d1_cron.py will
+    # backfill any drift.)
+    d1_synced = 0
+    if not args.dry_run:
+        try:
+            from config import settings
+            from core.d1_sync import D1Sync
+            if settings.cloudflare_account_id and settings.cloudflare_api_token and settings.d1_database_id:
+                sync = D1Sync(
+                    account_id=settings.cloudflare_account_id,
+                    api_token=settings.cloudflare_api_token,
+                    database_id=settings.d1_database_id,
+                    akira_db_path=args.db,
+                )
+                d1_synced = sync.sync_table("emerging_clusters")
+            else:
+                logger.info("d1_sync skipped: missing AKIRA_CLOUDFLARE_* env")
+        except Exception:
+            logger.exception("d1_sync emerging_clusters failed (non-fatal)")
+
     elapsed = time.time() - start
     logger.info(
-        "done: wrote=%d expired=%d elapsed=%.2fs",
-        written, dropped, elapsed,
+        "done: wrote=%d expired=%d d1_synced=%d elapsed=%.2fs",
+        written, dropped, d1_synced, elapsed,
     )
 
     # Emit a one-line JSON summary to stdout so cron can capture it.
@@ -133,6 +155,7 @@ def main() -> int:
         "clusters": len(clusters),
         "written": written,
         "expired": dropped,
+        "d1_synced": d1_synced,
         "window_hours": args.window_hours,
         "min_score": args.min_score,
         "elapsed_seconds": round(elapsed, 3),

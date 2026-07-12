@@ -110,5 +110,31 @@ module.exports = {
         PYTHONPATH: '.',
       },
     },
+    {
+      // AKIRA → D1 sync (hourly). Mirrors clusters, emerging_clusters,
+      // sources_credibility, and news_cards_simhash from AKIRA's local
+      // SQLite to Cloudflare D1 via the HTTP API
+      // (core/d1_sync.py + core/cloudflare_d1.py). This is the
+      // belt-and-suspenders safety net for the inline sync calls in
+      // scripts/harvest_full_cycle.py and scripts/update_emerging_themes.py.
+      // If those inline calls fail or get skipped, this hourly cron
+      // catches up. autorestart=false: a single failed tick isn't a
+      // crash — the next tick at minute 0 retries.
+      name: 'akira-d1-sync',
+      cwd: './packages/akira',
+      script: './.venv/bin/python',
+      args: '-m scripts.sync_to_d1_cron',
+      interpreter: 'none',
+      instances: 1,
+      autorestart: false,
+      cron_restart: '0 * * * *',
+      max_memory_restart: '300M',
+      error_file: '/tmp/akira-d1-sync-error.log',
+      out_file: '/tmp/akira-d1-sync-out.log',
+      merge_logs: true,
+      env: {
+        PYTHONPATH: '.',
+      },
+    },
   ],
 };

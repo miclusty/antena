@@ -41,6 +41,17 @@ class Settings(BaseSettings):
     node_api_url: str = "http://localhost:8787"
     node_api_key: Optional[str] = None
 
+    # Cloudflare D1 sync (used by core/d1_sync.D1Sync). All three are
+    # required for the AKIRA → D1 sync to run; leaving any of them blank
+    # disables the sync gracefully (sync calls become no-ops with a
+    # warning logged). The production values live in ~/.hermes/.env
+    # (see .env.example). The AKIRA_ prefix means the env vars are
+    # AKIRA_CLOUDFLARE_ACCOUNT_ID, AKIRA_CLOUDFLARE_API_TOKEN,
+    # AKIRA_D1_DATABASE_ID.
+    cloudflare_account_id: Optional[str] = None
+    cloudflare_api_token: Optional[str] = None
+    d1_database_id: Optional[str] = None
+
     # Database path. pydantic-settings binds this to AKIRA_DB_PATH (prefix +
     # field name uppercased). The legacy env var AKIRA_DB was used in earlier
     # deployments and the .env.example file before 2026-06-20 — see

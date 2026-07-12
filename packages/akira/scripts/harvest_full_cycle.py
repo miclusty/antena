@@ -136,7 +136,49 @@ def main() -> int:
         flush=True,
     )
     rc = subprocess.call(cmd, env={**os.environ, "PYTHONPATH": PKG_ROOT})
-    return rc
+    if rc != 0:
+        return rc
+
+    # Mirror the new cards + cluster mirror + credibility back to D1.
+    # Best-effort: a D1 outage here doesn't fail the harvest cycle
+    # (which already succeeded). The hourly sync_to_d1_cron.py will
+    # backfill any drift on its next tick.
+    _maybe_sync_to_d1(args.db)
+    return 0
+
+
+def _maybe_sync_to_d1(db_path: str) -> None:
+    """Push the post-harvest tables to D1. No-op if creds missing."""
+    try:
+        from config import settings
+        from core.d1_sync import D1Sync
+    except Exception as exc:  # noqa: BLE001
+        print(f"d1_sync_unavailable: {exc}", flush=True)
+        return
+
+    if not (
+        settings.cloudflare_account_id
+        and settings.cloudflare_api_token
+        and settings.d1_database_id
+    ):
+        print("d1_sync skipped: missing AKIRA_CLOUDFLARE_* env", flush=True)
+        return
+
+    try:
+        sync = D1Sync(
+            account_id=settings.cloudflare_account_id,
+            api_token=settings.cloudflare_api_token,
+            database_id=settings.d1_database_id,
+            akira_db_path=db_path,
+        )
+        counts = sync.sync_all(dry_run=False)
+        print(
+            "d1_sync_complete "
+            + " ".join(f"{k}={v}" for k, v in counts.items()),
+            flush=True,
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"d1_sync_failed: {exc}", flush=True)
 
 
 if __name__ == "__main__":
