@@ -1,6 +1,7 @@
 /** @jsxImportSource solid-js */
 import { For, Show } from "solid-js";
 import type { EntitySummary } from "../../lib/api";
+import { entitySlugify } from "../../lib/slugify";
 import MaterialIcon from "./MaterialIcon";
 
 const TYPE_LABEL: Record<EntitySummary["type"], string> = {
@@ -41,7 +42,7 @@ export default function EntityChipRow(props: EntityChipRowProps) {
             {(e) => (
               <li>
                 <a
-                  href={`/buscar?q=${encodeURIComponent(e.name)}`}
+                  href={`/entidad/${entitySlugify(e.name)}`}
                   class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-colors hover:opacity-80"
                   style={{
                     background: "var(--accent-muted)",
