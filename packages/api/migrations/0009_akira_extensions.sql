@@ -18,3 +18,13 @@ ALTER TABLE sources ADD COLUMN uniqueness_ratio REAL DEFAULT 1.0;
 ALTER TABLE sources ADD COLUMN diversity_score INTEGER DEFAULT 50;
 ALTER TABLE sources ADD COLUMN credibility_updated_at TEXT;
 CREATE INDEX idx_sources_credibility ON sources(credibility_score DESC);
+
+-- Phase 4 — contradiction detection (numerical/factual disagreements
+-- between sources in the same cluster). The detector runs inside
+-- AKIRA's synthesis pipeline (core/contradiction_detector.py) and
+-- writes the JSON payload + count + analysis timestamp here. The
+-- frontend reads it via GET /api/clusters/:id/contradictions.
+ALTER TABLE clusters ADD COLUMN contradictions_json TEXT;
+ALTER TABLE clusters ADD COLUMN contradictions_at TEXT;
+ALTER TABLE clusters ADD COLUMN contradictions_count INTEGER DEFAULT 0;
+CREATE INDEX idx_clusters_contradictions_at ON clusters(contradictions_at);
