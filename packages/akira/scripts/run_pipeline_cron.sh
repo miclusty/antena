@@ -92,24 +92,31 @@ UPDATE sources SET error_count = 0 WHERE is_active = 1;
 EOF
 
 # Step 2: harvest (RSS + WordPress via AKIRA cascade)
+# Use `python -m scripts.harvest_run` instead of `python scripts/harvest_run.py`
+# so Python uses cwd (packages/akira) as the package context and finds
+# the `extractors` package. Without -m, sys.path gets the script's
+# directory, and `from extractors.base import ...` fails with
+# ModuleNotFoundError.
 step "1/8 harvest_run.py" \
-    "python scripts/harvest_run.py"
+    "python -m scripts.harvest_run"
 
 # Step 3: enrich body with trafilatura (parallel)
+# NOTE: enrich_body_trafilatura.py does NOT accept --workers (it runs
+# serially). Removed that flag.
 step "2/8 enrich_body_trafilatura.py" \
-    "python scripts/enrich_body_trafilatura.py --since-hours 1 --workers 10"
+    "python -m scripts.enrich_body_trafilatura --since-hours 1"
 
 # Step 4: embed (nomic embed via LM Studio M5)
 step "3/8 embed_cards.py" \
-    "python scripts/embed_cards.py --limit 500"
+    "python -m scripts.embed_cards --limit 500"
 
 # Step 5: entity extraction (qwen3.5-4b via M5, thinking disabled)
 step "4/8 extract_entities.py" \
-    "python scripts/extract_entities.py --workers 4 --limit 500"
+    "python -m scripts.extract_entities --workers 4 --limit 500"
 
 # Step 6: KB graph
 step "5/8 build_kb.py" \
-    "python scripts/build_kb.py"
+    "python -m scripts.build_kb"
 
 # Step 7: re-cluster ALL cards with semantic embeddings
 # Uses HDBSCAN density-based clustering on cosine similarity.
@@ -119,13 +126,13 @@ step "5/8 build_kb.py" \
 # - Genuine topical clusters (regional, vertical — e.g. all
 #   'San Pedro de Jujuy' or all 'inflación')
 step "6.5/9 recluster_all_semantic.py" \
-    "python scripts/recluster_all_semantic.py --min-cluster 3 --min-samples 2"
+    "python -m scripts.recluster_all_semantic --min-cluster 3 --min-samples 2"
 
 # Step 8: cluster (kept for incremental ingest of new cards
 # without embeddings yet — runs the lexical pass to catch
 # any cards that haven't been embedded)
 step "7/9 cluster_all_cards.py" \
-    "python scripts/cluster_all_cards.py --batch-size 500"
+    "python -m scripts.cluster_all_cards --batch-size 500"
 
 # Step 9: synthesize 3-perspective master articles via RAG.
 # Uses qwen3.5-4b on LM Studio (M4 + M5, 2-node load balanced).
@@ -134,10 +141,10 @@ step "7/9 cluster_all_cards.py" \
 # picks up where this one left off — completes in ~4-5h for
 # 901 clusters at ~18s/cluster with 2 workers).
 step "8.5/10 rag_synthesize.py" \
-    "python scripts/rag_synthesize.py --workers 2 --skip-existing"
+    "python -m scripts.rag_synthesize --workers 2 --skip-existing"
 
 # Step 10: sync to D1
 step "9/10 sync_to_d1_remote.py" \
-    "python scripts/sync_to_d1_remote.py --limit 1000 --tables news_cards --config ../api/wrangler.toml"
+    "python -m scripts.sync_to_d1_remote --limit 1000 --tables news_cards --config ../api/wrangler.toml"
 
 log "=== Pipeline complete ==="
