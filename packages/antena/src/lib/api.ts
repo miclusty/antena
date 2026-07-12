@@ -371,6 +371,46 @@ export async function fetchBlindspot(limit = 10): Promise<{ items: unknown[]; to
   return res.json();
 }
 
+// ─── Emerging themes (S3.9) ───────────────────────────────────
+// "Emerging" = cluster with multiple distinct sources converging
+// within the last few hours. Sourced from AKIRA's emerging_themes
+// detector (see packages/akira/core/emerging_themes.py). Surfaced
+// in the TrendingSection as a 1h-or-so overlay.
+//
+// Returns null when the network fails so callers can fall back to
+// fetchTrending() without an exception.
+
+export interface EmergingCluster {
+  cluster_id: string;
+  title: string | null;
+  velocity_score: number;
+  new_articles_in_window: number;
+  distinct_sources_in_window: number;
+  credibility_avg: number;
+  first_seen_at: string | null;
+  last_updated_at: string | null;
+}
+
+export interface EmergingResponse {
+  emerging: EmergingCluster[];
+  computed_at: string;
+  window_hours: number;
+  /** "materialized" = served from the cron-filled mirror table;
+   *  "live" = computed on the fly when the mirror is stale.
+   *  Surfaced in dev tools to verify the cron is firing. */
+  source: "materialized" | "live";
+}
+
+export async function fetchEmerging(windowHours = 6, minScore = 0): Promise<EmergingResponse | null> {
+  const res = await safeFetch(`${API_BASE}/api/emerging?window_hours=${windowHours}&min_score=${minScore}`);
+  if (!res) return null;
+  try {
+    return (await res.json()) as EmergingResponse;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Source follows ────────────────────────────────────────
 // Until we have real auth, follows are scoped to a device_id —
 // a UUID generated on first visit and stored in localStorage.
@@ -618,5 +658,158 @@ export async function fetchBiasNarrative(
     return (await res.json()) as BiasNarrative;
   } catch {
     return null;
+  }
+}
+
+// ─── Contradictions (numerical/factual disagreements) ─────────────
+// The detector runs in AKIRA (core/contradiction_detector.py) and
+// writes a JSON payload to clusters.contradictions_json. The shape:
+//   { subject, unit, values, entries, confidence }
+export interface ContradictionEntry {
+  source: string;
+  value: number;
+  raw_text: string;
+}
+
+export interface Contradiction {
+  subject: string;
+  unit: string | null;
+  values: number[];
+  entries: ContradictionEntry[];
+  confidence: number;
+}
+
+export interface ContradictionsResponse {
+  cluster_id: string;
+  contradictions: Contradiction[];
+  count: number;
+  stored_count: number;
+  generated_at: string | null;
+}
+
+export async function fetchContradictions(
+  clusterId: string,
+): Promise<ContradictionsResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/clusters/${clusterId}/contradictions`);
+    if (!res.ok) return null;
+    return (await res.json()) as ContradictionsResponse;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Entity graph ──────────────────────────────────────────────────
+// Powers "Personas/entidades mencionadas" panels on article pages,
+// "Personas que más cubre" leaderboards on source profiles, and
+// the /api/entities/search autocomplete.
+//
+// The fields on `EntitySummary` are intentionally narrow — just enough
+// to render a chip + link. Bigger payloads (timeline, related entities)
+// live on EntityDetail.
+
+export interface EntitySummary {
+  id: number;
+  name: string;
+  type: "person" | "place" | "org" | "event";
+  mention_count: number;
+  recent_count?: number;
+  card_count?: number;
+}
+
+export interface EntityDetail extends EntitySummary {
+  first_seen?: string | null;
+  last_seen?: string | null;
+  related?: EntitySummary[];
+}
+
+export interface EntityTimelinePoint {
+  day: string;
+  count: number;
+}
+
+export async function fetchTopEntities(options?: {
+  limit?: number;
+  days?: number;
+  type?: "person" | "place" | "org" | "event";
+}): Promise<EntitySummary[]> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.days !== undefined) params.set("days", String(options.days));
+  if (options?.type) params.set("type", options.type);
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/top?${params}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { entities?: EntitySummary[] };
+    return data.entities ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchEntityDetail(id: number): Promise<EntityDetail | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/${id}?include=related&related_limit=10`);
+    if (!res.ok) return null;
+    return (await res.json()) as EntityDetail;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchEntityTimeline(
+  id: number,
+  days = 30,
+): Promise<EntityTimelinePoint[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/${id}/timeline?days=${days}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { timeline?: EntityTimelinePoint[] };
+    return data.timeline ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function searchEntities(
+  q: string,
+  limit = 10,
+): Promise<EntitySummary[]> {
+  if (!q || q.trim().length < 2) return [];
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/search?q=${encodeURIComponent(q)}&limit=${limit}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { results?: EntitySummary[] };
+    return data.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchEntitiesByCard(
+  newsId: string,
+  limit = 5,
+): Promise<EntitySummary[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/by-card/${encodeURIComponent(newsId)}?limit=${limit}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { entities?: (EntitySummary & { confidence?: number })[] };
+    return (data.entities ?? []).map(({ confidence: _confidence, ...rest }) => rest as EntitySummary);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchEntitiesBySource(
+  sourceId: number,
+  limit = 5,
+): Promise<EntitySummary[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/entities/by-source/${sourceId}?limit=${limit}`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { entities?: EntitySummary[] };
+    return data.entities ?? [];
+  } catch {
+    return [];
   }
 }

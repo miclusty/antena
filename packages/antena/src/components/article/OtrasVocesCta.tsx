@@ -1,13 +1,74 @@
 /** @jsxImportSource solid-js */
-import { createMemo, createResource, createSignal, Show } from 'solid-js';
+import { createMemo, createResource, createSignal, Show, For } from 'solid-js';
 import type { NewsItem } from '../../lib/types';
 import { useHaptic } from '../../lib/haptic';
 import { createScrollProgress } from '../../lib/scroll-progress';
 import { trackEvent } from '../../lib/analytics';
-import { fetchBiasNarrative } from '../../lib/api';
+import { fetchBiasNarrative, fetchContradictions } from '../../lib/api';
 import BottomSheet from '../common/BottomSheet';
 import MaterialIcon from '../common/MaterialIcon';
 import OtrasVocesTable from './OtrasVocesTable';
+
+// Map subject keys to user-friendly Spanish labels. Falls back to
+// the raw key (with underscores replaced) so a brand-new subject
+// the i18n table doesn't know about still renders something legible.
+const SUBJECT_LABELS: Record<string, string> = {
+  muerto: 'muertos',
+  herido: 'heridos',
+  evacuado: 'evacuados',
+  damnificado: 'damnificados',
+  detenido: 'detenidos',
+  desaparecido: 'desaparecidos',
+  contagiado: 'contagiados',
+  victima: 'víctimas',
+  persona: 'personas',
+  familia: 'familias',
+  nino: 'niños',
+  menor: 'menores',
+  peso: 'pesos',
+  dolar: 'dólares',
+  dolares: 'dólares',
+  euro: 'euros',
+  grado: 'grados',
+  dia: 'días',
+  mes: 'meses',
+  ano: 'años',
+  hora: 'horas',
+  minuto: 'minutos',
+  casa: 'casas',
+  edificio: 'edificios',
+  vehiculo: 'vehículos',
+  metro: 'metros',
+  kilometro: 'kilómetros',
+  centimetro: 'centímetros',
+  hectarea: 'hectáreas',
+  kilogramo: 'kilogramos',
+  tonelada: 'toneladas',
+  porcentaje: '%',
+  millon_ARS: 'millones de pesos',
+  millon_USD: 'millones de dólares',
+  millon_peso: 'millones de pesos',
+  millon_dolar: 'millones de dólares',
+  millon_euro: 'millones de euros',
+  millon: 'millones',
+  mil_ARS: 'miles de pesos',
+  mil_peso: 'miles de pesos',
+  mil: 'miles',
+};
+
+function formatSubject(subject: string, unit: string | null): string {
+  if (unit === '%') return SUBJECT_LABELS.porcentaje ?? '%';
+  if (subject in SUBJECT_LABELS) return SUBJECT_LABELS[subject];
+  return subject.replace(/_/g, ' ');
+}
+
+function formatValue(v: number): string {
+  // Spanish news style: 1.234 for thousands, decimals only when needed
+  if (Number.isInteger(v) && Math.abs(v) >= 1000) {
+    return v.toLocaleString('es-AR');
+  }
+  return v.toString();
+}
 
 interface OtrasVocesCtaProps {
   otherSources: NewsItem[];
@@ -30,6 +91,14 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
   const [narrative] = createResource(
     () => (sheetOpen() && props.clusterId ? props.clusterId : null),
     fetchBiasNarrative
+  );
+
+  // Contradictions: numerical/factual disagreements between sources.
+  // Shown above the narrative as a discrete warning card. Lazy-loaded
+  // along with the narrative so we don't fire two requests on mount.
+  const [contradictions] = createResource(
+    () => (sheetOpen() && props.clusterId ? props.clusterId : null),
+    fetchContradictions
   );
 
   // Pre-compute the source labels for the CTA copy
@@ -135,6 +204,58 @@ export default function OtrasVocesCta(props: OtrasVocesCtaProps) {
         >
           Deslizá horizontalmente para comparar cómo cubre cada medio
         </p>
+        <Show when={(contradictions()?.count ?? 0) > 0}>
+          {(getCount) => (
+            <div
+              class="rounded-lg p-3 mb-3 text-[13px]"
+              role="alert"
+              aria-label="Discrepancias entre fuentes"
+              style={{
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                'border-left': '4px solid #f59e0b',
+              }}
+            >
+              <div class="flex items-center gap-2 mb-1.5">
+                <MaterialIcon
+                  name="warning"
+                  size="sm"
+                  style={{ color: '#f59e0b' }}
+                />
+                <p
+                  class="text-[12px] font-bold uppercase tracking-wider"
+                  style={{ color: '#b45309' }}
+                >
+                  Discrepancias entre fuentes ({getCount()})
+                </p>
+              </div>
+              <ul class="space-y-1 text-[12px] leading-snug" style={{ color: 'var(--text-primary)' }}>
+                <For each={contradictions()?.contradictions ?? []}>
+                  {(c) => {
+                    // Build "A=5 vs B=8 (muertos)" string from entries.
+                    // We dedupe by source so the same outlet saying two
+                    // things doesn't show up twice.
+                    const seen = new Set<string>();
+                    const parts: string[] = [];
+                    for (const e of c.entries) {
+                      if (seen.has(e.source)) continue;
+                      seen.add(e.source);
+                      parts.push(`${e.source}=${formatValue(e.value)}`);
+                    }
+                    return (
+                      <li>
+                        <strong>{parts.join(' vs ')}</strong>
+                        <span style={{ color: 'var(--text-tertiary)' }}>
+                          {' '}({formatSubject(c.subject, c.unit)})
+                        </span>
+                      </li>
+                    );
+                  }}
+                </For>
+              </ul>
+            </div>
+          )}
+        </Show>
         <Show when={narrative()}>
           {(n) => (
             <div
